@@ -84,7 +84,7 @@ export function LayerTreeItem({
     <div className="select-none">
       <div
         className={cn(
-          'flex items-center gap-1 py-1.5 px-2 hover:bg-slate-100/50 transition-colors cursor-pointer group',
+          'flex items-center gap-1 py-2 px-2 hover:bg-slate-100/50 transition-colors cursor-pointer group min-h-[44px]',
           !isGroup && selectedLayerId === node.id && 'bg-blue-50 hover:bg-blue-100/50',
           !isGroup && 'cursor-pointer'
         )}
@@ -95,32 +95,32 @@ export function LayerTreeItem({
         {isGroup ? (
           <button
             onClick={handleExpandClick}
-            className="w-5 h-5 flex items-center justify-center rounded hover:bg-slate-200/50 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded hover:bg-slate-200/50 transition-colors touch-manipulation"
           >
             {node.expanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              <ChevronDown className="w-4 h-4 text-slate-500" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+              <ChevronRight className="w-4 h-4 text-slate-500" />
             )}
           </button>
         ) : (
-          <span className="w-5" />
+          <span className="w-8" />
         )}
 
         {/* Visibility toggle */}
         <button
           onClick={handleVisibilityClick}
           className={cn(
-            'w-6 h-6 flex items-center justify-center rounded transition-colors',
+            'w-9 h-9 flex items-center justify-center rounded transition-colors touch-manipulation',
             node.visible
               ? 'text-blue-600 hover:bg-blue-100/50'
               : 'text-slate-400 hover:bg-slate-200/50'
           )}
         >
           {node.visible ? (
-            <Eye className="w-4 h-4" />
+            <Eye className="w-5 h-5" />
           ) : (
-            <EyeOff className="w-4 h-4" />
+            <EyeOff className="w-5 h-5" />
           )}
         </button>
 
@@ -143,10 +143,10 @@ export function LayerTreeItem({
       {/* Opacity slider for visible layers */}
       {!isGroup && node.visible && (
         <div
-          className="px-4 py-1"
-          style={{ paddingLeft: `${paddingLeft + 40}px` }}
+          className="px-4 py-2 min-h-[44px] flex items-center"
+          style={{ paddingLeft: `${paddingLeft + 48}px` }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full">
             <span className="text-xs text-slate-500">Opacity</span>
             <Slider
               value={[node.opacity * 100]}
@@ -154,9 +154,9 @@ export function LayerTreeItem({
               min={0}
               max={100}
               step={5}
-              className="w-24 h-1"
+              className="flex-1 h-2"
             />
-            <span className="text-xs text-slate-500 w-8">
+            <span className="text-xs text-slate-500 w-10 text-right">
               {Math.round(node.opacity * 100)}%
             </span>
           </div>

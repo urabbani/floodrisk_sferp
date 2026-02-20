@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
@@ -7,8 +7,9 @@ import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft } from 'lucide-react';
+import { PanelLeft, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Recursively collect all layers from the tree
 function collectAllLayers(tree: LayerGroup): LayerInfo[] {
@@ -43,10 +44,19 @@ function collectVisibleLayerIds(tree: LayerGroup): Set<string> {
 }
 
 function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const isMobile = useIsMobile();
+  // Sidebar starts closed on mobile, open on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Map<string, number>>(new Map());
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
+
+  // Close sidebar when switching to mobile view
+  useEffect(() => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }, [isMobile]);
 
   // Get all layers
   const allLayers = useMemo(() => collectAllLayers(layerTree), []);
@@ -104,14 +114,39 @@ function App() {
       <Header onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
 
       {/* Main content */}
-      <div className="flex flex-1 overflow-hidden min-w-0">
+      <div className="flex flex-1 overflow-hidden min-w-0 relative">
+        {/* Mobile sidebar overlay backdrop */}
+        {isMobile && sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40"
+            onClick={toggleSidebar}
+          />
+        )}
+
         {/* Sidebar with layer tree */}
         <aside
           className={cn(
-            'bg-white border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col',
-            sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'
+            'bg-white border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col z-50',
+            // Desktop: slide in from left
+            !isMobile && (sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'),
+            // Mobile: full-width overlay
+            isMobile && (sidebarOpen ? 'w-full absolute inset-y-0 left-0' : 'w-0 overflow-hidden')
           )}
         >
+          {/* Mobile close button */}
+          {isMobile && sidebarOpen && (
+            <div className="flex items-center justify-between p-3 border-b border-slate-200">
+              <h2 className="text-sm font-semibold text-slate-800">Layers</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleSidebar}
+                className="h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
           <LayerTree
             root={layerTree}
             onLayerVisibilityChange={handleLayerVisibilityChange}
@@ -128,7 +163,12 @@ function App() {
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="absolute left-4 top-20 z-10 bg-white shadow-md hover:bg-slate-50"
+            className={cn(
+              "z-10 bg-white shadow-md hover:bg-slate-50",
+              isMobile
+                ? "absolute bottom-4 right-4 h-12 w-12 rounded-full"
+                : "absolute left-4 top-20"
+            )}
           >
             <PanelLeft className="w-5 h-5 text-slate-600" />
           </Button>
@@ -147,8 +187,8 @@ function App() {
             onClose={() => setSelectedLayer(null)}
           />
 
-          {/* Layer info overlay */}
-          {visibleLayers.length > 0 && (
+          {/* Layer info overlay - hidden on mobile */}
+          {!isMobile && visibleLayers.length > 0 && (
             <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3 z-10 max-w-xs">
               <h3 className="text-xs font-semibold text-slate-700 mb-1">
                 Active Layers
