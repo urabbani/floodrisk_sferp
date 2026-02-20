@@ -46,7 +46,7 @@ function collectVisibleLayerIds(tree: LayerGroup): Set<string> {
 function App() {
   const isMobile = useIsMobile();
   // Sidebar starts closed on mobile, open on desktop
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Map<string, number>>(new Map());
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);

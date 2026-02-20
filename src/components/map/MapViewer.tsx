@@ -75,13 +75,16 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
       layers: Array.from(baseLayerRefs.current.values()),
       view: new View({
         projection,
-        center: MAP_CONFIG.center,
-        zoom: MAP_CONFIG.zoom,
-        minZoom: MAP_CONFIG.zoom - 4,
-        maxZoom: MAP_CONFIG.zoom + 4,
+        extent: MAP_CONFIG.extent,
       }),
       controls: [],
     });
+
+    // Fit view to extent on initialization
+    const view = map.getView();
+    if (view && MAP_CONFIG.extent) {
+      view.fit(MAP_CONFIG.extent, { padding: [50, 50, 50, 50] });
+    }
 
     map.on('click', (event) => {
       event.stopPropagation();
