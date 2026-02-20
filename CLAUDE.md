@@ -4,65 +4,91 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Flood Risk Assessment web application** for the Indus River region (Sindh Province, Pakistan). Built with React 19, TypeScript, Vite, Tailwind CSS, and OpenLayers, it visualizes flood scenario data from GeoServer WMS services.
+Flood Risk Assessment - Indus River is a web-based GIS application for visualizing flood scenarios in Sindh Province, Pakistan. It combines OpenLayers mapping with GeoServer WMS services to display flood risk data across different climate conditions, maintenance levels, and return periods.
 
-The application allows users to:
-- Compare flood scenarios across different climate conditions (Present/Future)
-- Analyze different maintenance levels (Breaches, Reduced Capacity, Perfect)
-- View multiple parameters: Max Depth, Max Velocity, Duration, V×h
-- Explore return periods from 2.3 to 500 years
+**Tech Stack:** React 19, TypeScript, Vite, Tailwind CSS, OpenLayers, shadcn/ui (Radix UI)
 
 ## Development Commands
 
 ```bash
-npm run dev      # Start development server (HMR enabled)
-npm run build    # TypeScript check + production build
-npm run lint     # Run ESLint
-npm run preview  # Preview production build locally
+# Start development server (includes GeoServer proxy at /geoserver)
+npm run dev
+
+# Build for production (TypeScript check + Vite build)
+npm run build
+
+# Run ESLint
+npm run lint
+
+# Preview production build locally
+npm run preview
+
+# WSL workaround (if you encounter EPERM symlink errors)
+npm install --no-bin-links
 ```
 
 ## Architecture
 
-### Layer System
+### Layer System (Core Concept)
 
-The entire data layer structure is defined in `src/config/layers.ts`. This file:
-- Defines the hierarchical layer tree matching the QGIS project structure
-- Contains GeoServer configuration (`GEOSERVER_CONFIG`) - points to `/geoserver` relative path
-- Contains map projection settings (`MAP_CONFIG`) - uses UTM Zone 42N (EPSG:32642)
-- Generates hundreds of flood scenario layers programmatically via `generateFloodScenarioLayers()`
+The application is built around a hierarchical layer tree structure defined in `src/config/layers.ts`. Understanding this is critical:
 
-**Layer naming convention:** `T3_{returnPeriod}yrs_{scenario}_{maintenance}_{parameter}`
-- Example: `T3_25yrs_Present_Perfect_MaxDepth`
+- **Layer Types:** Groups can contain both sub-groups and individual layers
+- **Recursive Structure:** `LayerTreeItem` components render themselves recursively
+- **GeoServer Integration:** All flood layers use WMS from GeoServer at `http://10.0.0.205:8080`
+- **Proxy:** Vite dev server proxies `/geoserver` to the GeoServer instance (see `vite.config.ts`)
 
-**Important:** When adding new layers, update `src/config/layers.ts`. The layer tree structure drives the LayerTree component and scenario selection UI.
+**Layer Naming Convention:** GeoServer layers follow `t3_{rp}yrs_{scenario}_{maintenance}_{parameter}`
+- Example: `t3_25yrs_present_perfect_maxdepth`
+- The `buildLayerName()` function in `layers.ts` handles this
 
-### Type System
+**Layer Hierarchy:**
+```
+Supporting Layers (AOI, Sindh Province, Sub-Catchments)
+Survey (DGPS points)
+Structures (Canal Network, Drains)
+Present Climate / Future Climate
+  └─ Maintenance: Breaches, Reduced Capacity, Perfect
+      └─ Parameters: Depth, Velocity, Duration, V×h
+          └─ Return Periods: 2.3, 5, 10, 25, 50, 100, 500 years
+Flood 2022 (Actual Event data)
+HDTM (Digital Terrain Model tiles)
+```
 
-All layer and scenario types are in `src/types/layers.ts`:
-- `LayerInfo` - Individual layer metadata (WMS layer with GeoServer integration)
-- `LayerGroup` - Hierarchical groups containing layers or sub-groups
-- Type guards: `isLayerGroup()` and `isLayerInfo()`
+### Key Components
 
-### Component Structure
+- **MapViewer** (`src/components/map/MapViewer.tsx`): OpenLayers map instance manager
+- **LayerTree** (`src/components/layer-tree/`): Recursive layer visibility controls
+- **ScenarioMatrix** (`src/components/scenario-explorer/`): Grid-based scenario comparison view
+- **LegendPanel** (`src/components/map/LegendPanel.tsx`): Dynamic legend from GeoServer
 
-- **`src/components/map/`** - OpenLayers map viewer (`MapViewer.tsx`) and legend panel
-- **`src/components/layer-tree/`** - Hierarchical layer management UI
-- **`src/components/scenario-explorer/`** - Scenario comparison interface (`ScenarioMatrix.tsx`)
-- **`src/components/ui/`** - 40+ shadcn/ui components (Button, Card, Dialog, etc.)
+### Map Projection
 
-### Map Configuration
+**CRITICAL:** The map uses UTM Zone 42N (EPSG:32642), not Web Mercator. OpenLayers is configured with proj4 for this projection. Center coordinates and extent in `MAP_CONFIG` are in UTM, not lat/lon.
 
-- **Projection:** EPSG:32642 (WGS 84 / UTM zone 42N)
-- **Center:** [439335, 3080045]
-- **Extent:** [309082.5, 2853827.75, 569587.5, 3306262.25]
-- **Base maps:** Google Satellite, OpenStreetMap, Terrain (configured in `layers.ts`)
+### GeoServer Configuration
 
-## GeoServer Integration
+- **Workspaces:** `results` (flood scenarios), `DEM` (terrain tiles)
+- **WMS Version:** 1.1.1
+- **Legend Graphics:** Dynamically generated via `GetLegendGraphic` request
+- **Development Proxy:** Vite proxies `/geoserver` → `http://10.0.0.205:8080`
 
-The app integrates with a local GeoServer instance:
-- Workspace: `flood_risk`
-- Base URL: `/geoserver` (relative path for same-origin)
-- WMS Version: 1.1.1
-- Legend graphics generated dynamically via GetLegendGraphic requests
+### shadcn/ui Integration
 
-When working with GeoServer layers, ensure the `geoserverName` in layer config matches the actual layer name in GeoServer workspace.
+UI components are from shadcn/ui (Radix UI primitives). Components are in `src/components/ui/`. When adding new components, use the shadcn CLI which places them in this directory.
+
+### Path Aliases
+
+`@/*` maps to `src/*` (configured in `vite.config.ts` and `tsconfig.json`)
+
+## Adding New Layers
+
+1. Define in `src/config/layers.ts` using `createRasterLayer()` or `createVectorLayer()`
+2. Add to appropriate group in the `layerTree` structure
+3. Layer names must match GeoServer layer names exactly
+
+## Mobile Responsiveness
+
+- App uses `use-mobile.ts` hook for responsive behavior
+- Sidebar collapses on mobile (overlay pattern)
+- Base maps and map controls adapt to screen size
