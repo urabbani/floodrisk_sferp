@@ -6,6 +6,7 @@ import XYZ from 'ol/source/XYZ';
 import { get as getProjection } from 'ol/proj';
 import { register } from 'ol/proj/proj4';
 import proj4 from 'proj4';
+import { Compass } from 'lucide-react';
 import 'ol/ol.css';
 import type { LayerInfo, GeometryType } from '@/types/layers';
 import { GEOSERVER_CONFIG, MAP_CONFIG, baseMaps } from '@/config/layers';
@@ -44,6 +45,7 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
   const layerOpacitiesRef = useRef<Record<string, number>>({});
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
   const [activeBaseMap, setActiveBaseMap] = useState('satellite');
+  const [rotation, setRotation] = useState(0);
   const initializedRef = useRef(false);
 
   // Initialize map (only once)
@@ -75,7 +77,6 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
       layers: Array.from(baseLayerRefs.current.values()),
       view: new View({
         projection,
-        extent: MAP_CONFIG.extent,
       }),
       controls: [],
     });
@@ -97,6 +98,17 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
     });
 
     mapInstance.current = map;
+
+    // Track map rotation for north arrow
+    const updateRotation = () => {
+      const view = map.getView();
+      if (view) {
+        const rotation = view.getRotation() || 0;
+        setRotation(-rotation * (180 / Math.PI)); // Convert to degrees, negate for compass
+      }
+    };
+    updateRotation();
+    view.on('change:rotation', updateRotation);
 
     return () => {
       map.setTarget(undefined);
@@ -180,8 +192,22 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
     <div className="relative w-full h-full overflow-hidden">
       <div ref={mapRef} className="w-full h-full overflow-hidden" />
 
+      {/* North arrow */}
+      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full shadow-lg p-2 z-10">
+        <Compass
+          className="w-6 h-6 text-slate-700"
+          style={{ transform: `rotate(${rotation}deg)` }}
+        />
+        <div className="text-[10px] font-semibold text-slate-700 text-center mt-0.5">N</div>
+      </div>
+
+      {/* Attribution */}
+      <div className="absolute bottom-1 left-8 text-[10px] text-slate-500 bg-white/70 px-1 rounded">
+        {activeBaseMap === 'satellite' ? '© Google' : '© OpenStreetMap'}
+      </div>
+
       {/* Base map switcher */}
-      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 z-10">
+      <div className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-2 z-10">
         <div className="flex flex-col gap-1">
           {baseMaps.map((bm) => (
             <button
@@ -197,11 +223,6 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
             </button>
           ))}
         </div>
-      </div>
-
-      {/* Attribution */}
-      <div className="absolute bottom-1 left-8 text-[10px] text-slate-500 bg-white/70 px-1 rounded">
-        {activeBaseMap === 'satellite' ? '© Google' : '© OpenStreetMap'}
       </div>
     </div>
   );

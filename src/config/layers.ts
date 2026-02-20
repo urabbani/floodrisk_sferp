@@ -139,7 +139,7 @@ export const layerTree: LayerGroup = {
     {
       id: 'supporting',
       name: 'Supporting Layers',
-      expanded: true,
+      expanded: false,
       visible: true,
       children: [
         createVectorLayer('Area of Interest', 'aoi', false, 0.6, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
