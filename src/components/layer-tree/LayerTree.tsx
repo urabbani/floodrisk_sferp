@@ -85,6 +85,18 @@ function isClimateGroup(node: LayerGroup): boolean {
   return node.id === 'present_climate' || node.id === 'future_climate';
 }
 
+// Recursively collect all layer IDs in a group
+function collectLayerIds(node: LayerGroup | LayerInfo): string[] {
+  if (isLayerGroup(node)) {
+    const ids: string[] = [];
+    node.children.forEach((child) => {
+      ids.push(...collectLayerIds(child));
+    });
+    return ids;
+  }
+  return [node.id];
+}
+
 export function LayerTree({
   root: initialRoot,
   onLayerVisibilityChange,
@@ -132,18 +144,68 @@ export function LayerTree({
 
   // FIXED: Notify parent BEFORE updating local state
   const handleToggleVisibility = useCallback((id: string, visible: boolean) => {
-    // Notify parent first to ensure map updates immediately
-    onLayerVisibilityChange(id, visible);
-    
+    // Find the node being toggled
+    const findNode = (node: LayerGroup | LayerInfo, targetId: string): LayerGroup | LayerInfo | null => {
+      if (node.id === targetId) return node;
+      if (isLayerGroup(node)) {
+        for (const child of node.children) {
+          const found = findNode(child, targetId);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    const node = findNode(tree, id);
+    if (!node) return;
+
+    // If it's a group, collect all layer IDs within it and toggle each
+    if (isLayerGroup(node)) {
+      const layerIds = collectLayerIds(node);
+      layerIds.forEach((layerId) => {
+        onLayerVisibilityChange(layerId, visible);
+      });
+    } else {
+      // Single layer - just toggle it
+      onLayerVisibilityChange(id, visible);
+    }
+
     // Then update local state
     setTree((prev) => {
-      const newTree = updateNodeInTree(prev, id, (node) => ({
-        ...node,
-        visible,
-      }));
-      return newTree;
+      const updateVisibility = (node: LayerGroup | LayerInfo): LayerGroup | LayerInfo => {
+        if (node.id === id) {
+          // If this is the target node, update it
+          return { ...node, visible };
+        }
+        if (isLayerGroup(node)) {
+          // Check if any parent groups should have their visibility updated
+          const hasVisibleChildren = node.children.some((child) => {
+            if (child.id === id) return visible;
+            if (isLayerGroup(child)) {
+              // For nested groups, check if any children are visible
+              const checkChildVisible = (n: LayerGroup | LayerInfo): boolean => {
+                if (n.id === id) return visible;
+                if (isLayerGroup(n)) {
+                  return n.children.some(checkChildVisible);
+                }
+                return n.visible;
+              };
+              return checkChildVisible(child);
+            }
+            return child.visible;
+          });
+          return {
+            ...node,
+            visible: hasVisibleChildren,
+            children: node.children.map(updateVisibility),
+          };
+        }
+        return node;
+      };
+
+      return updateVisibility(prev) as LayerGroup;
     });
-  }, [onLayerVisibilityChange]);
+  }, [onLayerVisibilityChange, tree]);
 
   const handleToggleExpand = useCallback((id: string, expanded: boolean) => {
     setTree((prev) =>

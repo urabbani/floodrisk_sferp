@@ -140,7 +140,7 @@ export const layerTree: LayerGroup = {
       id: 'supporting',
       name: 'Supporting Layers',
       expanded: false,
-      visible: true,
+      visible: false,
       children: [
         createVectorLayer('Area of Interest', 'aoi', false, 0.6, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
         createVectorLayer('Sindh Province', 'sindh_province', false, 0.4, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
@@ -153,7 +153,7 @@ export const layerTree: LayerGroup = {
       id: 'present_climate',
       name: 'Present Climate',
       expanded: true,
-      visible: true,
+      visible: false,
       children: [
         {
           id: 'present_breaches',
