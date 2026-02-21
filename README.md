@@ -172,6 +172,94 @@ Layers
 - Firefox (latest)
 - Safari (latest)
 
+## Production Deployment (Apache on WSL with HTTPS)
+
+This application is deployed on Apache running in WSL with HTTPS enabled.
+
+### 1. Build the Application
+
+```bash
+npm run build
+```
+
+### 2. Apache Configuration
+
+Create or update the Apache virtual host configuration:
+
+```apache
+<VirtualHost *:443>
+    ServerName your-domain.com
+    DocumentRoot /mnt/d/Scenario_Reullts/dist
+
+    # SSL Configuration
+    SSLEngine on
+    SSLCertificateFile /etc/ssl/certs/your-cert.crt
+    SSLCertificateKeyFile /etc/ssl/private/your-key.key
+
+    # Proxy GeoServer WMS requests
+    ProxyPreserveHost On
+    ProxyPass /geoserver http://10.0.0.205:8080/geoserver
+    ProxyPassReverse /geoserver http://10.0.0.205:8080/geoserver
+
+    # SPA routing - redirect all requests to index.html
+    <Directory "/mnt/d/Scenario_Reullts/dist">
+        RewriteEngine On
+        RewriteBase /
+        RewriteRule ^index\.html$ - [L]
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteCond %{REQUEST_FILENAME} !-d
+        RewriteRule . /index.html [L]
+
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    # Enable compression
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+    </IfModule>
+
+    # Cache static assets
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresByType image/gif "access plus 1 year"
+        ExpiresByType image/jpeg "access plus 1 year"
+        ExpiresByType image/png "access plus 1 year"
+        ExpiresByType image/svg+xml "access plus 1 year"
+        ExpiresByType application/javascript "access plus 1 year"
+        ExpiresByType text/css "access plus 1 year"
+    </IfModule>
+
+    ErrorLog ${APACHE_LOG_DIR}/floodrisk-error.log
+    CustomLog ${APACHE_LOG_DIR}/floodrisk-access.log combined
+</VirtualHost>
+
+# Redirect HTTP to HTTPS
+<VirtualHost *:80>
+    ServerName your-domain.com
+    Redirect permanent / https://your-domain.com/
+</VirtualHost>
+```
+
+### 3. Deploy
+
+Copy the built files to the Apache document root:
+
+```bash
+sudo cp -r dist/* /var/www/html/floodrisk/
+sudo systemctl reload apache2
+```
+
+### 4. GeoServer Configuration
+
+The application proxies GeoServer requests through Apache. Ensure:
+- GeoServer is accessible at `http://10.0.0.205:8080/geoserver`
+- Apache `proxy`, `proxy_http`, and `rewrite` modules are enabled:
+  ```bash
+  sudo a2enmod proxy proxy_http rewrite ssl
+  ```
+
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
