@@ -174,6 +174,8 @@ Layers
 
 ## Production Deployment (Apache on WSL with HTTPS)
 
+**Live Site:** https://portal.srpsid-dss.gos.pk
+
 This application is deployed on Apache running in WSL with HTTPS enabled.
 
 ### 1. Build the Application
@@ -188,13 +190,13 @@ Create or update the Apache virtual host configuration:
 
 ```apache
 <VirtualHost *:443>
-    ServerName your-domain.com
-    DocumentRoot /mnt/d/Scenario_Reullts/dist
+    ServerName portal.srpsid-dss.gos.pk
+    DocumentRoot /mnt/d/Scenario_results/floodrisk_sferp/dist
 
-    # SSL Configuration
+    # SSL Configuration (Let's Encrypt)
     SSLEngine on
-    SSLCertificateFile /etc/ssl/certs/your-cert.crt
-    SSLCertificateKeyFile /etc/ssl/private/your-key.key
+    SSLCertificateFile "/etc/letsencrypt/live/portal.srpsid-dss.gos.pk/fullchain.pem"
+    SSLCertificateKeyFile "/etc/letsencrypt/live/portal.srpsid-dss.gos.pk/privkey.pem"
 
     # Proxy GeoServer WMS requests
     ProxyPreserveHost On
@@ -247,7 +249,14 @@ Create or update the Apache virtual host configuration:
 Copy the built files to the Apache document root:
 
 ```bash
-sudo cp -r dist/* /var/www/html/floodrisk/
+# Local build
+npm run build
+
+# Upload to server (using sshpass)
+sshpass -p 'password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+
+# Or if on server directly
+sudo cp -r dist/* /mnt/d/Scenario_results/floodrisk_sferp/dist/
 sudo systemctl reload apache2
 ```
 
@@ -260,7 +269,21 @@ The application proxies GeoServer requests through Apache. Ensure:
   sudo a2enmod proxy proxy_http rewrite ssl
   ```
 
-### 5. Updating the Production Site
+### 5. Server Details
+
+**Production Server:**
+- Host: `10.0.0.205` (internal WSL)
+- Domain: `portal.srpsid-dss.gos.pk`
+- Public IP: `124.29.217.193`
+- Document Root: `/mnt/d/Scenario_results/floodrisk_sferp/dist/`
+- Apache Config: `/etc/apache2/sites-available/floodrisk.conf`
+- SSL: Let's Encrypt certificates
+
+**GeoServer:**
+- URL: `http://10.0.0.205:8080/geoserver`
+- Proxy: Apache proxies `/geoserver` to GeoServer
+
+### 6. Updating the Production Site
 
 After the initial deployment, use this workflow to update the site with new features or fixes:
 
@@ -308,6 +331,14 @@ echo "Deployment complete! Clear browser cache if needed."
 Make it executable: `chmod +x deploy.sh`
 
 Then deploy with: `./deploy.sh`
+
+## Credits
+
+Designed and structured using Kimi-K2.5
+
+Built, maintained and deployed using Claude Code with Z.AI's GLM series of models
+
+Orchestrated by Dr. Umair Rabbani
 
 ## Known Issues
 

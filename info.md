@@ -1,31 +1,46 @@
-Using Node.js 20, Tailwind CSS v3.4.19, and Vite v7.2.4
+# Flood Risk Assessment - Project Info
 
-Tailwind CSS has been set up with the shadcn theme
+## Project Status
+- **Status:** Live Production
+- **Live URL:** https://portal.srpsid-dss.gos.pk
+- **Last Deployed:** February 21, 2026
 
-Setup complete: /mnt/okcomputer/output/app
+## Server Information
+- **Internal IP:** 10.0.0.205
+- **Public IP:** 124.29.217.193
+- **SSH User:** umair
+- **Document Root:** `/mnt/d/Scenario_results/floodrisk_sferp/dist/`
+- **Apache Config:** `/etc/apache2/sites-available/floodrisk.conf`
 
-Components (40+):
-  accordion, alert-dialog, alert, aspect-ratio, avatar, badge, breadcrumb,
-  button-group, button, calendar, card, carousel, chart, checkbox, collapsible,
-  command, context-menu, dialog, drawer, dropdown-menu, empty, field, form,
-  hover-card, input-group, input-otp, input, item, kbd, label, menubar,
-  navigation-menu, pagination, popover, progress, radio-group, resizable,
-  scroll-area, select, separator, sheet, sidebar, skeleton, slider, sonner,
-  spinner, switch, table, tabs, textarea, toggle-group, toggle, tooltip
+## Tech Stack
+- **Frontend:** React 19, TypeScript, Vite 7.3
+- **Styling:** Tailwind CSS 3.x
+- **Map:** OpenLayers (EPSG:32642 - UTM Zone 42N)
+- **UI:** shadcn/ui (Radix UI)
+- **Data:** GeoServer WMS at `http://10.0.0.205:8080/geoserver`
 
-Usage:
-  import { Button } from '@/components/ui/button'
-  import { Card, CardHeader, CardTitle } from '@/components/ui/card'
+## Deployment Workflow
+```bash
+# 1. Build
+npm run build
 
-Structure:
-  src/sections/        Page sections
-  src/hooks/           Custom hooks
-  src/types/           Type definitions
-  src/App.css          Styles specific to the Webapp
-  src/App.tsx          Root React component
-  src/index.css        Global styles
-  src/main.tsx         Entry point for rendering the Webapp
-  index.html           Entry point for the Webapp
-  tailwind.config.js   Configures Tailwind's theme, plugins, etc.
-  vite.config.ts       Main build and dev server settings for Vite
-  postcss.config.js    Config file for CSS post-processing tools
+# 2. Upload to server
+sshpass -p 'password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+
+# 3. Sync git repo on server
+sshpass -p 'password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+```
+
+## Credits
+- **Design & Structure:** Kimi-K2.5
+- **Build, Maintain & Deploy:** Claude Code (Z.AI's GLM series)
+- **Orchestrator:** Dr. Umair Rabbani
+
+## Backup & Rollback
+- **Backup Config:** `/etc/apache2/sites-available/qgis-web-client.conf.backup`
+- **To Rollback:**
+  ```bash
+  sudo a2dissite floodrisk.conf
+  sudo a2ensite qgis-web-client.conf
+  sudo systemctl reload apache2
+  ```

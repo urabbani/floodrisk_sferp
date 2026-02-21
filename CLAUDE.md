@@ -100,9 +100,25 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 
 ## Production Deployment
 
+**Live Site:** https://portal.srpsid-dss.gos.pk
+
 - **Platform:** Apache on WSL with HTTPS
-- **Document Root:** `/var/www/html/floodrisk/` (or configured path)
+- **Server:** `10.0.0.205` (umair@10.0.0.205)
+- **Document Root:** `/mnt/d/Scenario_results/floodrisk_sferp/dist/`
+- **Apache Config:** `/etc/apache2/sites-available/floodrisk.conf`
 - **GeoServer Proxy:** Apache proxies `/geoserver` → `http://10.0.0.205:8080/geoserver`
-- **Update Workflow:** Build with `npm run build`, then copy `dist/*` to Apache document root
+- **SSL:** Let's Encrypt certificates for `portal.srpsid-dss.gos.pk`
+
+**Deployment Workflow:**
+```bash
+# 1. Build locally
+npm run build
+
+# 2. Upload to server
+sshpass -p 'password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+
+# 3. Server git pull (to keep repo synced)
+ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+```
 
 See README.md for detailed Apache configuration and deployment instructions.
