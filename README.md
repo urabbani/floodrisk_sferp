@@ -260,6 +260,55 @@ The application proxies GeoServer requests through Apache. Ensure:
   sudo a2enmod proxy proxy_http rewrite ssl
   ```
 
+### 5. Updating the Production Site
+
+After the initial deployment, use this workflow to update the site with new features or fixes:
+
+```bash
+# 1. Pull latest changes from git (if applicable)
+git pull origin main
+
+# 2. Install any new dependencies
+npm install --no-bin-links
+
+# 3. Build the production bundle
+npm run build
+
+# 4. Backup current production (optional but recommended)
+sudo cp -r /var/www/html/floodrisk /var/www/html/floodrisk.backup.$(date +%Y%m%d_%H%M%S)
+
+# 5. Deploy to production
+sudo rm -rf /var/www/html/floodrisk/*
+sudo cp -r dist/* /var/www/html/floodrisk/
+
+# 6. Clear browser cache (users may need to hard refresh: Ctrl+Shift+R)
+```
+
+#### Quick Deploy Script
+
+Create a script `deploy.sh` for faster deployments:
+
+```bash
+#!/bin/bash
+set -e
+
+echo "Building application..."
+npm run build
+
+echo "Backing up current version..."
+sudo cp -r /var/www/html/floodrisk /var/www/html/floodrisk.backup.$(date +%Y%m%d_%H%M%S)
+
+echo "Deploying to production..."
+sudo rm -rf /var/www/html/floodrisk/*
+sudo cp -r dist/* /var/www/html/floodrisk/
+
+echo "Deployment complete! Clear browser cache if needed."
+```
+
+Make it executable: `chmod +x deploy.sh`
+
+Then deploy with: `./deploy.sh`
+
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
