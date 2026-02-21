@@ -98,6 +98,14 @@ export function Header({ onToggleSidebar, sidebarOpen }: HeaderProps) {
                   WGS 84 / UTM zone 42N (EPSG:32642)
                 </p>
               </div>
+
+              <div className="pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-500 text-center">
+                  Designed and structured using Kimi-K2.5<br />
+                  Built, maintained and deployed using Claude Code with Z.AI's GLM series of models<br />
+                  Orchestrated by Dr. Umair Rabbani
+                </p>
+              </div>
             </div>
           </DialogContent>
         </Dialog>
