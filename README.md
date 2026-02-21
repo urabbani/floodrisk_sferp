@@ -9,34 +9,27 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 
 ## Features
 
-- **Interactive Map Viewer** - OpenLayers-based map with multiple base map options (Google Satellite, OpenStreetMap, Terrain)
+- **Interactive Map Viewer** - OpenLayers-based map with dynamic north arrow and multiple base map options (Google Satellite, OpenStreetMap, Terrain)
 - **GeoServer Integration** - WMS services for flood scenario layers
-- **Scenario Explorer** - Matrix view for comparing flood events across different parameters
-- **Layer Management** - Hierarchical layer tree with visibility toggle and opacity control
+- **Layer Management** - Hierarchical layer tree with:
+  - Group and individual layer visibility toggles
+  - Opacity control for each layer
+  - Expandable/collapsible groups
+  - Search functionality with recursive filtering
+  - Active layers overlay showing all visible layers
 - **Climate Scenarios** - Compare Present vs Future climate conditions
 - **Multiple Parameters** - Max Depth, Max Velocity, Duration, V×h
 - **Return Periods** - Analyze flood events from 2.3 to 500 years
 - **Maintenance Levels** - Breaches (2022), Reduced Capacity, Perfect conditions
-
-## Screenshots
-
-### Layer Tree View
-- Hierarchical organization of flood scenario layers
-- Toggle layer visibility and adjust opacity
-- Expandable/collapsible groups
-
-### Scenario Matrix View
-- Grid-based scenario comparison
-- Quick toggle for return periods and maintenance conditions
-- Single vs Compare mode
+- **Mobile Responsive** - Adaptive UI with sidebar toggle for mobile/desktop
 
 ## Tech Stack
 
 - **Frontend Framework:** React 19 with TypeScript
 - **Build Tool:** Vite 7.3
-- **Styling:** Tailwind CSS 4.x
+- **Styling:** Tailwind CSS 3.x
 - **Map Library:** OpenLayers
-- **UI Components:** shadcn/ui
+- **UI Components:** shadcn/ui (Radix UI)
 - **Map Projection:** UTM Zone 42N (EPSG:32642)
 
 ## Prerequisites
@@ -67,8 +60,11 @@ Before running this application, ensure you have:
    Edit `src/config/layers.ts` to match your GeoServer setup:
    ```typescript
    const GEOSERVER_CONFIG = {
-     baseUrl: '/geoserver',  // Change if GeoServer is on different host/port
-     workspace: 'flood_risk',
+     baseUrl: '/geoserver',  // Proxied to GeoServer via Vite
+     workspaces: {
+       results: 'results',
+       dem: 'DEM',
+     },
      wmsVersion: '1.1.1',
    };
    ```
@@ -107,15 +103,19 @@ floodrisk_sferp/
 ├── public/                 # Static assets
 ├── src/
 │   ├── components/
-│   │   ├── header.tsx     # Application header
-│   │   ├── layer-tree/    # Layer tree & scenario matrix
+│   │   ├── Header.tsx     # Application header
+│   │   ├── layer-tree/    # Layer tree component
 │   │   ├── map/           # Map viewer & legend panel
-│   │   ├── scenario-explorer/
+│   │   ├── scenario-explorer/  # Scenario matrix view
 │   │   └── ui/            # shadcn/ui components
 │   ├── config/
 │   │   └── layers.ts      # Layer configuration & GeoServer settings
 │   ├── types/
 │   │   └── layers.ts      # TypeScript type definitions
+│   ├── hooks/
+│   │   └── use-mobile.ts  # Mobile detection hook
+│   ├── lib/
+│   │   └── utils.ts       # Utility functions
 │   ├── App.tsx            # Main application component
 │   ├── main.tsx           # Application entry point
 │   └── index.css          # Global styles
@@ -131,23 +131,31 @@ floodrisk_sferp/
 All layers are defined in `src/config/layers.ts`. The layer tree structure is:
 
 ```
-Flood Scenarios
+Layers
+├── Survey
+│   └── DGPS Survey Points
+├── Structures
+│   ├── Canal Network
+│   └── Drains
+├── Supporting Layers
+│   ├── Area of Interest
+│   ├── Sindh Province
+│   └── Sub-Catchments
 ├── Present Climate
-│   ├── Breaches
-│   │   ├── Return Periods (2.3, 5, 10, 25, 50, 100, 200, 500 years)
-│   │   └── Parameters (MaxDepth, MaxVelocity, Duration, VxH)
-│   ├── Reduced Capacity
-│   └── Perfect
+│   ├── Maintenance - Breaches
+│   │   └── Depth, Velocity, Duration, V×h
+│   ├── Maintenance - Reduced Capacity
+│   └── Maintenance - Perfect
 ├── Future Climate
-│   └── (same structure)
-└── Supporting Layers
-    ├── Area of Interest
-    ├── Sindh Province
-    └── Sub-Catchments
+│   └── (same structure as Present)
+├── Flood 2022 (Actual Event)
+│   └── Max Depth, Max Velocity, Duration, V×h
+└── HDTM
+    └── High-resolution DEM tiles (9 tiles)
 ```
 
-**Layer naming convention:** `T3_{returnPeriod}yrs_{scenario}_{maintenance}_{parameter}`
-- Example: `T3_25yrs_Present_Perfect_MaxDepth`
+**Layer naming convention:** `t3_{returnPeriod}yrs_{scenario}_{maintenance}_{parameter}`
+- Example: `t3_25yrs_present_perfect_maxdepth`
 
 ## Available Scripts
 
@@ -167,7 +175,6 @@ Flood Scenarios
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
-- **Mobile:** Not fully optimized for mobile devices yet
 
 ## Contributing
 
