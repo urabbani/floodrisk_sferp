@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
@@ -7,7 +7,7 @@ import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft, X } from 'lucide-react';
+import { PanelLeft, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -47,9 +47,53 @@ function App() {
   const isMobile = useIsMobile();
   // Sidebar starts closed on mobile, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
   const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Map<string, number>>(new Map());
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+
+  // Minimum and maximum sidebar width
+  const MIN_WIDTH = 200;
+  const MAX_WIDTH = 600;
+
+  // Handle sidebar resize
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || !sidebarRef.current) return;
+
+      const sidebarRect = sidebarRef.current.getBoundingClientRect();
+      const newWidth = e.clientX - sidebarRect.left;
+
+      if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing]);
 
   // Close sidebar when switching to mobile view
   useEffect(() => {
@@ -125,10 +169,12 @@ function App() {
 
         {/* Sidebar with layer tree */}
         <aside
+          ref={sidebarRef}
+          style={!isMobile && sidebarOpen ? { width: `${sidebarWidth}px` } : undefined}
           className={cn(
             'bg-white border-r border-slate-200 transition-all duration-300 ease-in-out flex flex-col z-50',
             // Desktop: slide in from left
-            !isMobile && (sidebarOpen ? 'w-80' : 'w-0 overflow-hidden'),
+            !isMobile && (sidebarOpen ? '' : 'w-0 overflow-hidden'),
             // Mobile: full-width overlay
             isMobile && (sidebarOpen ? 'w-full absolute inset-y-0 left-0' : 'w-0 overflow-hidden')
           )}
@@ -156,6 +202,17 @@ function App() {
             visibleLayerIds={visibleLayerIds}
           />
         </aside>
+
+        {/* Sidebar resize handle */}
+        {!isMobile && sidebarOpen && (
+          <div
+            className="absolute top-0 bottom-0 w-1 bg-slate-200 hover:bg-blue-500 cursor-col-resize z-50 flex items-center justify-center group"
+            style={{ left: `${sidebarWidth}px` }}
+            onMouseDown={handleMouseDown}
+          >
+            <GripVertical className="w-4 h-4 text-slate-400 group-hover:text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        )}
 
         {/* Sidebar toggle button (when closed) */}
         {!sidebarOpen && (
