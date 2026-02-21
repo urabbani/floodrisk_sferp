@@ -1,4 +1,4 @@
-import { Menu, Info, Settings } from 'lucide-react';
+import { Menu, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,6 +8,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useState } from 'react';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -68,7 +69,7 @@ export function Header({ onToggleSidebar, sidebarOpen }: HeaderProps) {
                 for the Right Bank of the Indus River. The project analyzes flood risks under various
                 climate and infrastructure maintenance scenarios.
               </p>
-              
+
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2">Available Data Layers</h3>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
@@ -100,10 +101,6 @@ export function Header({ onToggleSidebar, sidebarOpen }: HeaderProps) {
             </div>
           </DialogContent>
         </Dialog>
-
-        <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
-          <Settings className="w-5 h-5 text-slate-600" />
-        </Button>
       </div>
     </header>
   );
