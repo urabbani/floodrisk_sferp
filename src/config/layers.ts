@@ -129,7 +129,6 @@ export const layerTree: LayerGroup = {
       expanded: false,
       visible: false,
       children: [
-        createVectorLayer('Structures', 'structures', false, 1, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
         createVectorLayer('Canal Network', 'canal_network', false, 1, GEOSERVER_CONFIG.workspaces.results, 'line'),
         createVectorLayer('Drains', 'drains', false, 1, GEOSERVER_CONFIG.workspaces.results, 'line'),
       ],

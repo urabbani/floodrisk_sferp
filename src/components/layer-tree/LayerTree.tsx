@@ -97,6 +97,34 @@ function collectLayerIds(node: LayerGroup | LayerInfo): string[] {
   return [node.id];
 }
 
+// Compute group visibility based on children (recursively check if any child/grandchild is visible)
+function computeGroupVisibility(node: LayerGroup | LayerInfo): boolean {
+  if (!isLayerGroup(node)) {
+    return node.visible;
+  }
+  // Group is visible if any descendant is visible
+  return node.children.some(computeGroupVisibility);
+}
+
+// Recursively update group visibility based on their children's actual state
+function updateParentVisibility(node: LayerGroup | LayerInfo): LayerGroup | LayerInfo {
+  if (!isLayerGroup(node)) {
+    return node;
+  }
+  const updatedChildren = node.children.map(updateParentVisibility);
+  const hasVisibleChildren = updatedChildren.some((child) => {
+    if (isLayerGroup(child)) {
+      return computeGroupVisibility(child);
+    }
+    return child.visible;
+  });
+  return {
+    ...node,
+    visible: hasVisibleChildren,
+    children: updatedChildren,
+  };
+}
+
 export function LayerTree({
   root: initialRoot,
   onLayerVisibilityChange,
@@ -107,7 +135,7 @@ export function LayerTree({
 }: LayerTreeProps) {
   const [tree, setTree] = useState<LayerGroup>(initialRoot);
   const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState<'tree' | 'matrix'>('matrix');
+  const [viewMode, setViewMode] = useState<'tree' | 'matrix'>('tree');
 
   const prevVisibleIdsRef = useRef<string[]>([]);
 
@@ -127,9 +155,17 @@ export function LayerTree({
     setTree((prev) => {
       const syncVisibility = (node: LayerGroup | LayerInfo): LayerGroup | LayerInfo => {
         if (isLayerGroup(node)) {
+          const updatedChildren = node.children.map(syncVisibility);
+          const hasVisibleChildren = updatedChildren.some((child) => {
+            if (isLayerGroup(child)) {
+              return computeGroupVisibility(child);
+            }
+            return child.visible;
+          });
           return {
             ...node,
-            children: node.children.map(syncVisibility),
+            visible: hasVisibleChildren,
+            children: updatedChildren,
           };
         }
         return {
@@ -170,41 +206,7 @@ export function LayerTree({
       onLayerVisibilityChange(id, visible);
     }
 
-    // Then update local state
-    setTree((prev) => {
-      const updateVisibility = (node: LayerGroup | LayerInfo): LayerGroup | LayerInfo => {
-        if (node.id === id) {
-          // If this is the target node, update it
-          return { ...node, visible };
-        }
-        if (isLayerGroup(node)) {
-          // Check if any parent groups should have their visibility updated
-          const hasVisibleChildren = node.children.some((child) => {
-            if (child.id === id) return visible;
-            if (isLayerGroup(child)) {
-              // For nested groups, check if any children are visible
-              const checkChildVisible = (n: LayerGroup | LayerInfo): boolean => {
-                if (n.id === id) return visible;
-                if (isLayerGroup(n)) {
-                  return n.children.some(checkChildVisible);
-                }
-                return n.visible;
-              };
-              return checkChildVisible(child);
-            }
-            return child.visible;
-          });
-          return {
-            ...node,
-            visible: hasVisibleChildren,
-            children: node.children.map(updateVisibility),
-          };
-        }
-        return node;
-      };
-
-      return updateVisibility(prev) as LayerGroup;
-    });
+    // Note: Parent visibility will be updated by the sync effect when externalVisibleLayerIds changes
   }, [onLayerVisibilityChange, tree]);
 
   const handleToggleExpand = useCallback((id: string, expanded: boolean) => {
@@ -244,15 +246,43 @@ export function LayerTree({
 
   const filterTree = (node: LayerGroup | LayerInfo, query: string): boolean => {
     if (!query) return true;
-    
+
     const matches = node.name.toLowerCase().includes(query.toLowerCase());
-    
+
     if (isLayerGroup(node)) {
-      const childMatches = node.children.some((child) => filterTree(child, query));
-      return matches || childMatches;
+      // Check if any children match
+      const hasMatchingChildren = node.children.some((child) => filterTree(child, query));
+      return matches || hasMatchingChildren;
     }
-    
+
     return matches;
+  };
+
+  // Recursively filter tree to only include matching nodes and their parents
+  const filterTreeRecursive = (node: LayerGroup | LayerInfo, query: string, autoExpand = false): LayerGroup | LayerInfo | null => {
+    if (!query) return node;
+
+    const matches = node.name.toLowerCase().includes(query.toLowerCase());
+
+    if (isLayerGroup(node)) {
+      // Filter children recursively
+      const filteredChildren = node.children
+        .map((child) => filterTreeRecursive(child, query, autoExpand))
+        .filter((child): child is LayerGroup | LayerInfo => child !== null);
+
+      // Show this group if it matches OR has matching children
+      if (matches || filteredChildren.length > 0) {
+        return {
+          ...node,
+          expanded: autoExpand || node.expanded || matches, // Auto-expand if searching
+          children: filteredChildren,
+        };
+      }
+      return null;
+    }
+
+    // Leaf nodes - only show if they match
+    return matches ? node : null;
   };
 
   const visibleCount = externalVisibleLayerIds.size;
@@ -282,8 +312,8 @@ export function LayerTree({
           />
         </div>
         
-        {/* View Mode Toggle */}
-        <div className="flex items-center justify-between">
+        {/* View Mode Toggle - Hidden */}
+        <div className="flex items-center justify-between hidden">
           <div className="flex bg-slate-100 rounded-md p-0.5">
             <button
               onClick={() => setViewMode('matrix')}
@@ -308,7 +338,7 @@ export function LayerTree({
               Tree
             </button>
           </div>
-          
+
           {viewMode === 'tree' && (
             <div className="flex gap-1">
               <Button
@@ -331,6 +361,28 @@ export function LayerTree({
               </Button>
             </div>
           )}
+        </div>
+
+        {/* Always show Expand/Collapse buttons since view toggle is hidden */}
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleExpandAll}
+            className="h-7 text-xs px-2"
+          >
+            <ChevronDown className="w-3 h-3 mr-1" />
+            Expand
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCollapseAll}
+            className="h-7 text-xs px-2"
+          >
+            <ChevronUp className="w-3 h-3 mr-1" />
+            Collapse
+          </Button>
         </div>
       </div>
 
@@ -366,7 +418,8 @@ export function LayerTree({
               <div className="mt-4 pt-4 border-t border-slate-200">
                 <h3 className="text-xs font-semibold text-slate-700 mb-2 px-1">Other Layers</h3>
                 {otherGroups
-                  .filter((child) => filterTree(child, searchQuery))
+                  .map((child) => filterTreeRecursive(child, searchQuery, true))
+                  .filter((child): child is LayerGroup | LayerInfo => child !== null)
                   .map((child) => (
                     <LayerTreeItem
                       key={child.id}
@@ -384,7 +437,8 @@ export function LayerTree({
             ) : (
               <div className="px-3">
                 {tree.children
-                  .filter((child) => filterTree(child, searchQuery))
+                  .map((child) => filterTreeRecursive(child, searchQuery, true))
+                  .filter((child): child is LayerGroup | LayerInfo => child !== null)
                   .map((child) => (
                     <LayerTreeItem
                       key={child.id}

@@ -196,8 +196,8 @@ function App() {
               <p className="text-xs text-slate-500">
                 {visibleLayers.length} layer{visibleLayers.length !== 1 ? 's' : ''} visible
               </p>
-              <div className="mt-2 max-h-32 overflow-y-auto">
-                {visibleLayers.slice(0, 5).map((layer) => (
+              <div className="mt-2 max-h-48 overflow-y-auto scrollbar-thin">
+                {visibleLayers.map((layer) => (
                   <div
                     key={layer.id}
                     className="text-xs text-slate-600 py-0.5 truncate"
@@ -206,11 +206,6 @@ function App() {
                     • {layer.name}
                   </div>
                 ))}
-                {visibleLayers.length > 5 && (
-                  <div className="text-xs text-slate-400 py-0.5">
-                    + {visibleLayers.length - 5} more...
-                  </div>
-                )}
               </div>
             </div>
           )}
