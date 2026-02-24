@@ -15,8 +15,11 @@ A web-based interactive flood risk assessment tool for the Indus River region in
   - Group and individual layer visibility toggles
   - Opacity control for each layer
   - Expandable/collapsible groups
-  - Search functionality with recursive filtering
   - Active layers overlay showing all visible layers
+  - Resizable sidebar panel
+- **Feature Identification** - Click on any layer (raster or vector) to view attributes via GeoServer WMS GetFeatureInfo
+- **Coordinate Display** - Real-time mouse position display in both UTM (Zone 42N) and Lat/Lon formats with copy-to-clipboard
+- **Swipe Compare Tool** - Side-by-side comparison of two different flood scenarios with synchronized pan/zoom
 - **Climate Scenarios** - Compare Present vs Future climate conditions
 - **Multiple Parameters** - Max Depth, Max Velocity, Duration, V×h
 - **Return Periods** - Analyze flood events from 2.3 to 500 years
@@ -106,6 +109,9 @@ floodrisk_sferp/
 │   │   ├── Header.tsx     # Application header
 │   │   ├── layer-tree/    # Layer tree component
 │   │   ├── map/           # Map viewer & legend panel
+│   │   ├── map-tools/     # Map tool components
+│   │   ├── popups/        # Feature info popups
+│   │   ├── swipe/         # Swipe compare component
 │   │   ├── scenario-explorer/  # Scenario matrix view
 │   │   └── ui/            # shadcn/ui components
 │   ├── config/

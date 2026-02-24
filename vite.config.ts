@@ -13,6 +13,8 @@ export default defineConfig({
     },
   },
   server: {
+    port: 3000,
+    host: true,
     proxy: {
       '/geoserver': {
         target: 'http://10.0.0.205:8080',

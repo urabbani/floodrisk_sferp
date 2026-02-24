@@ -3,11 +3,13 @@ import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
 import { LegendPanel } from '@/components/map/LegendPanel';
+import { FeaturePopup } from '@/components/popups/FeaturePopup';
+import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft, X, GripVertical } from 'lucide-react';
+import { PanelLeft, X, GripVertical, ArrowLeftRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -52,6 +54,8 @@ function App() {
   const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Map<string, number>>(new Map());
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
+  const [identifyPopup, setIdentifyPopup] = useState<{ coordinate: number[]; position: { x: number; y: number }; features: any[] } | null>(null);
+  const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
 
   // Minimum and maximum sidebar width
@@ -143,9 +147,82 @@ function App() {
   }, []);
 
   // Handle map click (stable reference to prevent map re-initialization)
-  const handleMapClick = useCallback((coord: number[]) => {
+  const handleMapClick = useCallback(async (coord: number[]) => {
     console.log('Map clicked at:', coord);
-  }, []);
+
+    // Show identify popup at click position
+    const mapElement = document.querySelector('.ol-viewport');
+    if (!mapElement) return;
+
+    const rect = mapElement.getBoundingClientRect();
+
+    // Get visible WMS layer names (all layers, including vector)
+    const visibleWmsLayers = visibleLayers
+      .map(l => ({ name: l.geoserverName, workspace: l.workspace, layerInfo: l }));
+
+    console.log('Visible WMS layers:', visibleWmsLayers);
+
+    let features: any[] = [];
+
+    // Query GeoServer for each visible WMS layer
+    for (const layer of visibleWmsLayers) {
+      try {
+        // Build GetFeatureInfo URL - use proper BBOX from map view
+        const mapDiv = document.querySelector('.ol-viewport') as HTMLElement;
+        const size = mapDiv ? { width: mapDiv.offsetWidth, height: mapDiv.offsetHeight } : { width: 256, height: 256 };
+
+        // Calculate a small bbox around the clicked point
+        const bboxSize = 50; // meters
+        const bbox = `${coord[0] - bboxSize},${coord[1] - bboxSize},${coord[0] + bboxSize},${coord[1] + bboxSize}`;
+
+        const params = new URLSearchParams({
+          SERVICE: 'WMS',
+          VERSION: '1.1.1',
+          REQUEST: 'GetFeatureInfo',
+          LAYERS: layer.name,
+          QUERY_LAYERS: layer.name,
+          INFO_FORMAT: 'application/json',
+          FEATURE_COUNT: '10',
+          SRS: 'EPSG:32642',
+          BBOX: bbox,
+          WIDTH: '11',
+          HEIGHT: '11',
+          X: '5',
+          Y: '5',
+        });
+
+        const url = `/geoserver/${layer.workspace}/wms?${params}`;
+        console.log('GetFeatureInfo URL:', url);
+
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Feature data:', data);
+
+          if (data.features && data.features.length > 0) {
+            features.push(...data.features.map((f: any) => ({
+              layer: layer.layerInfo.name,
+              properties: f.properties || {},
+            })));
+          }
+        } else {
+          console.warn('GetFeatureInfo failed:', response.status, response.statusText);
+        }
+      } catch (error) {
+        console.warn('GetFeatureInfo failed for layer:', layer.name, error);
+      }
+    }
+
+    console.log('Final features:', features);
+
+    setIdentifyPopup({
+      coordinate: coord,
+      position: { x: rect.width / 2, y: rect.height / 2 },
+      features,
+    });
+  }, [visibleLayers]);
 
   // Toggle sidebar
   const toggleSidebar = useCallback(() => {
@@ -231,6 +308,17 @@ function App() {
           </Button>
         )}
 
+        {/* Swipe Compare button */}
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => setSwipeCompareOpen(true)}
+          className="absolute top-4 right-20 z-10 bg-blue-600 hover:bg-blue-700 shadow-lg"
+        >
+          <ArrowLeftRight className="w-4 h-4 mr-2" />
+          Swipe Compare
+        </Button>
+
         {/* Map container */}
         <main className="flex-1 relative overflow-hidden">
           <MapViewer
@@ -243,6 +331,16 @@ function App() {
             layer={selectedLayer}
             onClose={() => setSelectedLayer(null)}
           />
+
+          {/* Feature identify popup */}
+          {identifyPopup && (
+            <FeaturePopup
+              position={identifyPopup.position}
+              coordinate={identifyPopup.coordinate}
+              features={identifyPopup.features}
+              onClose={() => setIdentifyPopup(null)}
+            />
+          )}
 
           {/* Layer info overlay - hidden on mobile */}
           {!isMobile && visibleLayers.length > 0 && (
@@ -268,6 +366,14 @@ function App() {
           )}
         </main>
       </div>
+
+      {/* Swipe Compare Modal */}
+      {swipeCompareOpen && (
+        <SwipeCompare
+          layers={allLayers}
+          onClose={() => setSwipeCompareOpen(false)}
+        />
+      )}
     </div>
   );
 }

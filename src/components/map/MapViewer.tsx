@@ -3,14 +3,13 @@ import { Map, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import XYZ from 'ol/source/XYZ';
-import { get as getProjection } from 'ol/proj';
+import { get as getProjection, toLonLat } from 'ol/proj';
 import { register } from 'ol/proj/proj4';
 import proj4 from 'proj4';
-import { Compass } from 'lucide-react';
+import { Compass, Copy } from 'lucide-react';
 import 'ol/ol.css';
 import type { LayerInfo, GeometryType } from '@/types/layers';
 import { GEOSERVER_CONFIG, MAP_CONFIG, baseMaps } from '@/config/layers';
-import { defaults as defaultControls } from 'ol/control';
 
 // Register UTM Zone 42N projection (EPSG:32642)
 proj4.defs(
@@ -46,6 +45,8 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
   const [activeBaseMap, setActiveBaseMap] = useState('satellite');
   const [rotation, setRotation] = useState(0);
+  const [mousePosition, setMousePosition] = useState<{ utm: string; latlon: string } | null>(null);
+  const [copied, setCopied] = useState(false);
   const initializedRef = useRef(false);
 
   // Initialize map (only once)
@@ -188,6 +189,67 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
     });
   }, []);
 
+  // Track mouse position for coordinate display
+  useEffect(() => {
+    const map = mapInstance.current;
+    if (!map) return;
+
+    const pointerMove = (evt: any) => {
+      const coord = evt.coordinate;
+      if (!coord) return;
+
+      // UTM coordinates
+      const utmX = coord[0].toFixed(0);
+      const utmY = coord[1].toFixed(0);
+
+      // Convert to lat/lon
+      const [lon, lat] = toLonLat(coord, 'EPSG:32642');
+      const latStr = Math.abs(lat).toFixed(5) + (lat >= 0 ? '°N' : '°S');
+      const lonStr = Math.abs(lon).toFixed(5) + (lon >= 0 ? '°E' : '°W');
+
+      setMousePosition({
+        utm: `E: ${utmX} N: ${utmY}`,
+        latlon: `${latStr}, ${lonStr}`,
+      });
+    };
+
+    map.on('pointermove', pointerMove);
+
+    return () => {
+      map.un('pointermove', pointerMove);
+    };
+  }, []);
+
+  // Copy coordinates to clipboard
+  const copyCoordinates = useCallback(() => {
+    if (!mousePosition) return;
+
+    // Try modern Clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(mousePosition.utm).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      });
+      return;
+    }
+
+    // Fallback for older browsers or non-secure contexts
+    const textArea = document.createElement('textarea');
+    textArea.value = mousePosition.utm;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+      document.execCommand('copy');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+    document.body.removeChild(textArea);
+  }, [mousePosition]);
+
   return (
     <div className="relative w-full h-full overflow-hidden">
       <div ref={mapRef} className="w-full h-full overflow-hidden" />
@@ -224,6 +286,25 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
           ))}
         </div>
       </div>
+
+      {/* Coordinate Display */}
+      {mousePosition && (
+        <div className="absolute bottom-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg shadow-lg p-3 z-10">
+          <div className="flex items-center gap-3">
+            <div className="text-xs">
+              <div className="font-mono text-slate-700">{mousePosition.utm}</div>
+              <div className="text-slate-500">{mousePosition.latlon}</div>
+            </div>
+            <button
+              onClick={copyCoordinates}
+              className="p-1 hover:bg-slate-100 rounded transition-colors"
+              title={copied ? 'Copied!' : 'Copy coordinates'}
+            >
+              <Copy className="w-3 h-3 text-slate-500" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

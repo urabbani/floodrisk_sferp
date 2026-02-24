@@ -57,10 +57,12 @@ HDTM (GeoServer layer group in DEM workspace)
 
 ### Key Components
 
-- **MapViewer** (`src/components/map/MapViewer.tsx`): OpenLayers map instance manager
+- **MapViewer** (`src/components/map/MapViewer.tsx`): OpenLayers map instance manager with coordinate display
 - **LayerTree** (`src/components/layer-tree/`): Recursive layer visibility controls
 - **ScenarioMatrix** (`src/components/scenario-explorer/`): Grid-based scenario comparison view
 - **LegendPanel** (`src/components/map/LegendPanel.tsx`): Dynamic legend from GeoServer
+- **FeaturePopup** (`src/components/popups/FeaturePopup.tsx`): Displays feature attributes from WMS GetFeatureInfo
+- **SwipeCompare** (`src/components/swipe/SwipeCompare.tsx`): Side-by-side comparison of two flood scenarios
 
 ### Map Projection
 
@@ -96,6 +98,9 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 ## UI Features
 
 - **Resizable Sidebar:** Layer panel can be resized by dragging the right edge (200px-600px range)
+- **Coordinate Display:** Real-time mouse position in UTM (Zone 42N) and Lat/Lon with copy-to-clipboard
+- **Feature Identification:** Click on any layer to view attributes via WMS GetFeatureInfo (works for raster and vector)
+- **Swipe Compare:** Compare two flood scenarios side-by-side with synchronized pan/zoom and draggable divider
 - All groups default to collapsed state except root
 
 ## Production Deployment
