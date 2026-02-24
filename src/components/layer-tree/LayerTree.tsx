@@ -106,25 +106,6 @@ function computeGroupVisibility(node: LayerGroup | LayerInfo): boolean {
   return node.children.some(computeGroupVisibility);
 }
 
-// Recursively update group visibility based on their children's actual state
-function updateParentVisibility(node: LayerGroup | LayerInfo): LayerGroup | LayerInfo {
-  if (!isLayerGroup(node)) {
-    return node;
-  }
-  const updatedChildren = node.children.map(updateParentVisibility);
-  const hasVisibleChildren = updatedChildren.some((child) => {
-    if (isLayerGroup(child)) {
-      return computeGroupVisibility(child);
-    }
-    return child.visible;
-  });
-  return {
-    ...node,
-    visible: hasVisibleChildren,
-    children: updatedChildren,
-  };
-}
-
 export function LayerTree({
   root: initialRoot,
   onLayerVisibilityChange,
@@ -427,7 +408,7 @@ export function LayerTree({
                       level={0}
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
-                      onLayerSelect={handleLayerSelect}
+                      onSelectLayer={handleLayerSelect}
                       onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />
@@ -446,7 +427,7 @@ export function LayerTree({
                       level={0}
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
-                      onLayerSelect={handleLayerSelect}
+                      onSelectLayer={handleLayerSelect}
                       onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />

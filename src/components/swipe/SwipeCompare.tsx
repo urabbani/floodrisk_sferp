@@ -22,7 +22,6 @@ proj4.defs(
 register(proj4);
 
 interface SwipeCompareProps {
-  layers: LayerInfo[];
   onClose: () => void;
 }
 
@@ -53,7 +52,7 @@ interface SwipePosition {
   percentage: number;
 }
 
-export function SwipeCompare({ layers, onClose }: SwipeCompareProps) {
+export function SwipeCompare({ onClose }: SwipeCompareProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftMapRef = useRef<HTMLDivElement>(null);
   const rightMapRef = useRef<HTMLDivElement>(null);
@@ -140,7 +139,7 @@ export function SwipeCompare({ layers, onClose }: SwipeCompareProps) {
         const rightView = rightMap.getView();
         if (leftView && rightView) {
           rightView.setCenter(leftView.getCenter());
-          rightView.setZoom(leftView.getZoom());
+          rightView.setZoom(leftView.getZoom() || 10);
           rightView.setRotation(leftView.getRotation() || 0);
         }
         syncingRight = false;
@@ -154,7 +153,7 @@ export function SwipeCompare({ layers, onClose }: SwipeCompareProps) {
         const rightView = rightMap.getView();
         if (leftView && rightView) {
           leftView.setCenter(rightView.getCenter());
-          leftView.setZoom(rightView.getZoom());
+          leftView.setZoom(rightView.getZoom() || 10);
           leftView.setRotation(rightView.getRotation() || 0);
         }
         syncingLeft = false;

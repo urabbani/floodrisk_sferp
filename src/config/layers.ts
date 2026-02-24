@@ -1,4 +1,4 @@
-import type { LayerGroup, LayerInfo, GeometryType, Z_INDEX_PRIORITY } from '@/types/layers';
+import type { LayerGroup, LayerInfo, GeometryType } from '@/types/layers';
 
 // GeoServer configuration
 export const GEOSERVER_CONFIG = {

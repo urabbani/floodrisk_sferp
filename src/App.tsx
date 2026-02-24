@@ -167,29 +167,26 @@ function App() {
     // Query GeoServer for each visible WMS layer
     for (const layer of visibleWmsLayers) {
       try {
-        // Build GetFeatureInfo URL - use proper BBOX from map view
-        const mapDiv = document.querySelector('.ol-viewport') as HTMLElement;
-        const size = mapDiv ? { width: mapDiv.offsetWidth, height: mapDiv.offsetHeight } : { width: 256, height: 256 };
-
         // Calculate a small bbox around the clicked point
         const bboxSize = 50; // meters
         const bbox = `${coord[0] - bboxSize},${coord[1] - bboxSize},${coord[0] + bboxSize},${coord[1] + bboxSize}`;
 
-        const params = new URLSearchParams({
-          SERVICE: 'WMS',
-          VERSION: '1.1.1',
-          REQUEST: 'GetFeatureInfo',
-          LAYERS: layer.name,
-          QUERY_LAYERS: layer.name,
-          INFO_FORMAT: 'application/json',
-          FEATURE_COUNT: '10',
-          SRS: 'EPSG:32642',
-          BBOX: bbox,
-          WIDTH: '11',
-          HEIGHT: '11',
-          X: '5',
-          Y: '5',
-        });
+        const params = new URLSearchParams();
+        params.append('SERVICE', 'WMS');
+        params.append('VERSION', '1.1.1');
+        params.append('REQUEST', 'GetFeatureInfo');
+        if (layer.name) {
+          params.append('LAYERS', layer.name);
+          params.append('QUERY_LAYERS', layer.name);
+        }
+        params.append('INFO_FORMAT', 'application/json');
+        params.append('FEATURE_COUNT', '10');
+        params.append('SRS', 'EPSG:32642');
+        params.append('BBOX', bbox);
+        params.append('WIDTH', '11');
+        params.append('HEIGHT', '11');
+        params.append('X', '5');
+        params.append('Y', '5');
 
         const url = `/geoserver/${layer.workspace}/wms?${params}`;
         console.log('GetFeatureInfo URL:', url);
@@ -370,7 +367,6 @@ function App() {
       {/* Swipe Compare Modal */}
       {swipeCompareOpen && (
         <SwipeCompare
-          layers={allLayers}
           onClose={() => setSwipeCompareOpen(false)}
         />
       )}
