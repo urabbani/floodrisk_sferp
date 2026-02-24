@@ -338,6 +338,37 @@ Make it executable: `chmod +x deploy.sh`
 
 Then deploy with: `./deploy.sh`
 
+## Standard Deployment Workflow (Keep All 3 Synced)
+
+**The 3 locations to keep synced:**
+1. **Local machine** - Your development environment
+2. **GitHub** - Remote repository (https://github.com/urabbani/floodrisk_sferp.git)
+3. **Production server** - Live site at https://portal.srpsid-dss.gos.pk
+
+### Complete Deployment Steps
+
+```bash
+# 1. Build locally
+npm run build
+
+# 2. Commit and push to GitHub
+git add .
+git commit -m "your commit message"
+git push
+
+# 3. Upload dist to server
+sshpass -p 'your_password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+
+# 4. Pull git changes on server (keeps server repo synced)
+sshpass -p 'your_password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+```
+
+**Server Details:**
+- Host: `umair@10.0.0.205`
+- Document Root: `/mnt/d/Scenario_results/floodrisk_sferp/dist/`
+- Repo Path: `/mnt/d/Scenario_results/floodrisk_sferp/`
+- Live Site: https://portal.srpsid-dss.gos.pk
+
 ## Credits
 
 Designed and structured using Kimi-K2.5

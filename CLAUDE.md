@@ -114,16 +114,27 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 - **GeoServer Proxy:** Apache proxies `/geoserver` → `http://10.0.0.205:8080/geoserver`
 - **SSL:** Let's Encrypt certificates for `portal.srpsid-dss.gos.pk`
 
-**Deployment Workflow:**
+**Deployment Workflow (Keep All 3 Synced):**
+
+The 3 locations to keep synced:
+1. **Local machine** - Development environment
+2. **GitHub** - https://github.com/urabbani/floodrisk_sferp.git
+3. **Production server** - https://portal.srpsid-dss.gos.pk
+
 ```bash
 # 1. Build locally
 npm run build
 
-# 2. Upload to server
-sshpass -p 'password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+# 2. Commit and push to GitHub
+git add .
+git commit -m "your commit message"
+git push
 
-# 3. Server git pull (to keep repo synced)
-ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+# 3. Upload dist to server
+sshpass -p 'your_password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+
+# 4. Pull git changes on server (keeps server repo synced)
+sshpass -p 'your_password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
 ```
 
 See README.md for detailed Apache configuration and deployment instructions.
