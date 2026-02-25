@@ -34,7 +34,7 @@ function getZIndexForGeometryType(geometryType?: GeometryType): number {
 
 interface MapViewerProps {
   visibleLayers: LayerInfo[];
-  onMapClick?: (coordinate: number[]) => void;
+  onMapClick?: (coordinate: number[], pixel: [number, number]) => void;
 }
 
 export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
@@ -90,7 +90,7 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
 
     map.on('click', (event) => {
       event.stopPropagation();
-      onMapClick?.(event.coordinate);
+      onMapClick?.(event.coordinate, event.pixel);
     });
 
     map.getViewport().addEventListener('dblclick', (e) => {

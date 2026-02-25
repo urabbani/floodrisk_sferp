@@ -147,14 +147,12 @@ function App() {
   }, []);
 
   // Handle map click (stable reference to prevent map re-initialization)
-  const handleMapClick = useCallback(async (coord: number[]) => {
-    console.log('Map clicked at:', coord);
+  const handleMapClick = useCallback(async (coord: number[], pixel: [number, number]) => {
+    console.log('Map clicked at:', coord, 'pixel:', pixel);
 
     // Show identify popup at click position
     const mapElement = document.querySelector('.ol-viewport');
     if (!mapElement) return;
-
-    const rect = mapElement.getBoundingClientRect();
 
     // Get visible WMS layer names (all layers, including vector)
     const visibleWmsLayers = visibleLayers
@@ -167,8 +165,10 @@ function App() {
     // Query GeoServer for each visible WMS layer
     for (const layer of visibleWmsLayers) {
       try {
-        // Calculate a small bbox around the clicked point
-        const bboxSize = 50; // meters
+        // Use smaller bbox for point features to avoid getting multiple nearby points
+        const isPointLayer = layer.layerInfo.geometryType === 'point';
+        const bboxSize = isPointLayer ? 5 : 50; // 5m for points, 50m for others
+        const featureCount = isPointLayer ? 1 : 10; // Limit to 1 for points
         const bbox = `${coord[0] - bboxSize},${coord[1] - bboxSize},${coord[0] + bboxSize},${coord[1] + bboxSize}`;
 
         const params = new URLSearchParams();
@@ -180,7 +180,7 @@ function App() {
           params.append('QUERY_LAYERS', layer.name);
         }
         params.append('INFO_FORMAT', 'application/json');
-        params.append('FEATURE_COUNT', '10');
+        params.append('FEATURE_COUNT', String(featureCount));
         params.append('SRS', 'EPSG:32642');
         params.append('BBOX', bbox);
         params.append('WIDTH', '11');
@@ -199,7 +199,25 @@ function App() {
           console.log('Feature data:', data);
 
           if (data.features && data.features.length > 0) {
-            features.push(...data.features.map((f: any) => ({
+            // For point layers, find the closest feature to click point
+            let featuresToAdd = data.features;
+            if (isPointLayer && data.features.length > 1) {
+              featuresToAdd = data.features
+                .map((f: any) => ({
+                  feature: f,
+                  distance: f.geometry?.coordinates
+                    ? Math.sqrt(
+                        Math.pow((f.geometry.coordinates[0] ?? 0) - coord[0], 2) +
+                        Math.pow((f.geometry.coordinates[1] ?? 0) - coord[1], 2)
+                      )
+                    : Infinity,
+                }))
+                .sort((a: any, b: any) => a.distance - b.distance)
+                .slice(0, 1)
+                .map((item: any) => item.feature);
+            }
+
+            features.push(...featuresToAdd.map((f: any) => ({
               layer: layer.layerInfo.name,
               properties: f.properties || {},
             })));
@@ -216,7 +234,7 @@ function App() {
 
     setIdentifyPopup({
       coordinate: coord,
-      position: { x: rect.width / 2, y: rect.height / 2 },
+      position: { x: pixel[0], y: pixel[1] },
       features,
     });
   }, [visibleLayers]);
