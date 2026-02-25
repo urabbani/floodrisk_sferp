@@ -34,7 +34,7 @@ function getZIndexForGeometryType(geometryType?: GeometryType): number {
 
 interface MapViewerProps {
   visibleLayers: LayerInfo[];
-  onMapClick?: (coordinate: number[], pixel: [number, number]) => void;
+  onMapClick?: (coordinate: number[], pixel: number[]) => void;
 }
 
 export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {

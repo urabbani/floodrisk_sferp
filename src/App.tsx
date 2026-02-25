@@ -147,7 +147,7 @@ function App() {
   }, []);
 
   // Handle map click (stable reference to prevent map re-initialization)
-  const handleMapClick = useCallback(async (coord: number[], pixel: [number, number]) => {
+  const handleMapClick = useCallback(async (coord: number[], pixel: number[]) => {
     console.log('Map clicked at:', coord, 'pixel:', pixel);
 
     // Show identify popup at click position
