@@ -52,7 +52,6 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
-  const [layerOpacities, setLayerOpacities] = useState<Map<string, number>>(new Map());
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
   const [identifyPopup, setIdentifyPopup] = useState<{ coordinate: number[]; position: { x: number; y: number }; features: any[] } | null>(null);
   const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
@@ -109,15 +108,10 @@ function App() {
   // Get all layers
   const allLayers = useMemo(() => collectAllLayers(layerTree), []);
 
-  // Get currently visible layers with their opacities
+  // Get currently visible layers
   const visibleLayers = useMemo(() => {
-    return allLayers
-      .filter((layer) => visibleLayerIds.has(layer.id))
-      .map((layer) => ({
-        ...layer,
-        opacity: layerOpacities.get(layer.id) ?? layer.opacity,
-      }));
-  }, [allLayers, visibleLayerIds, layerOpacities]);
+    return allLayers.filter((layer) => visibleLayerIds.has(layer.id));
+  }, [allLayers, visibleLayerIds]);
 
   // Handle layer visibility change
   const handleLayerVisibilityChange = useCallback((id: string, visible: boolean) => {
@@ -129,15 +123,6 @@ function App() {
         newSet.delete(id);
       }
       return newSet;
-    });
-  }, []);
-
-  // Handle layer opacity change
-  const handleLayerOpacityChange = useCallback((id: string, opacity: number) => {
-    setLayerOpacities((prev) => {
-      const newMap = new Map(prev);
-      newMap.set(id, opacity);
-      return newMap;
     });
   }, []);
 
@@ -288,7 +273,6 @@ function App() {
           <LayerTree
             root={layerTree}
             onLayerVisibilityChange={handleLayerVisibilityChange}
-            onLayerOpacityChange={handleLayerOpacityChange}
             onLayerSelect={handleLayerSelect}
             selectedLayerId={selectedLayer?.id}
             visibleLayerIds={visibleLayerIds}

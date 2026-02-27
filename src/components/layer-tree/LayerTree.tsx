@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface LayerTreeProps {
   root: LayerGroup;
   onLayerVisibilityChange: (id: string, visible: boolean) => void;
-  onLayerOpacityChange: (id: string, opacity: number) => void;
   onLayerSelect?: (layer: LayerInfo) => void;
   selectedLayerId?: string;
   visibleLayerIds: Set<string>;
@@ -109,7 +108,6 @@ function computeGroupVisibility(node: LayerGroup | LayerInfo): boolean {
 export function LayerTree({
   root: initialRoot,
   onLayerVisibilityChange,
-  onLayerOpacityChange,
   onLayerSelect,
   selectedLayerId,
   visibleLayerIds: externalVisibleLayerIds,
@@ -198,20 +196,6 @@ export function LayerTree({
       }))
     );
   }, []);
-
-  // FIXED: Notify parent BEFORE updating local state
-  const handleOpacityChange = useCallback((id: string, opacity: number) => {
-    // Notify parent first
-    onLayerOpacityChange(id, opacity);
-    
-    // Then update local state
-    setTree((prev) =>
-      updateNodeInTree(prev, id, (node) => ({
-        ...node,
-        opacity,
-      }))
-    );
-  }, [onLayerOpacityChange]);
 
   const handleLayerSelect = useCallback((layer: LayerInfo) => {
     onLayerSelect?.(layer);
@@ -409,7 +393,6 @@ export function LayerTree({
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
                       onSelectLayer={handleLayerSelect}
-                      onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />
                   ))}
@@ -428,7 +411,6 @@ export function LayerTree({
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
                       onSelectLayer={handleLayerSelect}
-                      onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />
                   ))}

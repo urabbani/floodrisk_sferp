@@ -41,7 +41,6 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
-  const layerOpacitiesRef = useRef<Record<string, number>>({});
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
   const [activeBaseMap, setActiveBaseMap] = useState('satellite');
   const [rotation, setRotation] = useState(0);
@@ -118,7 +117,7 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
     };
   }, [onMapClick]);
 
-  // Update WMS layers when visible layers change - FIXED: No recreation on opacity change
+  // Update WMS layers when visible layers change
   useEffect(() => {
     if (!mapInstance.current) return;
 
@@ -130,21 +129,18 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
       if (!currentLayerIds.has(id)) {
         map.removeLayer(layer);
         layerRefs.current.delete(id);
-        delete layerOpacitiesRef.current[id];
       }
     });
 
     // Add new layers or update existing ones
     visibleLayers.forEach((layerInfo) => {
       const existingLayer = layerRefs.current.get(layerInfo.id);
-      
-      // FIXED: Stable z-index calculation (no array index)
+
+      // Stable z-index calculation
       const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
 
       if (!existingLayer) {
         // Create new WMS layer
-        layerOpacitiesRef.current[layerInfo.id] = layerInfo.opacity;
-
         const wmsLayer = new TileLayer({
           source: new TileWMS({
             url: `${GEOSERVER_CONFIG.baseUrl}/${layerInfo.workspace}/wms`,
@@ -166,15 +162,6 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
         map.addLayer(wmsLayer);
         layerRefs.current.set(layerInfo.id, wmsLayer);
       } else {
-        // FIXED: Update opacity without recreating layer
-        const currentOpacity = layerInfo.opacity;
-        const previousOpacity = layerOpacitiesRef.current[layerInfo.id];
-        
-        if (previousOpacity === undefined || Math.abs(previousOpacity - currentOpacity) > 0.01) {
-          existingLayer.setOpacity(currentOpacity);
-          layerOpacitiesRef.current[layerInfo.id] = currentOpacity;
-        }
-        
         // Update z-index if needed
         existingLayer.setZIndex(zIndex);
       }
