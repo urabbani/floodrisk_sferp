@@ -223,8 +223,8 @@ export const layerTree: LayerGroup = {
       ],
     },
     
-    // HDTM (DEM workspace - GeoServer layer group)
-    createRasterLayer('HDTM', 'HDTM', false, 1, GEOSERVER_CONFIG.workspaces.dem),
+    // HDTM (DEM workspace - merged tiles 1-9 at 1m resolution)
+    createRasterLayer('HDTM', 'HDTM_1-9_1m', false, 1, GEOSERVER_CONFIG.workspaces.dem),
   ],
 };
 

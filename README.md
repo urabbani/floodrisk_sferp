@@ -157,7 +157,7 @@ Layers
 ├── Flood 2022 (Actual Event)
 │   └── Max Depth, Max Velocity, Duration, V×h
 └── HDTM
-    └── High-resolution DEM tiles (9 tiles)
+    └── High-resolution DEM (merged tiles 1-9 at 1m resolution)
 ```
 
 **Layer naming convention:** `t3_{returnPeriod}yrs_{scenario}_{maintenance}_{parameter}`

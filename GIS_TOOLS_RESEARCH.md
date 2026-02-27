@@ -496,7 +496,7 @@ function getElevationProfile(line: LineString): Promise<number[]> {
     // Query DEM elevation at this point
     const url = `${GEOSERVER_CONFIG.baseUrl}/DEM/wms` +
       `?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo` +
-      `&LAYERS=DEM:HDTM&QUERY_LAYERS=DEM:HDTM` +
+      `&LAYERS=DEM:HDTM_1-9_1m&QUERY_LAYERS=DEM:HDTM_1-9_1m` +
       `&INFO_FORMAT=application/json` +
       `&X=${point[0]}&Y=${point[1]}`;
 
@@ -584,7 +584,7 @@ async function delineateWatershed(outletPoint: number[]) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       outlet: outletPoint,
-      dem: 'HDTM'
+      dem: 'HDTM_1-9_1m'
     })
   });
 

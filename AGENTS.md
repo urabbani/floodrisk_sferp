@@ -52,7 +52,7 @@ Present Climate / Future Climate
       └─ Parameters: Depth, Velocity, Duration, V×h
           └─ Return Periods: 2.3, 5, 10, 25, 50, 100, 500 years
 Flood 2022 (Actual Event data)
-HDTM (GeoServer layer group in DEM workspace)
+HDTM (GeoServer layer in DEM workspace: HDTM_1-9_1m)
 ```
 
 ### Key Components
