@@ -30,14 +30,14 @@ function collectAllLayers(tree: LayerGroup): LayerInfo[] {
 }
 
 // Recursively collect initially visible layer IDs
-function collectVisibleLayerIds(tree: LayerGroup): Set<string> {
-  const visibleIds = new Set<string>();
+function collectVisibleLayerIds(tree: LayerGroup): string[] {
+  const visibleIds: string[] = [];
 
   const traverse = (node: LayerGroup | LayerInfo) => {
     if (isLayerGroup(node)) {
       node.children.forEach(traverse);
     } else if (node.visible) {
-      visibleIds.add(node.id);
+      visibleIds.push(node.id);
     }
   };
 
@@ -51,7 +51,8 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
-  const [visibleLayerIds, setVisibleLayerIds] = useState<Set<string>>(() => collectVisibleLayerIds(layerTree));
+  const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
+  const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
   const [identifyPopup, setIdentifyPopup] = useState<{ coordinate: number[]; position: { x: number; y: number }; features: any[] } | null>(null);
   const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
@@ -108,22 +109,30 @@ function App() {
   // Get all layers
   const allLayers = useMemo(() => collectAllLayers(layerTree), []);
 
-  // Get currently visible layers
+  // Get currently visible layers (for feature identification and UI display)
   const visibleLayers = useMemo(() => {
-    return allLayers.filter((layer) => visibleLayerIds.has(layer.id));
+    return allLayers.filter((layer) => visibleLayerIds.includes(layer.id));
   }, [allLayers, visibleLayerIds]);
 
   // Handle layer visibility change
   const handleLayerVisibilityChange = useCallback((id: string, visible: boolean) => {
     setVisibleLayerIds((prev) => {
-      const newSet = new Set(prev);
       if (visible) {
-        newSet.add(id);
+        // Add ID if not already present (avoid duplicates)
+        return prev.includes(id) ? prev : [...prev, id];
       } else {
-        newSet.delete(id);
+        // Remove ID
+        return prev.filter((layerId) => layerId !== id);
       }
-      return newSet;
     });
+  }, []);
+
+  // Handle layer opacity change
+  const handleLayerOpacityChange = useCallback((id: string, opacity: number) => {
+    setLayerOpacities((prev) => ({
+      ...prev,
+      [id]: opacity,
+    }));
   }, []);
 
   // Handle layer selection
@@ -273,6 +282,7 @@ function App() {
           <LayerTree
             root={layerTree}
             onLayerVisibilityChange={handleLayerVisibilityChange}
+            onLayerOpacityChange={handleLayerOpacityChange}
             onLayerSelect={handleLayerSelect}
             selectedLayerId={selectedLayer?.id}
             visibleLayerIds={visibleLayerIds}
@@ -321,7 +331,9 @@ function App() {
         {/* Map container */}
         <main className="flex-1 relative overflow-hidden">
           <MapViewer
-            visibleLayers={visibleLayers}
+            visibleLayerIds={visibleLayerIds}
+            allLayers={allLayers}
+            layerOpacities={layerOpacities}
             onMapClick={handleMapClick}
           />
 

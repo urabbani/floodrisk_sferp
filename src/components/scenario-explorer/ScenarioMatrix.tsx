@@ -9,7 +9,7 @@ interface ScenarioMatrixProps {
   climate?: 'Present' | 'Future';
   onLayerToggle: (layerId: string, visible: boolean) => void;
   onCompareModeChange?: (mode: 'single' | 'all') => void;
-  visibleLayers: Set<string>;
+  visibleLayers: string[];
 }
 
 type CompareMode = 'single' | 'all';
@@ -67,20 +67,20 @@ export function ScenarioMatrix({
   // Check if a cell (return period + maintenance) is active
   const isCellActive = (returnPeriod: string, maintenance: string): boolean => {
     const layerId = buildLayerId(selectedClimate, maintenance, returnPeriod, selectedParameter);
-    return visibleLayers.has(layerId);
+    return visibleLayers.includes(layerId);
   };
 
   // Toggle a specific cell
   const toggleCell = (returnPeriod: string, maintenance: string) => {
     const layerId = buildLayerId(selectedClimate, maintenance, returnPeriod, selectedParameter);
-    const isActive = visibleLayers.has(layerId);
+    const isActive = visibleLayers.includes(layerId);
     
     // In single mode, turn off other return periods for this maintenance
     if (compareMode === 'single' && selectedMaintenance.length === 1) {
       // Turn off all other layers for this maintenance+parameter combination
       returnPeriods.forEach((rp) => {
         const otherId = buildLayerId(selectedClimate, maintenance, rp.value, selectedParameter);
-        if (otherId !== layerId && visibleLayers.has(otherId)) {
+        if (otherId !== layerId && visibleLayers.includes(otherId)) {
           onLayerToggle(otherId, false);
         }
       });

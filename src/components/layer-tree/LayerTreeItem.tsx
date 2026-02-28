@@ -1,6 +1,8 @@
 import { ChevronRight, ChevronDown, Eye, EyeOff, Layers, Image, MapPin } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import type { LayerGroup, LayerInfo } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 interface LayerTreeItemProps {
@@ -8,6 +10,7 @@ interface LayerTreeItemProps {
   level: number;
   onToggleVisibility: (id: string, visible: boolean) => void;
   onToggleExpand: (id: string, expanded: boolean) => void;
+  onOpacityChange: (id: string, opacity: number) => void;
   selectedLayerId?: string;
   onSelectLayer?: (layer: LayerInfo) => void;
 }
@@ -17,11 +20,36 @@ export function LayerTreeItem({
   level,
   onToggleVisibility,
   onToggleExpand,
+  onOpacityChange,
   selectedLayerId,
   onSelectLayer,
 }: LayerTreeItemProps) {
   const isGroup = isLayerGroup(node);
   const paddingLeft = level * 12 + 8;
+
+  // Debounce opacity changes for smoother performance
+  const opacityChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleOpacityChange = (value: number) => {
+    // Clear any pending opacity change
+    if (opacityChangeTimeoutRef.current) {
+      clearTimeout(opacityChangeTimeoutRef.current);
+    }
+
+    // Debounce the opacity change callback
+    opacityChangeTimeoutRef.current = setTimeout(() => {
+      onOpacityChange(node.id, value);
+    }, 50); // 50ms debounce for smooth but responsive feel
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (opacityChangeTimeoutRef.current) {
+        clearTimeout(opacityChangeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleVisibilityClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -112,6 +140,29 @@ export function LayerTreeItem({
         </span>
       </div>
 
+      {/* Opacity slider for visible layers */}
+      {!isGroup && node.visible && (
+        <div
+          className="px-4 py-2 min-h-[44px] flex items-center"
+          style={{ paddingLeft: `${paddingLeft + 48}px` }}
+        >
+          <div className="flex items-center gap-2 w-full">
+            <span className="text-xs text-slate-500">Opacity</span>
+            <Slider
+              value={[node.opacity * 100]}
+              onValueChange={(value) => handleOpacityChange(value[0] / 100)}
+              min={0}
+              max={100}
+              step={5}
+              className="flex-1 h-2"
+            />
+            <span className="text-xs text-slate-500 w-10 text-right">
+              {Math.round(node.opacity * 100)}%
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* Children for groups */}
       {isGroup && node.expanded && (
         <div className="">
@@ -122,6 +173,7 @@ export function LayerTreeItem({
               level={level + 1}
               onToggleVisibility={onToggleVisibility}
               onToggleExpand={onToggleExpand}
+              onOpacityChange={onOpacityChange}
               selectedLayerId={selectedLayerId}
               onSelectLayer={onSelectLayer}
             />

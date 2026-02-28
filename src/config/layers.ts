@@ -34,7 +34,7 @@ function createRasterLayer(
   name: string,
   geoserverName: string,
   visible: boolean = false,
-  opacity: number = 0.8,
+  opacity: number = 0.6,
   workspace: string = GEOSERVER_CONFIG.workspaces.results,
   geometryType: GeometryType = 'raster'
 ): LayerInfo {
@@ -224,7 +224,7 @@ export const layerTree: LayerGroup = {
     },
     
     // HDTM (DEM workspace - merged tiles 1-9 at 1m resolution)
-    createRasterLayer('HDTM', 'HDTM_1-9_1m', false, 1, GEOSERVER_CONFIG.workspaces.dem),
+    createRasterLayer('HDTM', 'HDTM_1-9_1m', false, 0.6, GEOSERVER_CONFIG.workspaces.dem),
   ],
 };
 

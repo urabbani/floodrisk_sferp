@@ -7,6 +7,8 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
+**Last Updated:** February 28, 2026
+
 ## Features
 
 - **Interactive Map Viewer** - OpenLayers-based map with dynamic north arrow and multiple base map options (Google Satellite, OpenStreetMap, Terrain)
@@ -380,6 +382,7 @@ Orchestrated by Dr. Umair Rabbani
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
+- **Multi-Layer Visibility:** Currently investigating an issue where enabling multiple layers in the Layer Tree may not display all layers simultaneously. The opacity slider is functional and works correctly for individual layers. Further debugging is scheduled to resolve the multi-layer overlay behavior.
 
 ## Contributing
 

@@ -12,9 +12,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 interface LayerTreeProps {
   root: LayerGroup;
   onLayerVisibilityChange: (id: string, visible: boolean) => void;
+  onLayerOpacityChange: (id: string, opacity: number) => void;
   onLayerSelect?: (layer: LayerInfo) => void;
   selectedLayerId?: string;
-  visibleLayerIds: Set<string>;
+  visibleLayerIds: string[];
 }
 
 // Recursively update a node in the tree
@@ -108,6 +109,7 @@ function computeGroupVisibility(node: LayerGroup | LayerInfo): boolean {
 export function LayerTree({
   root: initialRoot,
   onLayerVisibilityChange,
+  onLayerOpacityChange,
   onLayerSelect,
   selectedLayerId,
   visibleLayerIds: externalVisibleLayerIds,
@@ -120,7 +122,7 @@ export function LayerTree({
 
   // Sync tree visibility with external visibleLayerIds
   useEffect(() => {
-    const currentIds = Array.from(externalVisibleLayerIds).sort();
+    const currentIds = [...externalVisibleLayerIds].sort();
     const prevIds = prevVisibleIdsRef.current;
 
     const idsChanged =
@@ -149,7 +151,7 @@ export function LayerTree({
         }
         return {
           ...node,
-          visible: externalVisibleLayerIds.has(node.id),
+          visible: externalVisibleLayerIds.includes(node.id),
         };
       };
 
@@ -196,6 +198,20 @@ export function LayerTree({
       }))
     );
   }, []);
+
+  // FIXED: Notify parent BEFORE updating local state
+  const handleOpacityChange = useCallback((id: string, opacity: number) => {
+    // Notify parent first
+    onLayerOpacityChange(id, opacity);
+    
+    // Then update local state
+    setTree((prev) =>
+      updateNodeInTree(prev, id, (node) => ({
+        ...node,
+        opacity,
+      }))
+    );
+  }, [onLayerOpacityChange]);
 
   const handleLayerSelect = useCallback((layer: LayerInfo) => {
     onLayerSelect?.(layer);
@@ -250,7 +266,7 @@ export function LayerTree({
     return matches ? node : null;
   };
 
-  const visibleCount = externalVisibleLayerIds.size;
+  const visibleCount = externalVisibleLayerIds.length;
   const otherGroups = tree.children.filter(
     (child) => !(isLayerGroup(child) && isClimateGroup(child))
   );
@@ -393,6 +409,7 @@ export function LayerTree({
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
                       onSelectLayer={handleLayerSelect}
+                      onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />
                   ))}
@@ -411,6 +428,7 @@ export function LayerTree({
                       onToggleVisibility={handleToggleVisibility}
                       onToggleExpand={handleToggleExpand}
                       onSelectLayer={handleLayerSelect}
+                      onOpacityChange={handleOpacityChange}
                       selectedLayerId={selectedLayerId}
                     />
                   ))}

@@ -33,14 +33,17 @@ function getZIndexForGeometryType(geometryType?: GeometryType): number {
 }
 
 interface MapViewerProps {
-  visibleLayers: LayerInfo[];
+  visibleLayerIds: string[];
+  allLayers: LayerInfo[];
+  layerOpacities: Record<string, number>;
   onMapClick?: (coordinate: number[], pixel: number[]) => void;
 }
 
-export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
+export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick }: MapViewerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
+  const layerOpacitiesRef = useRef<Record<string, number>>({});
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
   const [activeBaseMap, setActiveBaseMap] = useState('satellite');
   const [rotation, setRotation] = useState(0);
@@ -117,30 +120,46 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
     };
   }, [onMapClick]);
 
-  // Update WMS layers when visible layers change
+  // Track previous visible layer IDs to detect add/remove operations
+  const prevVisibleIdsRef = useRef<Set<string>>(new Set());
+
+  // Manage layer add/remove when visibleLayerIds changes
   useEffect(() => {
     if (!mapInstance.current) return;
 
     const map = mapInstance.current;
-    const currentLayerIds = new Set(visibleLayers.map((l) => l.id));
+    const currentLayerIds = new Set(visibleLayerIds);
+    const previousLayerIds = prevVisibleIdsRef.current;
+
+    // Check if the set of visible layers has changed
+    const layersChanged =
+      currentLayerIds.size !== previousLayerIds.size ||
+      Array.from(currentLayerIds).some((id) => !previousLayerIds.has(id)) ||
+      Array.from(previousLayerIds).some((id) => !currentLayerIds.has(id));
+
+    if (!layersChanged) return;
+
+    prevVisibleIdsRef.current = currentLayerIds;
 
     // Remove layers that are no longer visible
     Array.from(layerRefs.current.entries()).forEach(([id, layer]) => {
       if (!currentLayerIds.has(id)) {
         map.removeLayer(layer);
         layerRefs.current.delete(id);
+        delete layerOpacitiesRef.current[id];
       }
     });
 
-    // Add new layers or update existing ones
-    visibleLayers.forEach((layerInfo) => {
-      const existingLayer = layerRefs.current.get(layerInfo.id);
+    // Add new layers
+    visibleLayerIds.forEach((layerId) => {
+      if (!layerRefs.current.has(layerId)) {
+        const layerInfo = allLayers.find((l) => l.id === layerId);
+        if (!layerInfo) return;
 
-      // Stable z-index calculation
-      const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
+        const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
+        const opacity = layerOpacities[layerId] ?? layerInfo.opacity;
+        layerOpacitiesRef.current[layerId] = opacity;
 
-      if (!existingLayer) {
-        // Create new WMS layer
         const wmsLayer = new TileLayer({
           source: new TileWMS({
             url: `${GEOSERVER_CONFIG.baseUrl}/${layerInfo.workspace}/wms`,
@@ -154,19 +173,38 @@ export function MapViewer({ visibleLayers, onMapClick }: MapViewerProps) {
             serverType: 'geoserver',
             transition: 0,
           }),
-          opacity: layerInfo.opacity,
+          opacity,
           zIndex,
           visible: true,
         });
 
         map.addLayer(wmsLayer);
-        layerRefs.current.set(layerInfo.id, wmsLayer);
-      } else {
-        // Update z-index if needed
-        existingLayer.setZIndex(zIndex);
+        layerRefs.current.set(layerId, wmsLayer);
       }
     });
-  }, [visibleLayers]);
+  }, [visibleLayerIds, layerOpacities]);
+
+  // Update opacity and z-index for existing layers when layerOpacities changes
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    visibleLayerIds.forEach((layerId) => {
+      const layer = layerRefs.current.get(layerId);
+      const layerInfo = allLayers.find((l) => l.id === layerId);
+      if (!layer || !layerInfo) return;
+
+      const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
+      const currentOpacity = layerOpacities[layerId] ?? layerInfo.opacity;
+      const previousOpacity = layerOpacitiesRef.current[layerId];
+
+      if (previousOpacity === undefined || Math.abs(previousOpacity - currentOpacity) > 0.01) {
+        layer.setOpacity(currentOpacity);
+        layerOpacitiesRef.current[layerId] = currentOpacity;
+      }
+
+      layer.setZIndex(zIndex);
+    });
+  }, [visibleLayerIds, layerOpacities, allLayers]);
 
   // Switch base map
   const switchBaseMap = useCallback((baseMapId: string) => {
