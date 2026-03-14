@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
-import { DEPTH_BIN_COLORS, DEPTH_BIN_RANGES, type DepthBinRange } from '@/types/impact';
+import { DEPTH_BIN_COLORS, type DepthBinRange } from '@/types/impact';
 
 interface DepthDistributionChartProps {
   /**

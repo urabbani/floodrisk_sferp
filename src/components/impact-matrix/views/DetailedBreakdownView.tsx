@@ -1,9 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
-import { X, Download, RefreshCw, Layers, EyeOff } from 'lucide-react';
+import { X, RefreshCw, Layers, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary, ExposureLayerType } from '@/types/impact';
-import { EXPOSURE_LAYER_LABELS, EXPOSURE_LAYER_TYPES } from '@/types/impact';
+import { EXPOSURE_LAYER_TYPES } from '@/types/impact';
 import { ExposureRow } from '../components/ExposureRow';
 
 interface DetailedBreakdownViewProps {

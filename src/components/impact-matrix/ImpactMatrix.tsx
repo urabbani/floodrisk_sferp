@@ -1,9 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Layers, BarChart3, X, AlertCircle } from 'lucide-react';
+import { Layers, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type {
-  ImpactMatrixData,
   ScenarioImpactSummary,
   ExposureLayerType,
   ImpactSummaryQuery,
@@ -142,7 +141,9 @@ export function ImpactMatrix({
     }
 
     // Build LayerInfo for each exposure type in the selected scenario
-    const impactLayers: LayerInfo[] = Object.entries(selectedScenario.impacts).map(
+    const impactLayers: LayerInfo[] = Object.entries(selectedScenario.impacts)
+      .filter(([, impact]) => impact !== null)
+      .map(
       ([exposureType, impact]) => {
         // Map geometry type to LayerInfo geometry type
         const geometryType = EXPOSURE_LAYER_GEOMETRY[exposureType as ExposureLayerType] === 'point'
@@ -152,14 +153,14 @@ export function ImpactMatrix({
             : ('polygon' as const);
 
         return {
-          id: impact.geoserverLayer,
+          id: impact!.geoserverLayer,
           name: `${selectedScenario.returnPeriod}yrs ${selectedScenario.climate} ${exposureType}`,
           type: 'wms',
           geometryType,
           visible: false,
           opacity: 0.7,
-          geoserverName: impact.geoserverLayer,
-          workspace: impact.workspace || 'exposures',
+          geoserverName: impact!.geoserverLayer,
+          workspace: impact!.workspace || 'exposures',
           style: undefined,
           legendUrl: undefined,
           zIndex: geometryType === 'point' ? 150 : geometryType === 'line' ? 100 : 50,

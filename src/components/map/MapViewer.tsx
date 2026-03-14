@@ -10,7 +10,6 @@ import { Compass, Copy } from 'lucide-react';
 import 'ol/ol.css';
 import type { LayerInfo, GeometryType } from '@/types/layers';
 import { GEOSERVER_CONFIG, MAP_CONFIG, baseMaps } from '@/config/layers';
-import type Extent from 'ol/extent';
 
 // Register UTM Zone 42N projection (EPSG:32642)
 proj4.defs(
@@ -38,13 +37,9 @@ interface MapViewerProps {
   allLayers: LayerInfo[];
   layerOpacities: Record<string, number>;
   onMapClick?: (coordinate: number[], pixel: number[]) => void;
-  /**
-   * Callback for exposing zoom to extent functionality
-   */
-  onZoomToExtentReady?: (zoomFn: (layerId: string) => void) => void;
 }
 
-export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick, onZoomToExtentReady }: MapViewerProps) {
+export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick }: MapViewerProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
@@ -55,85 +50,6 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   const [mousePosition, setMousePosition] = useState<{ utm: string; latlon: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const initializedRef = useRef(false);
-  const zoomToExtentExposedRef = useRef(false);
-
-  // Zoom to layer extent function
-  const zoomToLayerExtent = useCallback((layerId: string) => {
-    const map = mapInstance.current;
-    if (!map) {
-      console.warn('Map not initialized');
-      return;
-    }
-
-    // Get layer info first (layer might not be on map yet, but info should be available)
-    const layerInfo = allLayers.find((l) => l.id === layerId);
-    if (!layerInfo) {
-      console.warn(`[MapViewer] Layer info not found for ${layerId}`);
-      console.log('[MapViewer] Available layers:', allLayers.map(l => l.id));
-      return;
-    }
-
-    // Use GeoServer REST API to get layer extent
-    const extentUrl = `${GEOSERVER_CONFIG.baseUrl}/rest/layers/${layerInfo.workspace}:${layerInfo.geoserverName}.json`;
-
-    console.log(`[MapViewer] Fetching extent for ${layerId} from: ${extentUrl}`);
-
-    fetch(extentUrl)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        // GeoServer REST API returns extent in the layer's native projection
-        const extent = data.layer?.resource?.extent;
-        if (extent && extent.minx !== undefined && extent.maxx !== undefined &&
-            extent.miny !== undefined && extent.maxy !== undefined) {
-
-          const view = map.getView();
-          if (!view) return;
-
-          // The extent should be in the layer's projection, which should match our map projection
-          // Add some padding for better visibility
-          const layerExtent: Extent = [
-            extent.minx,
-            extent.miny,
-            extent.maxx,
-            extent.maxy
-          ];
-
-          view.fit(layerExtent, {
-            padding: [50, 50, 50, 50],
-            duration: 1000,
-            maxZoom: view.getMaxZoom(),
-          });
-
-          console.log(`[MapViewer] Zoomed to extent for ${layerId}:`, layerExtent);
-        } else {
-          console.warn(`[MapViewer] No extent found for layer ${layerId}`);
-        }
-      })
-      .catch((err) => {
-        console.error('[MapViewer] Error getting layer extent from GeoServer:', err);
-        // Fallback: Try to zoom to Sindh province extent
-        const view = map.getView();
-        if (view) {
-          view.fit(MAP_CONFIG.extent, {
-            padding: [100, 100, 100, 100],
-            duration: 1000,
-          });
-        }
-      });
-  }, [allLayers]);
-
-  // Expose zoom function to parent once
-  useEffect(() => {
-    if (mapInstance.current && !zoomToExtentExposedRef.current && onZoomToExtentReady) {
-      zoomToExtentExposedRef.current = true;
-      onZoomToExtentReady(zoomToLayerExtent);
-    }
-  }, [zoomToLayerExtent, onZoomToExtentReady]);
 
   // Initialize map (only once)
   useEffect(() => {

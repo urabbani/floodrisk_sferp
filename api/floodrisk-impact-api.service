@@ -1,0 +1,24 @@
+[Unit]
+Description=Flood Risk Impact API Server
+After=network.target
+
+[Service]
+Type=simple
+User=umair
+WorkingDirectory=/mnt/d/Scenario_results/floodrisk_sferp/api
+ExecStart=/usr/bin/node impact-summary.mjs
+Restart=on-failure
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=floodrisk-impact-api
+Environment=NODE_ENV=production
+Environment=PORT=3001
+Environment=DB_HOST=10.0.0.205
+Environment=DB_PORT=5432
+Environment=DB_NAME=postgres
+Environment=DB_USER=postgres
+Environment=DB_PASSWORD=maltanadirSRV0
+
+[Install]
+WantedBy=multi-user.target

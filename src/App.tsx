@@ -58,7 +58,6 @@ function App() {
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
   const [identifyPopup, setIdentifyPopup] = useState<{ coordinate: number[]; position: { x: number; y: number }; features: any[] } | null>(null);
   const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
-  const [zoomToLayerExtent, setZoomToLayerExtent] = useState<((layerId: string) => void) | null>(null);
   const [impactLayers, setImpactLayers] = useState<LayerInfo[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
 
@@ -392,7 +391,6 @@ function App() {
             allLayers={combinedLayers}
             layerOpacities={layerOpacities}
             onMapClick={handleMapClick}
-            onZoomToExtentReady={(zoomFn) => setZoomToLayerExtent(() => zoomFn)}
           />
 
           {/* Legend panel */}

@@ -241,6 +241,11 @@ Create or update the Apache virtual host configuration:
     ProxyPass /geoserver http://10.0.0.205:8080/geoserver
     ProxyPassReverse /geoserver http://10.0.0.205:8080/geoserver
 
+    # Proxy API requests to backend (for Impact Matrix)
+    ProxyPreserveHost On
+    ProxyPass /api/ http://localhost:3001/api/
+    ProxyPassReverse /api/ http://localhost:3001/api/
+
     # SPA routing - redirect all requests to index.html
     <Directory "/mnt/d/Scenario_Reullts/dist">
         RewriteEngine On
@@ -298,7 +303,91 @@ sudo cp -r dist/* /mnt/d/Scenario_results/floodrisk_sferp/dist/
 sudo systemctl reload apache2
 ```
 
-### 4. GeoServer Configuration
+### 4. Backend API Deployment (Impact Matrix)
+
+The Impact Matrix feature requires a backend API server to serve statistics from PostgreSQL/PostGIS.
+
+#### Quick Deploy (Automated)
+
+```bash
+# Set your password in deploy-backend.sh first
+./deploy-backend.sh
+```
+
+#### Manual Deploy
+
+**Step 1: Upload API files to server**
+
+```bash
+# Create api directory on server
+ssh umair@10.0.0.205 "mkdir -p /mnt/d/Scenario_results/floodrisk_sferp/api"
+
+# Upload files
+scp api/impact-summary.mjs umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/api/
+scp api/package.json umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/api/
+scp api/floodrisk-impact-api.service umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/api/
+```
+
+**Step 2: Install dependencies**
+
+```bash
+ssh umair@10.0.0.205
+cd /mnt/d/Scenario_results/floodrisk_sferp/api
+npm install --production
+```
+
+**Step 3: Setup systemd service**
+
+```bash
+# Copy service file
+sudo cp /mnt/d/Scenario_results/floodrisk_sferp/api/floodrisk-impact-api.service /etc/systemd/system/
+
+# Reload systemd
+sudo systemctl daemon-reload
+
+# Enable and start service
+sudo systemctl enable floodrisk-impact-api
+sudo systemctl start floodrisk-impact-api
+
+# Verify service is running
+sudo systemctl status floodrisk-impact-api
+```
+
+**Step 4: Test API**
+
+```bash
+# Test Present climate endpoint
+curl http://localhost:3001/api/impact-summary?climate=present
+
+# Test Future climate endpoint
+curl http://localhost:3001/api/impact-summary?climate=future
+```
+
+**Service Management:**
+
+```bash
+# Start/Stop/Restart
+sudo systemctl start floodrisk-impact-api
+sudo systemctl stop floodrisk-impact-api
+sudo systemctl restart floodrisk-impact-api
+
+# View logs
+sudo journalctl -u floodrisk-impact-api -f
+
+# Check status
+sudo systemctl status floodrisk-impact-api
+```
+
+**Environment Variables:** The API uses these environment variables (configured in systemd service):
+
+- `PORT`: 3001
+- `DB_HOST`: 10.0.0.205
+- `DB_PORT`: 5432
+- `DB_NAME`: postgres
+- `DB_USER`: postgres
+- `DB_PASSWORD`: maltanadirSRV0
+
+### 5. GeoServer Configuration
 
 The application proxies GeoServer requests through Apache. Ensure:
 - GeoServer is accessible at `http://10.0.0.205:8080/geoserver`
@@ -307,7 +396,7 @@ The application proxies GeoServer requests through Apache. Ensure:
   sudo a2enmod proxy proxy_http rewrite ssl
   ```
 
-### 5. Server Details
+### 6. Server Details
 
 **Production Server:**
 - Host: `10.0.0.205` (internal WSL)

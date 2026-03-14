@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
-import type { ScenarioImpactSummary, SeverityLevel } from '@/types/impact';
+import type { ScenarioImpactSummary } from '@/types/impact';
 
 // Return period intensity levels for color gradient (lightest to darkest)
 const RETURN_PERIOD_COLORS = {
