@@ -7,10 +7,11 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** February 28, 2026
+**Last Updated:** March 14, 2026
 
 ## Features
 
+### Core Features
 - **Interactive Map Viewer** - OpenLayers-based map with dynamic north arrow and multiple base map options (Google Satellite, OpenStreetMap, Terrain)
 - **GeoServer Integration** - WMS services for flood scenario layers
 - **Layer Management** - Hierarchical layer tree with:
@@ -22,11 +23,40 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Feature Identification** - Click on any layer (raster or vector) to view attributes via GeoServer WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position display in both UTM (Zone 42N) and Lat/Lon formats with copy-to-clipboard
 - **Swipe Compare Tool** - Side-by-side comparison of two different flood scenarios with synchronized pan/zoom
-- **Climate Scenarios** - Compare Present vs Future climate conditions
-- **Multiple Parameters** - Max Depth, Max Velocity, Duration, V×h
-- **Return Periods** - Analyze flood events from 2.3 to 500 years
-- **Maintenance Levels** - Breaches (2022), Reduced Capacity, Perfect conditions
 - **Mobile Responsive** - Adaptive UI with sidebar toggle for mobile/desktop
+
+### NEW: Impact Matrix Module
+- **Real-time Impact Analysis** - Comprehensive flood impact assessment across 42 scenarios per climate
+- **Dual Climate Views** - Toggle between Present and Future climate scenarios
+- **9 Exposure Layers** - Analyzes impacts on:
+  - Basic Health Units (BHU)
+  - Buildings
+  - Built-up Area
+  - Cropped Area
+  - Electric Grid
+  - Railways
+  - Roads
+  - Settlements
+  - Telecom Towers
+- **Dynamic Statistics** - All counts and percentages computed in real-time from database (no hardcoded values)
+- **Depth Distribution Charts** - Visual breakdown of flood depth by percentage for each layer
+- **Area-Based Analysis** - Zonal layers use actual geometric area calculations via ST_Area()
+- **Severity Levels** - Color-coded by return period intensity (light red → dark red)
+- **Interactive Layer Controls** - Toggle impact layers on the map directly from the Impact panel
+- **Summary Heatmap** - Quick overview of all scenarios in a 7×3 matrix layout
+- **Detailed Breakdown View** - Per-scenario exposure details with expandable depth distribution
+
+### Climate Scenarios
+- **Present Climate** - Current conditions with 3 maintenance levels
+- **Future Climate** - Projected conditions with 3 maintenance levels
+- **Maintenance Levels**:
+  - Breaches (2022 actual)
+  - Reduced Capacity
+  - Perfect conditions
+
+### Return Periods
+- 7 return periods: 2.3, 5, 10, 25, 50, 100, 500 years
+- Color-coded intensity gradient in matrix view
 
 ## Tech Stack
 
