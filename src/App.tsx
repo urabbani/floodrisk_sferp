@@ -5,11 +5,12 @@ import { MapViewer } from '@/components/map/MapViewer';
 import { LegendPanel } from '@/components/map/LegendPanel';
 import { FeaturePopup } from '@/components/popups/FeaturePopup';
 import { SwipeCompare } from '@/components/swipe/SwipeCompare';
+import { ImpactMatrix } from '@/components/impact-matrix';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft, X, GripVertical, ArrowLeftRight } from 'lucide-react';
+import { PanelLeft, X, GripVertical, ArrowLeftRight, Layers, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -51,11 +52,14 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
+  const [sidebarView, setSidebarView] = useState<'layers' | 'impact'>('layers');
   const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
   const [identifyPopup, setIdentifyPopup] = useState<{ coordinate: number[]; position: { x: number; y: number }; features: any[] } | null>(null);
   const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
+  const [zoomToLayerExtent, setZoomToLayerExtent] = useState<((layerId: string) => void) | null>(null);
+  const [impactLayers, setImpactLayers] = useState<LayerInfo[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
 
   // Minimum and maximum sidebar width
@@ -109,10 +113,15 @@ function App() {
   // Get all layers
   const allLayers = useMemo(() => collectAllLayers(layerTree), []);
 
+  // Combine regular layers with impact layers for MapViewer
+  const combinedLayers = useMemo(() => {
+    return [...allLayers, ...impactLayers];
+  }, [allLayers, impactLayers]);
+
   // Get currently visible layers (for feature identification and UI display)
   const visibleLayers = useMemo(() => {
-    return allLayers.filter((layer) => visibleLayerIds.includes(layer.id));
-  }, [allLayers, visibleLayerIds]);
+    return combinedLayers.filter((layer) => visibleLayerIds.includes(layer.id));
+  }, [combinedLayers, visibleLayerIds]);
 
   // Handle layer visibility change
   const handleLayerVisibilityChange = useCallback((id: string, visible: boolean) => {
@@ -138,6 +147,15 @@ function App() {
   // Handle layer selection
   const handleLayerSelect = useCallback((layer: LayerInfo) => {
     setSelectedLayer(layer);
+  }, []);
+
+  // Handle impact layers change from ImpactMatrix
+  const handleImpactLayersChange = useCallback((layers: LayerInfo[]) => {
+    console.log('[App] Impact layers changed:', {
+      count: layers.length,
+      layers: layers.map(l => l.id)
+    });
+    setImpactLayers(layers);
   }, []);
 
   // Handle map click (stable reference to prevent map re-initialization)
@@ -268,7 +286,9 @@ function App() {
           {/* Mobile close button */}
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
-              <h2 className="text-sm font-semibold text-slate-800">Layers</h2>
+              <h2 className="text-sm font-semibold text-slate-800">
+                {sidebarView === 'layers' ? 'Layers' : 'Impact Analysis'}
+              </h2>
               <Button
                 variant="ghost"
                 size="icon"
@@ -279,14 +299,51 @@ function App() {
               </Button>
             </div>
           )}
-          <LayerTree
-            root={layerTree}
-            onLayerVisibilityChange={handleLayerVisibilityChange}
-            onLayerOpacityChange={handleLayerOpacityChange}
-            onLayerSelect={handleLayerSelect}
-            selectedLayerId={selectedLayer?.id}
-            visibleLayerIds={visibleLayerIds}
-          />
+
+          {/* Desktop tab switcher */}
+          {!isMobile && sidebarOpen && (
+            <div className="flex items-center gap-1 p-2 border-b border-slate-200 bg-slate-50">
+              <Button
+                variant={sidebarView === 'layers' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSidebarView('layers')}
+                className="flex-1 gap-1.5 h-8 text-xs"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                Layers
+              </Button>
+              <Button
+                variant={sidebarView === 'impact' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSidebarView('impact')}
+                className="flex-1 gap-1.5 h-8 text-xs"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Impact
+              </Button>
+            </div>
+          )}
+
+          {/* Content */}
+          <div className="flex-1 overflow-y-auto">
+            {sidebarView === 'layers' ? (
+              <LayerTree
+                root={layerTree}
+                onLayerVisibilityChange={handleLayerVisibilityChange}
+                onLayerOpacityChange={handleLayerOpacityChange}
+                onLayerSelect={handleLayerSelect}
+                selectedLayerId={selectedLayer?.id}
+                visibleLayerIds={visibleLayerIds}
+              />
+            ) : (
+              <ImpactMatrix
+                onLayerToggle={handleLayerVisibilityChange}
+                visibleLayers={visibleLayerIds}
+                onImpactLayersChange={handleImpactLayersChange}
+                className="h-full"
+              />
+            )}
+          </div>
         </aside>
 
         {/* Sidebar resize handle */}
@@ -332,9 +389,10 @@ function App() {
         <main className="flex-1 relative overflow-hidden">
           <MapViewer
             visibleLayerIds={visibleLayerIds}
-            allLayers={allLayers}
+            allLayers={combinedLayers}
             layerOpacities={layerOpacities}
             onMapClick={handleMapClick}
+            onZoomToExtentReady={(zoomFn) => setZoomToLayerExtent(() => zoomFn)}
           />
 
           {/* Legend panel */}

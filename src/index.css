@@ -32,6 +32,12 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Impact severity colors */
+    --severity-low: #90EE90;
+    --severity-medium: #FFD700;
+    --severity-high: #FF6347;
+    --severity-extreme: #8B0000;
   }
 
   .dark {
