@@ -17,7 +17,7 @@ interface UseImpactDataResult {
   refetch: () => Promise<void>;
 }
 
-const API_BASE_URL = 'http://localhost:3001/api/impact';
+const API_BASE_URL = '/api/impact';
 
 /**
  * Custom hook for fetching impact summary data from the API
