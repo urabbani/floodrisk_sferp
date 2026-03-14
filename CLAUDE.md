@@ -76,10 +76,11 @@ The Impact Matrix provides comprehensive flood impact assessment across 42 scena
 
 **Backend API:**
 - **Server:** Node.js/Express server at `http://localhost:3001`
-- **Endpoint:** `GET /api/impact-summary?climate={present|future}`
+- **Endpoint:** `GET /api/impact/summary?climate={present|future}`
 - **Database:** PostgreSQL/PostGIS with 42 scenario schemas
 - **Statistics Source:** Materialized view `impact_summary_matview` (pre-aggregated per scenario)
 - **Zonal Layers:** `Cropped_Area` and `Built_up_Area` use area-based calculations via `ST_Area()`
+- **Production:** Managed by systemd service `floodrisk-impact-api`
 
 **Frontend Components:**
 - **SummaryHeatmapView:** 7×3 matrix showing affected count per scenario (color-coded by return period intensity)
@@ -109,8 +110,19 @@ npm run dev
 # Terminal 2: Start backend API server
 cd api && node impact-summary.mjs
 
-# The backend serves at http://localhost:3001/api/impact-summary
+# The backend serves at http://localhost:3001/api/impact/summary
 # Frontend proxies /api requests to the backend
+```
+
+**Production Deployment:**
+```bash
+# Backend runs as systemd service
+sudo systemctl start floodrisk-impact-api
+sudo systemctl enable floodrisk-impact-api
+sudo systemctl status floodrisk-impact-api
+
+# View logs
+sudo journalctl -u floodrisk-impact-api -f
 ```
 
 ### Map Projection
@@ -165,7 +177,16 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 - **Document Root:** `/mnt/d/Scenario_results/floodrisk_sferp/dist/`
 - **Apache Config:** `/etc/apache2/sites-available/floodrisk.conf`
 - **GeoServer Proxy:** Apache proxies `/geoserver` → `http://10.0.0.205:8080/geoserver`
+- **API Proxy:** Apache proxies `/api/` → `http://localhost:3001/api/`
+- **Backend Service:** systemd manages `floodrisk-impact-api` service on port 3001
 - **SSL:** Let's Encrypt certificates for `portal.srpsid-dss.gos.pk`
+
+**Backend API (Production):**
+- **Service Name:** `floodrisk-impact-api`
+- **Port:** 3001
+- **Endpoint:** `https://portal.srpsid-dss.gos.pk/api/impact/summary`
+- **Working Directory:** `/mnt/d/Scenario_results/floodrisk_sferp/api/`
+- **Auto-restart:** Enabled via systemd
 
 **Deployment Workflow (Keep All 3 Synced):**
 
