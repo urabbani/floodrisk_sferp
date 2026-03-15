@@ -36,6 +36,32 @@ app.use(cors());
 app.use(express.json());
 
 /**
+ * Get total feature counts from Exposure_InputData schema
+ * These represent the true total count of each exposure type
+ */
+async function getTotalFeatureCounts(pool) {
+  const exposureTypes = [
+    'BHU', 'Buildings', 'Built_up_Area', 'Cropped_Area',
+    'Electric_Grid', 'Railways', 'Roads', 'Settlements', 'Telecom_Towers'
+  ];
+
+  const totals = {};
+
+  for (const exposureType of exposureTypes) {
+    try {
+      const query = `SELECT COUNT(*) as count FROM "Exposure_InputData"."${exposureType}"`;
+      const result = await pool.query(query);
+      totals[exposureType] = parseInt(result.rows[0].count) || 0;
+    } catch (error) {
+      console.error(`Error getting total count for ${exposureType}:`, error);
+      totals[exposureType] = 0;
+    }
+  }
+
+  return totals;
+}
+
+/**
  * Helper function to get area-based percentages for zonal layers
  * Queries the actual geometry to calculate area distribution across depth bins
  */
@@ -199,6 +225,9 @@ app.get('/api/impact/summary', async (req, res) => {
  * Process database rows into ScenarioImpactSummary format
  */
 async function processResults(rows, depthThreshold, pool) {
+  // Get true total feature counts from Exposure_InputData
+  const totalFeatureCounts = await getTotalFeatureCounts(pool);
+
   // Group by scenario (climate + maintenance + return_period)
   const scenarioMap = new Map();
 
@@ -221,6 +250,7 @@ async function processResults(rows, depthThreshold, pool) {
 
     // Build depth bins
     const totalAffected = row.affected_features || 0;
+    const trueTotal = totalFeatureCounts[row.exposure_type] || totalAffected;
     const depthBins = [
       { range: '15-100cm', minDepth: 0.15, maxDepth: 1.0, count: row.bin_15_100cm_count || 0, percentage: 0 },
       { range: '1-2m', minDepth: 1.0, maxDepth: 2.0, count: row.bin_1_2m_count || 0, percentage: 0 },
@@ -257,7 +287,7 @@ async function processResults(rows, depthThreshold, pool) {
     // Add exposure impact
     scenario.impacts[row.exposure_type] = {
       layerType: row.exposure_type,
-      totalFeatures: row.total_features || 0,
+      totalFeatures: totalFeatureCounts[row.exposure_type] || 0, // Use true total from Exposure_InputData
       affectedFeatures: row.affected_features || 0,
       maxDepthBin: row.max_depth_bin,
       depthBins,
