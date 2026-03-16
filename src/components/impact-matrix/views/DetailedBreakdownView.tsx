@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary, ExposureLayerType } from '@/types/impact';
 import { EXPOSURE_LAYER_TYPES, formatDepthBinLabel, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
 import { ExposureRow } from '../components/ExposureRow';
+import { DepthDistributionChart } from '../components/DepthDistributionChart';
 
 interface DetailedBreakdownViewProps {
   /**
@@ -48,9 +49,11 @@ interface DetailedBreakdownViewProps {
  *
  * Displays:
  * - Scenario header with summary stats
+ * - 4 summary cards: Population, Infrastructure, Agriculture/Buildings, Overall Severity
+ * - Population depth distribution chart (if data available)
  * - All 9 exposure layers with their impact details
  * - Layer toggles for map visibility
- * - Depth distribution charts
+ * - Depth distribution charts per exposure layer
  * - Zoom to extent functionality
  */
 export function DetailedBreakdownView({
@@ -96,53 +99,54 @@ export function DetailedBreakdownView({
     }
   }, [scenario.impacts, sortBy]);
 
-  // Calculate summary stats
+  // Calculate summary stats for new 4-card design
   const summaryStats = useMemo(() => {
-    const totalFeatures = Object.values(scenario.impacts).reduce((sum, impact) => {
-      return sum + (impact?.totalFeatures || 0);
-    }, 0);
+    const impacts = scenario.impacts;
 
-    const totalAffected = Object.values(scenario.impacts).reduce((sum, impact) => {
-      return sum + (impact?.affectedFeatures || 0);
-    }, 0);
+    // Population Impact (if available)
+    const populationImpact = scenario.populationImpact ? {
+      total: scenario.populationImpact.totalPopulation,
+      affected: scenario.populationImpact.affectedPopulation,
+      percentage: scenario.populationImpact.affectedPercentage,
+    } : null;
 
-    const affectedLayers = Object.values(scenario.impacts).filter(
+    // Infrastructure Impact (Roads, Railways, Electric Grid, Telecom)
+    const infrastructureLayers: ExposureLayerType[] = ['Roads', 'Railways', 'Electric_Grid', 'Telecom_Towers'];
+    const infrastructureImpacts = infrastructureLayers
+      .map(layer => impacts[layer])
+      .filter(impact => impact && impact.totalFeatures > 0);
+
+    const infrastructureTotal = infrastructureImpacts.reduce((sum, impact) => sum + (impact?.totalFeatures || 0), 0);
+    const infrastructureAffected = infrastructureImpacts.reduce((sum, impact) => sum + (impact?.affectedFeatures || 0), 0);
+    const infrastructurePercentage = infrastructureTotal > 0
+      ? (infrastructureAffected / infrastructureTotal) * 100
+      : 0;
+
+    // Agriculture & Buildings Impact (Cropped Area, Buildings)
+    const agBuildingLayers: ExposureLayerType[] = ['Cropped_Area', 'Buildings'];
+    const agBuildingImpacts = agBuildingLayers
+      .map(layer => impacts[layer])
+      .filter(impact => impact && impact.totalFeatures > 0);
+
+    const agBuildingTotal = agBuildingImpacts.reduce((sum, impact) => sum + (impact?.totalFeatures || 0), 0);
+    const agBuildingAffected = agBuildingImpacts.reduce((sum, impact) => sum + (impact?.affectedFeatures || 0), 0);
+    const agBuildingPercentage = agBuildingTotal > 0
+      ? (agBuildingAffected / agBuildingTotal) * 100
+      : 0;
+
+    // Overall Severity based on affected layers
+    const affectedLayersCount = Object.values(impacts).filter(
       (impact) => impact && impact.affectedFeatures > 0
     ).length;
 
-    const maxDepthAll = Object.values(scenario.impacts).reduce((maxDepth, impact) => {
-      if (!impact || !impact.maxDepthBin) return maxDepth;
-      const depthOrder = ['15-100cm', '1-2m', '2-3m', '3-4m', '4-5m', 'above5m'];
-      const currentIndex = depthOrder.indexOf(impact.maxDepthBin);
-      const maxIndex = depthOrder.indexOf(maxDepth);
-      return currentIndex > maxIndex ? impact.maxDepthBin : maxDepth;
-    }, '15-100cm');
-
-    // Calculate impact percentage by geometry type
-    const getImpactByGeometry = (geometryType: 'point' | 'line' | 'polygon') => {
-      const impacts = Object.values(scenario.impacts).filter(
-        (impact) => impact && impact.geometryType === geometryType
-      );
-      const total = impacts.reduce((sum, impact) => sum + (impact?.totalFeatures || 0), 0);
-      const affected = impacts.reduce((sum, impact) => sum + (impact?.affectedFeatures || 0), 0);
-      return { total, affected, percentage: total > 0 ? (affected / total) * 100 : 0 };
-    };
-
-    const pointImpact = getImpactByGeometry('point');
-    const lineImpact = getImpactByGeometry('line');
-    const polygonImpact = getImpactByGeometry('polygon');
-
     return {
-      totalFeatures,
-      totalAffected,
-      affectedLayers,
-      maxDepthAll,
-      impactPercentage: totalFeatures > 0 ? (totalAffected / totalFeatures) * 100 : 0,
-      pointImpact,
-      lineImpact,
-      polygonImpact,
+      populationImpact,
+      infrastructurePercentage,
+      agBuildingPercentage,
+      affectedLayersCount,
+      severity: scenario.severity,
     };
-  }, [scenario.impacts]);
+  }, [scenario.impacts, scenario.populationImpact, scenario.severity]);
 
   // Handle layer visibility toggle
   const handleLayerToggle = useCallback((layerType: ExposureLayerType, visible: boolean) => {
@@ -179,7 +183,7 @@ export function DetailedBreakdownView({
             {scenario.returnPeriod}yrs • {formatClimateLabel(scenario.climate)} • Maintenance Level: {formatMaintenanceLabel(scenario.maintenance)}
           </h3>
           <p className="text-xs text-slate-600">
-            {summaryStats.affectedLayers} of 9 exposure types affected
+            {summaryStats.affectedLayersCount} of 9 exposure types affected
           </p>
         </div>
 
@@ -206,26 +210,65 @@ export function DetailedBreakdownView({
         </div>
       </div>
 
-      {/* Summary Stats Cards */}
+      {/* Summary Stats Cards - Hybrid Design */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4">
+        {/* 1. Population Affected */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Points Affected</div>
-          <div className="text-lg font-bold text-blue-600">{summaryStats.pointImpact.percentage.toFixed(1)}%</div>
-          <div className="text-[9px] text-slate-400">Count: {summaryStats.pointImpact.affected} of {summaryStats.pointImpact.total}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Population Affected</div>
+          {summaryStats.populationImpact ? (
+            <>
+              <div className="text-lg font-bold text-red-600">
+                {summaryStats.populationImpact.percentage.toFixed(1)}%
+              </div>
+              <div className="text-[9px] text-slate-400">
+                {summaryStats.populationImpact.affected.toLocaleString(undefined, {maximumFractionDigits: 0})} people
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-lg font-bold text-slate-400">--%</div>
+              <div className="text-[9px] text-slate-400">No data</div>
+            </>
+          )}
         </div>
+
+        {/* 2. Infrastructure Impact */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Length Affected</div>
-          <div className="text-lg font-bold text-blue-600">{summaryStats.lineImpact.percentage.toFixed(1)}%</div>
-          <div className="text-[9px] text-slate-400">Length: {summaryStats.lineImpact.affected} of {summaryStats.lineImpact.total}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Infrastructure</div>
+          <div className="text-lg font-bold text-orange-600">
+            {summaryStats.infrastructurePercentage.toFixed(1)}%
+          </div>
+          <div className="text-[9px] text-slate-400">
+            Roads, Railways, Electric, Telecom
+          </div>
         </div>
+
+        {/* 3. Agriculture & Buildings */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Area Affected</div>
-          <div className="text-lg font-bold text-blue-600">{summaryStats.polygonImpact.percentage.toFixed(1)}%</div>
-          <div className="text-[9px] text-slate-400">Area: {summaryStats.polygonImpact.affected} of {summaryStats.polygonImpact.total}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Ag. & Buildings</div>
+          <div className="text-lg font-bold text-amber-600">
+            {summaryStats.agBuildingPercentage.toFixed(1)}%
+          </div>
+          <div className="text-[9px] text-slate-400">
+            Crops, Buildings affected
+          </div>
         </div>
+
+        {/* 4. Overall Severity */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Max Depth</div>
-          <div className="text-lg font-bold text-red-600">{formatDepthBinLabel(summaryStats.maxDepthAll)}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Overall Risk</div>
+          <div className={cn(
+            'text-lg font-bold',
+            summaryStats.severity === 'extreme' ? 'text-red-700' :
+            summaryStats.severity === 'high' ? 'text-red-500' :
+            summaryStats.severity === 'medium' ? 'text-amber-600' :
+            'text-green-600'
+          )}>
+            {summaryStats.severity.charAt(0).toUpperCase() + summaryStats.severity.slice(1)}
+          </div>
+          <div className="text-[9px] text-slate-400">
+            {summaryStats.affectedLayersCount} of 9 layers affected
+          </div>
         </div>
       </div>
 
@@ -279,6 +322,33 @@ export function DetailedBreakdownView({
 
       {/* Exposure Layers List */}
       <div className="px-4 space-y-2">
+        {/* Population Depth Distribution (if available) */}
+        {scenario.populationImpact && (
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+            <button
+              onClick={() => {/* Population chart always expanded for now */}}
+              className="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-red-50 to-slate-50 hover:from-red-100 hover:to-slate-100 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-slate-800">Population Depth Distribution</span>
+                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                  {scenario.populationImpact.affectedPopulation.toLocaleString(undefined, {maximumFractionDigits: 0})} people affected
+                </span>
+              </div>
+            </button>
+
+            <div className="p-4">
+              <DepthDistributionChart
+                depthBins={scenario.populationImpact.depthBins.map(bin => ({
+                  range: bin.range,
+                  count: bin.population,
+                  percentage: bin.percentage,
+                }))}
+              />
+            </div>
+          </div>
+        )}
+
         {sortedExposures.map((layerType) => {
           const impact = scenario.impacts[layerType];
           const isVisible = isLayerVisible(layerType);

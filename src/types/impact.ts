@@ -33,6 +33,25 @@ export type DepthBin = {
 };
 
 /**
+ * Population depth bin statistics
+ */
+export type PopulationDepthBin = {
+  range: DepthBinRange;
+  population: number;  // Population count in this depth range
+  percentage: number;  // Percentage of total affected population
+};
+
+/**
+ * Population impact statistics for a scenario
+ */
+export type PopulationImpact = {
+  totalPopulation: number;  // Total population in study area
+  affectedPopulation: number;  // Population affected by flooding
+  affectedPercentage: number;  // (affected / total) * 100
+  depthBins: PopulationDepthBin[];  // Distribution across depth bins
+};
+
+/**
  * Impact statistics for a single exposure layer
  */
 export type ExposureImpact = {
@@ -62,6 +81,7 @@ export type ScenarioImpactSummary = {
   totalAffectedExposures: number;  // Count of exposure types with any impact
   severity: SeverityLevel;  // Calculated severity level
   impacts: Record<ExposureLayerType, ExposureImpact | null>;  // null if no impact
+  populationImpact?: PopulationImpact | null;  // Population impact statistics (if available)
 };
 
 /**

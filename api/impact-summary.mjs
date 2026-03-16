@@ -260,23 +260,37 @@ app.get('/api/impact/summary', async (req, res) => {
     }
 
     // Build the query - use materialized view for better performance
+    // Include population stats via LEFT JOIN
     let query = `
       SELECT
-        climate,
-        maintenance,
-        return_period,
-        exposure_type,
-        total_features,
-        affected_features,
-        max_depth_bin,
-        bin_15_100cm_count,
-        bin_1_2m_count,
-        bin_2_3m_count,
-        bin_3_4m_count,
-        bin_4_5m_count,
-        bin_above5m_count
-      FROM impact_summary_matview
-      WHERE climate = $1
+        m.climate,
+        m.maintenance,
+        m.return_period,
+        m.exposure_type,
+        m.total_features,
+        m.affected_features,
+        m.max_depth_bin,
+        m.bin_15_100cm_count,
+        m.bin_1_2m_count,
+        m.bin_2_3m_count,
+        m.bin_3_4m_count,
+        m.bin_4_5m_count,
+        m.bin_above5m_count,
+        p.total_population,
+        p.affected_population,
+        p.affected_percentage as pop_affected_percentage,
+        p.pop_15_100cm,
+        p.pop_1_2m,
+        p.pop_2_3m,
+        p.pop_3_4m,
+        p.pop_4_5m,
+        p.pop_above5m
+      FROM impact_summary_matview m
+      LEFT JOIN impact.population_stats p
+        ON m.climate = p.climate
+        AND m.maintenance = p.maintenance
+        AND m.return_period = p.return_period
+      WHERE m.climate = $1
     `;
 
     const params = [climate];
@@ -349,6 +363,19 @@ async function processResults(rows, depthThreshold, pool) {
         totalAffectedExposures: 0,
         severity: 'low',
         impacts: {},
+        populationImpact: row.total_population ? {
+          totalPopulation: parseFloat(row.total_population),
+          affectedPopulation: parseFloat(row.affected_population),
+          affectedPercentage: parseFloat(row.pop_affected_percentage),
+          depthBins: [
+            { range: '15-100cm', population: parseFloat(row.pop_15_100cm) || 0, percentage: 0 },
+            { range: '1-2m', population: parseFloat(row.pop_1_2m) || 0, percentage: 0 },
+            { range: '2-3m', population: parseFloat(row.pop_2_3m) || 0, percentage: 0 },
+            { range: '3-4m', population: parseFloat(row.pop_3_4m) || 0, percentage: 0 },
+            { range: '4-5m', population: parseFloat(row.pop_4_5m) || 0, percentage: 0 },
+            { range: 'above5m', population: parseFloat(row.pop_above5m) || 0, percentage: 0 },
+          ],
+        } : null,
       });
     }
 
@@ -426,9 +453,17 @@ async function processResults(rows, depthThreshold, pool) {
     }
   }
 
-  // Calculate severity for each scenario
+  // Calculate severity and population depth bin percentages for each scenario
   scenarioMap.forEach((scenario) => {
     scenario.severity = calculateSeverityFromExposures(scenario.totalAffectedExposures);
+
+    // Calculate percentages for population depth bins
+    if (scenario.populationImpact) {
+      const totalPop = scenario.populationImpact.affectedPopulation;
+      scenario.populationImpact.depthBins.forEach((bin) => {
+        bin.percentage = totalPop > 0 ? (bin.population / totalPop) * 100 : 0;
+      });
+    }
   });
 
   // Convert map to array
