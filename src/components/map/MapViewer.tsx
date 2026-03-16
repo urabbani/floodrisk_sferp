@@ -45,6 +45,7 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
   const layerOpacitiesRef = useRef<Record<string, number>>({});
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
+  const onMapClickRef = useRef(onMapClick);
   const [activeBaseMap, setActiveBaseMap] = useState('satellite');
   const [rotation, setRotation] = useState(0);
   const [mousePosition, setMousePosition] = useState<{ utm: string; latlon: string } | null>(null);
@@ -93,17 +94,17 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
       view.fit(MAP_CONFIG.extent, { padding: [50, 50, 50, 50] });
     }
 
+    mapInstance.current = map;
+
     map.on('click', (event) => {
       event.stopPropagation();
-      onMapClick?.(event.coordinate, event.pixel);
+      onMapClickRef.current?.(event.coordinate, event.pixel);
     });
 
     map.getViewport().addEventListener('dblclick', (e) => {
       e.preventDefault();
       e.stopPropagation();
     });
-
-    mapInstance.current = map;
 
     // Track map rotation for north arrow
     const updateRotation = () => {
@@ -121,6 +122,11 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
       mapInstance.current = null;
       initializedRef.current = false;
     };
+  }, []); // Empty deps - initialize map ONLY once
+
+  // Update the click handler ref when onMapClick changes
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
   }, [onMapClick]);
 
   // Track previous visible layer IDs to detect add/remove operations
