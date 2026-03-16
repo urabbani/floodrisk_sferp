@@ -80,12 +80,26 @@ The Impact Matrix provides comprehensive flood impact assessment across 42 scena
 - **Database:** PostgreSQL/PostGIS with 42 scenario schemas
 - **Statistics Source:** Materialized view `impact_summary_matview` (pre-aggregated per scenario)
 - **Zonal Layers:** `Cropped_Area` and `Built_up_Area` use area-based calculations via `ST_Area()`
+- **Population Stats:** Table `impact.population_stats` with population impact data by depth bins
 - **Production:** Managed by systemd service `floodrisk-impact-api`
 
 **Frontend Components:**
 - **SummaryHeatmapView:** 7×3 matrix showing affected count per scenario (color-coded by return period intensity)
-- **DetailedBreakdownView:** Per-scenario exposure details with toggleable layer controls
+- **DetailedBreakdownView:** Per-scenario exposure details with 4 summary cards
 - **DepthDistributionChart:** Horizontal bar chart showing depth bin percentages
+
+**Summary Cards (4):**
+1. **Population Affected** - Total count of people impacted (e.g., "262,993")
+2. **Infrastructure Impact** - Average % of roads, railways, electric grid, telecom affected
+3. **Agriculture & Buildings** - Average % of crops and buildings affected
+4. **Overall Risk** - Severity level (Low/Medium/High/Extreme) based on affected layers
+
+**Population Impact Data:**
+- **Source:** Excel files in `Exposure_Stats/` folder (42 files)
+- **Loader:** `api/load-population-stats.mjs` script
+- **Database:** `impact.population_stats` table with depth bin breakdown
+- **Display:** Population Impact chart shows distribution across flood depth bins
+- **Update:** Run `node api/load-population-stats.mjs` to reload from Excel files
 
 **Exposure Layers (9 types):**
 1. Basic Health Units (BHU) - point features
@@ -205,6 +219,53 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 **Result:** Accurate percentages comparing apples to apples (length vs length, area vs area, count vs count).
 
 **Performance:** Optimized to only calculate geometry for Electric_Grid, Built_up_Area, and Cropped_Area (3 queries per scenario). Other layers use fast COUNT(*) queries.
+
+---
+
+### Population Impact Statistics (ADDED - March 2026)
+
+**Feature:** Added population impact data to enhance flood scenario assessment.
+
+**Implementation:**
+1. **Database Schema:** Created `impact.population_stats` table with:
+   - Climate, maintenance, return period scenario identifiers
+   - Total and affected population counts
+   - Depth bin breakdown (15-100cm, 1-2m, 2-3m, 3-4m, 4-5m, above5m)
+   - ON CONFLICT UPDATE for easy reloading
+
+2. **Excel Data Loader:** `api/load-population-stats.mjs`
+   - Parses 42 Excel files from `Exposure_Stats/` folder
+   - Filename format: `Exposure_Consolidated_T3_{rp}yrs_{Climate}_{Maintenance}.xlsx`
+   - Extracts population row (row 12) with depth bin values
+   - Loads into database with deduplication
+
+3. **API Enhancement:** Modified `api/impact-summary.mjs` to:
+   - LEFT JOIN with `impact.population_stats` table
+   - Return `populationImpact` object in scenario summaries
+   - Include depth bin distribution with percentages
+
+4. **UI Updates:** Updated `DetailedBreakdownView.tsx` to:
+   - Show actual population count (not percentage) in summary cards
+   - Display 4 summary cards: Population, Infrastructure, Ag/Buildings, Severity
+   - Add "Population Impact" depth distribution chart
+   - Calculate category-level impact percentages
+
+**Data Management:**
+```bash
+# Reload population data from Excel files
+node api/load-population-stats.mjs
+
+# Verify population data in database
+psql -h 10.0.0.205 -U postgres -d postgres \
+  -c "SELECT climate, maintenance, return_period, affected_population FROM impact.population_stats LIMIT 5;"
+```
+
+**Files Added:**
+- `api/migrations/create_population_stats.sql` - Database schema
+- `api/load-population-stats.mjs` - Excel loader script
+- Updated `api/impact-summary.mjs` - API integration
+- Updated `src/types/impact.ts` - TypeScript types
+- Updated `src/components/impact-matrix/views/DetailedBreakdownView.tsx` - UI changes
 
 ## Mobile Responsiveness
 

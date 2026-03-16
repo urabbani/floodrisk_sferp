@@ -27,6 +27,12 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 
 ### NEW: Impact Matrix Module
 - **Real-time Impact Analysis** - Comprehensive flood impact assessment across 42 scenarios per climate
+- **Population Impact Statistics** - Shows affected population counts by depth bin for each scenario
+- **4 Summary Cards** - Quick overview showing:
+  - Population Affected (total count of people impacted)
+  - Infrastructure Impact (avg % of roads, railways, electric, telecom)
+  - Agriculture & Buildings (avg % of crops and buildings)
+  - Overall Risk Severity (Low/Medium/High/Extreme)
 - **Dual Climate Views** - Toggle between Present and Future climate scenarios
 - **9 Exposure Layers** - Analyzes impacts on:
   - Basic Health Units (BHU)
@@ -40,6 +46,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
   - Telecom Towers
 - **Dynamic Statistics** - All counts and percentages computed in real-time from database (no hardcoded values)
 - **Depth Distribution Charts** - Visual breakdown of flood depth by percentage for each layer
+- **Population Impact Chart** - Shows population distribution across flood depth bins
 - **Area-Based Analysis** - Zonal layers use actual geometric area calculations via ST_Area()
 - **Severity Levels** - Color-coded by return period intensity (light red → dark red)
 - **Interactive Layer Controls** - Toggle impact layers on the map directly from the Impact panel
@@ -378,6 +385,27 @@ sudo journalctl -u floodrisk-impact-api -f
 sudo systemctl status floodrisk-impact-api
 ```
 
+**Loading Population Data:**
+
+The Impact Matrix includes population impact statistics loaded from Excel files:
+
+```bash
+# Load/reload population data from Excel files
+cd /mnt/d/Scenario_results/floodrisk_sferp
+node api/load-population-stats.mjs
+
+# Verify population data in database
+PGPASSWORD='maltanadirSRV0' psql -h 10.0.0.205 -U postgres -d postgres \
+  -c "SELECT climate, maintenance, return_period, affected_population FROM impact.population_stats ORDER BY return_period LIMIT 10;"
+```
+
+**Data Source:**
+- Excel files located in `Exposure_Stats/` folder
+- Filename format: `Exposure_Consolidated_T3_{rp}yrs_{Climate}_{Maintenance}.xlsx`
+- 42 files covering all scenario combinations (2 climates × 3 maintenance levels × 7 return periods)
+- Population data stored in `impact.population_stats` table
+- Includes depth bin breakdown: 15-100cm, 1-2m, 2-3m, 3-4m, 4-5m, above5m
+
 **Environment Variables:** The API uses these environment variables (configured in systemd service):
 
 - `PORT`: 3001
@@ -565,6 +593,49 @@ Orchestrated by Dr. Umair Rabbani
 **Result:** Accurate percentages comparing apples to apples (length vs length, area vs area, count vs count). The percentage labels in the UI now correctly reflect the measurement type (Count/Length/Area).
 
 **Performance:** Optimized to only calculate expensive geometry operations for Electric_Grid, Built_up_Area, and Cropped_Area. Other layers use fast COUNT(*) queries.
+
+---
+
+### Population Impact Statistics (March 16, 2026)
+
+**Added:** Population impact data integration for flood scenario assessment.
+
+**What's New:**
+- Population affected count shown in summary cards (e.g., "262,993 people")
+- Population Impact chart showing distribution across flood depth bins
+- Database table `impact.population_stats` with 42 scenarios loaded
+- Excel data loader for importing population statistics from `Exposure_Stats/` folder
+
+**Implementation:**
+1. Created `impact.population_stats` database table with:
+   - Scenario identifiers (climate, maintenance, return period)
+   - Total and affected population counts
+   - Depth bin breakdown (6 bins: 15-100cm to above5m)
+
+2. Built Excel loader script (`api/load-population-stats.mjs`):
+   - Parses 42 Excel files with naming format: `Exposure_Consolidated_T3_{rp}yrs_{Climate}_{Maintenance}.xlsx`
+   - Extracts population data from row 12 of each file
+   - Loads into database with ON CONFLICT UPDATE for easy reloading
+
+3. Enhanced API (`api/impact-summary.mjs`):
+   - LEFT JOIN with `impact.population_stats` table
+   - Returns `populationImpact` object with depth bin distribution
+
+4. Updated UI (`DetailedBreakdownView.tsx`):
+   - 4 summary cards: Population, Infrastructure, Ag/Buildings, Severity
+   - Population Impact depth distribution chart
+   - Shows actual population count instead of percentage
+
+**Data Management:**
+```bash
+# Reload population data from Excel files
+node api/load-population-stats.mjs
+
+# Verify in database
+psql -h 10.0.0.205 -U postgres -d postgres \
+  -c "SELECT COUNT(*) FROM impact.population_stats;"
+# Expected: 42 scenarios
+```
 
 ## Known Issues
 
