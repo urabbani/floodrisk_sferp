@@ -26,9 +26,25 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'postgres',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'maltanadirSRV0',
-  max: 20,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  max: 10, // Reduced from 20 to prevent connection exhaustion
+  min: 2, // Keep minimum connections alive
+  idleTimeoutMillis: 10000, // Reduced from 30000 - release idle connections faster
+  connectionTimeoutMillis: 5000, // Increased from 2000 - give more time for connection
+  idleInTransactionSessionTimeout: 60000, // Kill idle transactions after 60 seconds
+  statement_timeout: 30000, // Kill queries running longer than 30 seconds
+});
+
+// Handle pool errors
+pool.on('error', (err) => {
+  console.error('Unexpected error on idle client', err);
+  process.exit(-1);
+});
+
+// Cleanup on shutdown
+process.on('SIGINT', async () => {
+  console.log('Received SIGINT, closing pool...');
+  await pool.end();
+  process.exit(0);
 });
 
 // Middleware
@@ -337,10 +353,37 @@ function calculateSeverityFromExposures(affectedCount) {
 
 /**
  * GET /api/health
- * Health check endpoint
+ * Health check endpoint with connection pool status
  */
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    const poolStatus = {
+      totalCount: pool.totalCount,
+      idleCount: pool.idleCount,
+      waitingCount: pool.waitingCount,
+    };
+
+    // Test database connection
+    const client = await pool.connect();
+    const dbResult = await client.query('SELECT NOW()');
+    client.release();
+
+    res.json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      database: {
+        connected: true,
+        dbTime: dbResult.rows[0].now,
+        pool: poolStatus,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message,
+    });
+  }
 });
 
 /**
