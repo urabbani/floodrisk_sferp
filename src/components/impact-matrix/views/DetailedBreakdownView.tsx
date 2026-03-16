@@ -118,12 +118,29 @@ export function DetailedBreakdownView({
       return currentIndex > maxIndex ? impact.maxDepthBin : maxDepth;
     }, '15-100cm');
 
+    // Calculate impact percentage by geometry type
+    const getImpactByGeometry = (geometryType: 'point' | 'line' | 'polygon') => {
+      const impacts = Object.values(scenario.impacts).filter(
+        (impact) => impact && impact.geometryType === geometryType
+      );
+      const total = impacts.reduce((sum, impact) => sum + (impact?.totalFeatures || 0), 0);
+      const affected = impacts.reduce((sum, impact) => sum + (impact?.affectedFeatures || 0), 0);
+      return { total, affected, percentage: total > 0 ? (affected / total) * 100 : 0 };
+    };
+
+    const pointImpact = getImpactByGeometry('point');
+    const lineImpact = getImpactByGeometry('line');
+    const polygonImpact = getImpactByGeometry('polygon');
+
     return {
       totalFeatures,
       totalAffected,
       affectedLayers,
       maxDepthAll,
       impactPercentage: totalFeatures > 0 ? (totalAffected / totalFeatures) * 100 : 0,
+      pointImpact,
+      lineImpact,
+      polygonImpact,
     };
   }, [scenario.impacts]);
 
@@ -192,16 +209,19 @@ export function DetailedBreakdownView({
       {/* Summary Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4">
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Total Features</div>
-          <div className="text-lg font-bold text-slate-800">{summaryStats.totalFeatures.toLocaleString()}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Points Affected</div>
+          <div className="text-lg font-bold text-blue-600">{summaryStats.pointImpact.percentage.toFixed(1)}%</div>
+          <div className="text-[9px] text-slate-400">Count: {summaryStats.pointImpact.affected} of {summaryStats.pointImpact.total}</div>
         </div>
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Affected</div>
-          <div className="text-lg font-bold text-blue-600">{summaryStats.totalAffected.toLocaleString()}</div>
+          <div className="text-[10px] text-slate-500 mb-1">Length Affected</div>
+          <div className="text-lg font-bold text-blue-600">{summaryStats.lineImpact.percentage.toFixed(1)}%</div>
+          <div className="text-[9px] text-slate-400">Length: {summaryStats.lineImpact.affected} of {summaryStats.lineImpact.total}</div>
         </div>
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Impact</div>
-          <div className="text-lg font-bold text-slate-800">{summaryStats.impactPercentage.toFixed(1)}%</div>
+          <div className="text-[10px] text-slate-500 mb-1">Area Affected</div>
+          <div className="text-lg font-bold text-blue-600">{summaryStats.polygonImpact.percentage.toFixed(1)}%</div>
+          <div className="text-[9px] text-slate-400">Area: {summaryStats.polygonImpact.affected} of {summaryStats.polygonImpact.total}</div>
         </div>
         <div className="bg-white p-3 rounded-lg border border-slate-200">
           <div className="text-[10px] text-slate-500 mb-1">Max Depth</div>
@@ -270,7 +290,7 @@ export function DetailedBreakdownView({
               impact={impact}
               isVisible={isVisible}
               onToggleVisibility={handleLayerToggle}
-              initiallyExpanded={impact?.affectedFeatures === impact?.totalFeatures}
+              initiallyExpanded={true}
             />
           );
         })}

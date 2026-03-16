@@ -66,6 +66,13 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
     polygon: ChevronDown,
   }[EXPOSURE_LAYER_GEOMETRY[layerType]] || MapPin;
 
+  // Determine the percentage label based on geometry type
+  const percentageLabel = {
+    point: 'Count',
+    line: 'Length',
+    polygon: 'Area',
+  }[EXPOSURE_LAYER_GEOMETRY[layerType]] || 'Count';
+
   const hasImpact = impact && impact.affectedFeatures > 0;
 
   const handleToggle = useCallback(() => {
@@ -134,8 +141,10 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
         {/* Stats */}
         <div className="flex items-center gap-4 text-xs">
           <div className="text-center">
-            <div className="font-semibold text-slate-800">{impact.affectedFeatures}</div>
-            <div className="text-slate-500">of {impact.totalFeatures}</div>
+            <div className="font-semibold text-slate-800">
+              {((impact.affectedFeatures / impact.totalFeatures) * 100).toFixed(1)}%
+            </div>
+            <div className="text-slate-500">{impact.affectedFeatures} of {impact.totalFeatures}</div>
           </div>
 
           {hasImpact && (
@@ -180,12 +189,15 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
           {/* Quick Stats */}
           <div className="grid grid-cols-3 gap-2 text-[10px]">
             <div className="bg-white p-2 rounded border border-slate-200">
-              <div className="text-slate-500">Total</div>
-              <div className="font-semibold text-slate-800">{impact.totalFeatures}</div>
+              <div className="text-slate-500">Impact %</div>
+              <div className="font-semibold text-slate-800">
+                {((impact.affectedFeatures / impact.totalFeatures) * 100).toFixed(1)}%
+              </div>
             </div>
             <div className="bg-white p-2 rounded border border-slate-200">
-              <div className="text-slate-500">Affected</div>
+              <div className="text-slate-500">Affected {percentageLabel}</div>
               <div className="font-semibold text-blue-600">{impact.affectedFeatures}</div>
+              <div className="text-[8px] text-slate-400">of {impact.totalFeatures}</div>
             </div>
             <div className="bg-white p-2 rounded border border-slate-200">
               <div className="text-slate-500">Max Depth</div>
