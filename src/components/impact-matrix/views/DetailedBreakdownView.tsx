@@ -218,15 +218,15 @@ export function DetailedBreakdownView({
           {summaryStats.populationImpact ? (
             <>
               <div className="text-lg font-bold text-red-600">
-                {summaryStats.populationImpact.percentage.toFixed(1)}%
+                {summaryStats.populationImpact.affected.toLocaleString(undefined, {maximumFractionDigits: 0})}
               </div>
               <div className="text-[9px] text-slate-400">
-                {summaryStats.populationImpact.affected.toLocaleString(undefined, {maximumFractionDigits: 0})} people
+                People impacted
               </div>
             </>
           ) : (
             <>
-              <div className="text-lg font-bold text-slate-400">--%</div>
+              <div className="text-lg font-bold text-slate-400">--</div>
               <div className="text-[9px] text-slate-400">No data</div>
             </>
           )}
@@ -330,7 +330,7 @@ export function DetailedBreakdownView({
               className="w-full px-4 py-3 flex items-center justify-between bg-gradient-to-r from-red-50 to-slate-50 hover:from-red-100 hover:to-slate-100 transition-colors"
             >
               <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold text-slate-800">Population Depth Distribution</span>
+                <span className="text-lg font-semibold text-slate-800">Population Impact</span>
                 <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
                   {scenario.populationImpact.affectedPopulation.toLocaleString(undefined, {maximumFractionDigits: 0})} people affected
                 </span>
