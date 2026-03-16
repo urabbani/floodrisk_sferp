@@ -224,20 +224,33 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   useEffect(() => {
     if (!mapInstance.current) return;
 
+    console.log('[MapViewer] Opacity/z-index effect triggered');
+    console.log('[MapViewer] visibleLayerIds:', visibleLayerIds);
+    console.log('[MapViewer] layerRefs keys:', Array.from(layerRefs.current.keys()));
+
     visibleLayerIds.forEach((layerId) => {
       const layer = layerRefs.current.get(layerId);
       const layerInfo = allLayers.find((l) => l.id === layerId);
-      if (!layer || !layerInfo) return;
+      if (!layer) {
+        console.warn(`[MapViewer] Opacity effect: Layer ${layerId} not found in layerRefs`);
+        return;
+      }
+      if (!layerInfo) {
+        console.warn(`[MapViewer] Opacity effect: Layer ${layerId} not found in allLayers`);
+        return;
+      }
 
       const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
       const currentOpacity = layerOpacities[layerId] ?? layerInfo.opacity;
       const previousOpacity = layerOpacitiesRef.current[layerId];
 
       if (previousOpacity === undefined || Math.abs(previousOpacity - currentOpacity) > 0.01) {
+        console.log(`[MapViewer] Updating opacity for ${layerId}: ${previousOpacity} → ${currentOpacity}`);
         layer.setOpacity(currentOpacity);
         layerOpacitiesRef.current[layerId] = currentOpacity;
       }
 
+      console.log(`[MapViewer] Setting z-index for ${layerId}: ${zIndex}`);
       layer.setZIndex(zIndex);
     });
   }, [visibleLayerIds, layerOpacities, allLayers]);
