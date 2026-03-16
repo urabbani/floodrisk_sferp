@@ -7,7 +7,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** March 14, 2026
+**Last Updated:** March 16, 2026
 
 ## Features
 
@@ -498,10 +498,30 @@ Built, maintained and deployed using Claude Code with Z.AI's GLM series of model
 
 Orchestrated by Dr. Umair Rabbani
 
+## Recent Fixes
+
+### Multiple Layer Visibility Bug (March 16, 2026)
+
+**Fixed:** Issue where only the newest activated layer would remain visible when toggling multiple layers in the Layer Tree or Impact Matrix.
+
+**What was broken:**
+- Enabling Layer 1 → visible ✓
+- Enabling Layer 2 → Layer 1 disappeared, only Layer 2 visible ✗
+- Enabling Layer 3 → Layer 2 disappeared, only Layer 3 visible ✗
+
+**Root Cause:** The map was being destroyed and recreated on every layer toggle due to a dependency chain in the React effects. The map initialization `useEffect` depended on `onMapClick`, which was recreated whenever `visibleLayers` changed (which happens on every layer toggle).
+
+**Solution:** Refactored `src/components/map/MapViewer.tsx`:
+- Removed `onMapClick` from map initialization dependencies (now uses empty deps array `[]`)
+- Added `onMapClickRef` to store the current click handler
+- Click listener now uses `onMapClickRef.current` instead of the prop directly
+- Added separate `useEffect` to update the ref when `onMapClick` changes
+
+**Result:** Map initializes only once on mount, click handler stays updated when layers change, and multiple layers can now coexist without interference. All layers in the Layer Tree and Impact Matrix now display correctly when multiple layers are enabled.
+
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
-- **Multi-Layer Visibility:** Currently investigating an issue where enabling multiple layers in the Layer Tree may not display all layers simultaneously. The opacity slider is functional and works correctly for individual layers. Further debugging is scheduled to resolve the multi-layer overlay behavior.
 
 ## Contributing
 

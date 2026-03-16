@@ -154,6 +154,27 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 2. Add to appropriate group in the `layerTree` structure
 3. Layer names must match GeoServer layer names exactly
 
+## Known Issues and Fixes
+
+### Multiple Layer Visibility Bug (FIXED - March 2026)
+
+**Issue:** When toggling multiple layers visible in the Layer Tree or Impact Matrix, only the newest layer would remain visible - previous layers would disappear.
+
+**Root Cause:** The map was being destroyed and recreated every time a layer was toggled due to the map initialization `useEffect` depending on `onMapClick`. The dependency chain was:
+1. Layer toggle → `visibleLayerIds` changes
+2. `visibleLayers` (computed from `visibleLayerIds`) recalculates
+3. `handleMapClick` (uses `visibleLayers`) recreates
+4. Map initialization effect runs (depended on `onMapClick`)
+5. Entire map destroyed → all previous layers lost
+
+**Solution:** Modified `src/components/map/MapViewer.tsx`:
+- Removed `onMapClick` from map initialization dependencies (empty deps array `[]`)
+- Added `onMapClickRef` to store current click handler
+- Click listener now uses `onMapClickRef.current` instead of prop directly
+- Separate `useEffect` updates the ref when `onMapClick` changes
+
+**Result:** Map initializes only once on mount, click handler stays updated, and multiple layers can coexist without interference.
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior
