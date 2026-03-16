@@ -3,7 +3,7 @@ import { X, RefreshCw, Layers, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary, ExposureLayerType } from '@/types/impact';
-import { EXPOSURE_LAYER_TYPES, formatDepthBinLabel } from '@/types/impact';
+import { EXPOSURE_LAYER_TYPES, formatDepthBinLabel, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
 import { ExposureRow } from '../components/ExposureRow';
 
 interface DetailedBreakdownViewProps {
@@ -159,7 +159,7 @@ export function DetailedBreakdownView({
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 rounded-t-lg">
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-slate-800 mb-1">
-            {scenario.returnPeriod}yrs • {scenario.climate} • {scenario.maintenance}
+            {scenario.returnPeriod}yrs • {formatClimateLabel(scenario.climate)} • Maintenance Level: {formatMaintenanceLabel(scenario.maintenance)}
           </h3>
           <p className="text-xs text-slate-600">
             {summaryStats.affectedLayers} of 9 exposure types affected

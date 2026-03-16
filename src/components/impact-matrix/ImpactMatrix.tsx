@@ -11,7 +11,7 @@ import { useImpactData } from './hooks/useImpactData';
 import { SummaryHeatmapView } from './views/SummaryHeatmapView';
 import { DetailedBreakdownView } from './views/DetailedBreakdownView';
 import type { LayerInfo } from '@/types/layers';
-import { EXPOSURE_LAYER_GEOMETRY } from '@/types/impact';
+import { EXPOSURE_LAYER_GEOMETRY, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
 
 // View types for the impact matrix
 type ImpactView = 'summary' | 'detail' | 'compare';
@@ -154,7 +154,7 @@ export function ImpactMatrix({
 
         return {
           id: impact!.geoserverLayer,
-          name: `${selectedScenario.returnPeriod}yrs ${selectedScenario.climate} ${exposureType}`,
+          name: `${selectedScenario.returnPeriod}yrs ${formatClimateLabel(selectedScenario.climate)} - ${formatMaintenanceLabel(selectedScenario.maintenance)} - ${exposureType}`,
           type: 'wms',
           geometryType,
           visible: false,

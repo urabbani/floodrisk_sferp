@@ -296,6 +296,18 @@ export function formatMaintenanceLabel(maintenance: string): string {
 }
 
 /**
+ * Format climate label for display
+ * Converts internal values to user-friendly labels
+ */
+export function formatClimateLabel(climate: string): string {
+  const labels: Record<string, string> = {
+    'present': 'Present Climate',
+    'future': 'Future Climate',
+  };
+  return labels[climate] || climate;
+}
+
+/**
  * Format depth value for display
  */
 export function formatDepthValue(depth: number): string {
