@@ -52,18 +52,60 @@ app.use(cors());
 app.use(express.json());
 
 /**
- * Get total feature counts from Exposure_InputData schema
- * These represent the true total count of each exposure type
+ * Get total counts/lengths/areas from Exposure_InputData schema
+ * - Point features: COUNT(*)
+ * - Line features (Electric_Grid): Total length in meters
+ * - Polygon features (Built_up_Area, Cropped_Area): Total area in square meters
+ * - Other features: COUNT(*)
  */
 async function getTotalFeatureCounts(pool) {
-  const exposureTypes = [
-    'BHU', 'Buildings', 'Built_up_Area', 'Cropped_Area',
-    'Electric_Grid', 'Railways', 'Roads', 'Settlements', 'Telecom_Towers'
-  ];
-
   const totals = {};
 
-  for (const exposureType of exposureTypes) {
+  // Electric_Grid: Calculate total length
+  try {
+    const query = `
+      SELECT COALESCE(ROUND(SUM(ST_Length(geom))), 0) as total_length
+      FROM "Exposure_InputData"."Electric_Grid"
+    `;
+    const result = await pool.query(query);
+    totals['Electric_Grid'] = parseInt(result.rows[0].total_length) || 0;
+    console.log(`Electric_Grid total length: ${totals['Electric_Grid']} meters`);
+  } catch (error) {
+    console.error('Error getting Electric_Grid total length:', error);
+    totals['Electric_Grid'] = 0;
+  }
+
+  // Built_up_Area: Calculate total area
+  try {
+    const query = `
+      SELECT COALESCE(ROUND(SUM(ST_Area(geom))), 0) as total_area
+      FROM "Exposure_InputData"."Built_up_Area"
+    `;
+    const result = await pool.query(query);
+    totals['Built_up_Area'] = parseInt(result.rows[0].total_area) || 0;
+    console.log(`Built_up_Area total area: ${totals['Built_up_Area']} sq meters`);
+  } catch (error) {
+    console.error('Error getting Built_up_Area total area:', error);
+    totals['Built_up_Area'] = 0;
+  }
+
+  // Cropped_Area: Calculate total area
+  try {
+    const query = `
+      SELECT COALESCE(ROUND(SUM(ST_Area(geom))), 0) as total_area
+      FROM "Exposure_InputData"."Cropped_Area"
+    `;
+    const result = await pool.query(query);
+    totals['Cropped_Area'] = parseInt(result.rows[0].total_area) || 0;
+    console.log(`Cropped_Area total area: ${totals['Cropped_Area']} sq meters`);
+  } catch (error) {
+    console.error('Error getting Cropped_Area total area:', error);
+    totals['Cropped_Area'] = 0;
+  }
+
+  // All other layers: Use COUNT(*)
+  const countLayers = ['BHU', 'Buildings', 'Railways', 'Roads', 'Settlements', 'Telecom_Towers'];
+  for (const exposureType of countLayers) {
     try {
       const query = `SELECT COUNT(*) as count FROM "Exposure_InputData"."${exposureType}"`;
       const result = await pool.query(query);
@@ -75,6 +117,54 @@ async function getTotalFeatureCounts(pool) {
   }
 
   return totals;
+}
+
+/**
+ * Get affected length/area from impacted scenario schema
+ * For Electric_Grid: returns total affected length in meters
+ * For Built_up_Area, Cropped_Area: returns total affected area in sq meters
+ * For others: returns null (use default count from materialized view)
+ */
+async function getAffectedMeasurement(pool, climate, maintenance, returnPeriod, exposureType) {
+  try {
+    // Build schema name: T3_{rp}yrs_{Climate}_{Maintenance}_Impacted
+    const rpFormatted = returnPeriod === '2.3' ? '2.3' : returnPeriod;
+    const climateFormatted = climate.charAt(0).toUpperCase() + climate.slice(1);
+    const maintenanceFormatted = maintenance === 'breaches' ? 'Breaches' :
+                               maintenance === 'redcapacity' ? 'RedCapacity' :
+                               maintenance.charAt(0).toUpperCase() + maintenance.slice(1);
+
+    const schemaName = `T3_${rpFormatted}yrs_${climateFormatted}_${maintenanceFormatted}_Impacted`;
+    const tableName = `"${schemaName}"."${exposureType}"`;
+
+    let query;
+    if (exposureType === 'Electric_Grid') {
+      // Get affected length
+      query = `
+        SELECT COALESCE(ROUND(SUM(ST_Length(geom))), 0) as affected_measurement
+        FROM ${tableName}
+        WHERE depth_bin IS NOT NULL
+      `;
+    } else if (exposureType === 'Built_up_Area' || exposureType === 'Cropped_Area') {
+      // Get affected area
+      query = `
+        SELECT COALESCE(ROUND(SUM(ST_Area(geom))), 0) as affected_measurement
+        FROM ${tableName}
+        WHERE depth_bin IS NOT NULL
+      `;
+    } else {
+      // Not one of our special layers
+      return null;
+    }
+
+    const result = await pool.query(query);
+    const affected = parseInt(result.rows[0].affected_measurement) || 0;
+    console.log(`${exposureType} affected: ${affected}`);
+    return affected;
+  } catch (error) {
+    console.error(`Error getting affected measurement for ${exposureType}:`, error.message);
+    return null;
+  }
 }
 
 /**
@@ -265,7 +355,25 @@ async function processResults(rows, depthThreshold, pool) {
     const scenario = scenarioMap.get(scenarioId);
 
     // Build depth bins
-    const totalAffected = row.affected_features || 0;
+    const geometryType = getGeometryType(row.exposure_type);
+
+    // For Electric_Grid, Built_up_Area, Cropped_Area: get geometry-based affected measurement
+    let affectedFeatures = row.affected_features || 0;
+    if (['Electric_Grid', 'Built_up_Area', 'Cropped_Area'].includes(row.exposure_type)) {
+      const affectedMeasurement = await getAffectedMeasurement(
+        pool,
+        row.climate,
+        row.maintenance,
+        row.return_period,
+        row.exposure_type
+      );
+      if (affectedMeasurement !== null) {
+        affectedFeatures = affectedMeasurement;
+        console.log(`${row.exposure_type}: using geometry-based affected=${affectedFeatures}`);
+      }
+    }
+
+    const totalAffected = affectedFeatures;
     const trueTotal = totalFeatureCounts[row.exposure_type] || totalAffected;
     const depthBins = [
       { range: '15-100cm', minDepth: 0.15, maxDepth: 1.0, count: row.bin_15_100cm_count || 0, percentage: 0 },
@@ -304,16 +412,16 @@ async function processResults(rows, depthThreshold, pool) {
     scenario.impacts[row.exposure_type] = {
       layerType: row.exposure_type,
       totalFeatures: totalFeatureCounts[row.exposure_type] || 0, // Use true total from Exposure_InputData
-      affectedFeatures: row.affected_features || 0,
+      affectedFeatures: affectedFeatures, // Use geometry-corrected affected measurement
       maxDepthBin: row.max_depth_bin,
       depthBins,
       geoserverLayer: `T3_${row.return_period}yrs_${row.climate.charAt(0).toUpperCase() + row.climate.slice(1)}_${row.maintenance === 'redcapacity' ? 'RedCapacity' : row.maintenance.charAt(0).toUpperCase() + row.maintenance.slice(1)}_Impacted_${row.exposure_type}`,
       workspace: 'exposures',
-      geometryType: getGeometryType(row.exposure_type),
+      geometryType: geometryType,
     };
 
     // Count affected exposures for severity calculation
-    if (row.affected_features > depthThreshold) {
+    if (affectedFeatures > depthThreshold) {
       scenario.totalAffectedExposures++;
     }
   }

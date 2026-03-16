@@ -175,6 +175,37 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
 
 **Result:** Map initializes only once on mount, click handler stays updated, and multiple layers can coexist without interference.
 
+---
+
+### Impact Matrix Percentage Calculation Bug (FIXED - March 2026)
+
+**Issue:** Electric Grid, Built_up_Area, and Cropped_Area showed >100% impact percentage (e.g., "199% Length affected").
+
+**Root Cause:** The materialized view `impact_summary_matview` used `COUNT(*)` for all exposure types. This is correct for point features but incorrect for line and polygon features:
+- **Line features** (Electric Grid, Railways, Roads) need: Total length vs affected length
+- **Polygon features** (Buildings, Settlements, Built_up_Area, Cropped_Area) need: Total area vs affected area
+- **Point features** (BHU, Telecom Towers) correctly use: Total count vs affected count
+
+**Solution:** Modified `api/impact-summary.mjs` to calculate geometry-specific totals:
+
+1. **Electric_Grid (Line)**:
+   - Total: `SUM(ST_Length(geom))` from Exposure_InputData.Electric_Grid
+   - Affected: `SUM(ST_Length(geom))` from impacted scenario schema
+   - Shows: "Length %" with meter units
+
+2. **Built_up_Area, Cropped_Area (Polygon)**:
+   - Total: `SUM(ST_Area(geom))` from Exposure_InputData
+   - Affected: `SUM(ST_Area(geom))` from impacted scenario schema
+   - Shows: "Area %" with square meter units
+
+3. **All Other Layers**:
+   - Continue using `COUNT(*)` for feature counts
+   - Shows: "Count %"
+
+**Result:** Accurate percentages comparing apples to apples (length vs length, area vs area, count vs count).
+
+**Performance:** Optimized to only calculate geometry for Electric_Grid, Built_up_Area, and Cropped_Area (3 queries per scenario). Other layers use fast COUNT(*) queries.
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior

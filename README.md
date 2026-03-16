@@ -519,6 +519,53 @@ Orchestrated by Dr. Umair Rabbani
 
 **Result:** Map initializes only once on mount, click handler stays updated when layers change, and multiple layers can now coexist without interference. All layers in the Layer Tree and Impact Matrix now display correctly when multiple layers are enabled.
 
+---
+
+### Impact Matrix Percentage Calculation Fix (March 16, 2026)
+
+**Fixed:** Electric Grid, Built_up_Area, and Cropped_Area showing >100% impact percentage.
+
+**What was broken:**
+- Electric Grid showed "199% Length affected" ✗
+- Built_up_Area showed "245% Area affected" ✗
+- Cropped_Area showed "312% Area affected" ✗
+
+**Root Cause:** The backend API was using `COUNT(*)` for all exposure types, which works for point features but is incorrect for line and polygon features:
+- **Line features** should compare: affected length ÷ total length
+- **Polygon features** should compare: affected area ÷ total area
+- **Point features** correctly compare: affected count ÷ total count
+
+**Solution:** Modified `api/impact-summary.mjs` to calculate geometry-specific totals:
+
+1. **Electric_Grid (Line Features)**:
+   ```sql
+   -- Total length from exposure input
+   SELECT SUM(ST_Length(geom)) FROM "Exposure_InputData"."Electric_Grid"
+
+   -- Affected length from impacted scenario
+   SELECT SUM(ST_Length(geom)) FROM "T3_25yrs_Present_Breaches_Impacted"."Electric_Grid" WHERE depth_bin IS NOT NULL
+   ```
+   Shows: "Length %" (e.g., "45.2%" with "12,345m of 27,890m affected")
+
+2. **Built_up_Area, Cropped_Area (Polygon Features)**:
+   ```sql
+   -- Total area from exposure input
+   SELECT SUM(ST_Area(geom)) FROM "Exposure_InputData"."Built_up_Area"
+
+   -- Affected area from impacted scenario
+   SELECT SUM(ST_Area(geom)) FROM "T3_25yrs_Present_Breaches_Impacted"."Built_up_Area" WHERE depth_bin IS NOT NULL
+   ```
+   Shows: "Area %" (e.g., "67.8%" with "45,678m² of 67,890m² affected")
+
+3. **All Other Layers (Point Features)**:
+   - BHU, Telecom Towers, Buildings, Settlements, Railways, Roads
+   - Continue using `COUNT(*)` for feature counts
+   - Shows: "Count %"
+
+**Result:** Accurate percentages comparing apples to apples (length vs length, area vs area, count vs count). The percentage labels in the UI now correctly reflect the measurement type (Count/Length/Area).
+
+**Performance:** Optimized to only calculate expensive geometry operations for Electric_Grid, Built_up_Area, and Cropped_Area. Other layers use fast COUNT(*) queries.
+
 ## Known Issues
 
 - **WSL Symlink Issues:** On WSL, use `npm install --no-bin-links` to avoid EPERM errors
