@@ -124,6 +124,9 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   const prevVisibleIdsRef = useRef<Set<string>>(new Set());
 
   // Manage layer add/remove when visibleLayerIds changes
+  // NOTE: Deliberately NOT including allLayers or layerOpacities in dependencies
+  // to prevent removing/re-adding layers when those change. Layer properties should
+  // be updated in-place, not by recreating layers.
   useEffect(() => {
     if (!mapInstance.current) return;
 
@@ -197,7 +200,7 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
         console.log(`[MapViewer] Layer added to map. Total layers: ${map.getLayers().getLength()}`);
       }
     });
-  }, [visibleLayerIds, layerOpacities, allLayers]);
+  }, [visibleLayerIds]);
 
   // Update opacity and z-index for existing layers when layerOpacities changes
   useEffect(() => {
