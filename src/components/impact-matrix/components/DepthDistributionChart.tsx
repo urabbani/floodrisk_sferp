@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
-import { DEPTH_BIN_COLORS, type DepthBinRange } from '@/types/impact';
+import { DEPTH_BIN_COLORS, formatDepthBinLabel, type DepthBinRange } from '@/types/impact';
 
 interface DepthDistributionChartProps {
   /**
@@ -84,7 +84,7 @@ export const DepthDistributionChart = memo<DepthDistributionChartProps>(function
             <div key={bin.range} className="flex items-center gap-2">
               {/* Range label */}
               <div className="w-20 text-[10px] text-slate-600 text-right flex-shrink-0">
-                {bin.range}
+                {formatDepthBinLabel(bin.range)}
               </div>
 
               {/* Bar */}
@@ -146,7 +146,7 @@ export const DepthDistributionChart = memo<DepthDistributionChartProps>(function
 
             {/* Range label */}
             <div className="text-[9px] text-slate-500 truncate w-full text-center" title={bin.range}>
-              {bin.range.replace('m', '')}
+              {formatDepthBinLabel(bin.range).replace('m', '')}
             </div>
           </div>
         );

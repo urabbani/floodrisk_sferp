@@ -274,6 +274,15 @@ export function getDepthBinRange(depth: number): DepthBinRange {
 }
 
 /**
+ * Format depth bin label for display
+ * Converts internal 'above5m' to user-friendly '>5m'
+ */
+export function formatDepthBinLabel(range: DepthBinRange | string): string {
+  if (range === 'above5m') return '>5m';
+  return range;
+}
+
+/**
  * Format depth value for display
  */
 export function formatDepthValue(depth: number): string {

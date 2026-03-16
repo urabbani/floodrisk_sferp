@@ -3,7 +3,7 @@ import { X, RefreshCw, Layers, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary, ExposureLayerType } from '@/types/impact';
-import { EXPOSURE_LAYER_TYPES } from '@/types/impact';
+import { EXPOSURE_LAYER_TYPES, formatDepthBinLabel } from '@/types/impact';
 import { ExposureRow } from '../components/ExposureRow';
 
 interface DetailedBreakdownViewProps {
@@ -284,13 +284,13 @@ export function DetailedBreakdownView({
           </div>
           <div className="flex items-center gap-1 text-[10px] text-slate-600">
             <span>Depth:</span>
-            {['15-100cm', '1-2m', '2-3m'].map((range) => (
+            {['15-100cm', '1-2m', '2-3m', '3-4m', '4-5m', 'above5m'].map((range) => (
               <div
                 key={range}
                 className="px-1.5 py-0.5 rounded text-white"
                 style={{ backgroundColor: DEPTH_BIN_COLOR(range) }}
               >
-                {range}
+                {formatDepthBinLabel(range)}
               </div>
             ))}
           </div>

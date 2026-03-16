@@ -3,7 +3,7 @@ import { Eye, EyeOff, MapPin, MoreHorizontal, ChevronDown, ChevronUp } from 'luc
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ExposureLayerType, ExposureImpact } from '@/types/impact';
-import { EXPOSURE_LAYER_LABELS, EXPOSURE_LAYER_GEOMETRY } from '@/types/impact';
+import { EXPOSURE_LAYER_LABELS, EXPOSURE_LAYER_GEOMETRY, formatDepthBinLabel } from '@/types/impact';
 import { DepthDistributionChart } from './DepthDistributionChart';
 
 interface ExposureRowProps {
@@ -144,7 +144,7 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
               color: DEPTH_BIN_COLOR(impact.maxDepthBin)
             }}>
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: DEPTH_BIN_COLOR(impact.maxDepthBin) }} />
-              <span className="font-medium">{impact.maxDepthBin}</span>
+              <span className="font-medium">{formatDepthBinLabel(impact.maxDepthBin)}</span>
             </div>
           )}
         </div>
@@ -189,7 +189,7 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
             </div>
             <div className="bg-white p-2 rounded border border-slate-200">
               <div className="text-slate-500">Max Depth</div>
-              <div className="font-semibold text-slate-800">{impact.maxDepthBin}</div>
+              <div className="font-semibold text-slate-800">{formatDepthBinLabel(impact.maxDepthBin)}</div>
             </div>
           </div>
         </div>
