@@ -205,7 +205,7 @@ export function DetailedBreakdownView({
         </div>
         <div className="bg-white p-3 rounded-lg border border-slate-200">
           <div className="text-[10px] text-slate-500 mb-1">Max Depth</div>
-          <div className="text-lg font-bold text-red-600">{summaryStats.maxDepthAll}</div>
+          <div className="text-lg font-bold text-red-600">{formatDepthBinLabel(summaryStats.maxDepthAll)}</div>
         </div>
       </div>
 
