@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { cn } from '@/lib/utils';
 import { returnPeriods, parameters, maintenanceLevels, climateScenarios } from '@/types/layers';
+import { formatMaintenanceLabel } from '@/types/impact';
 
 interface ScenarioMatrixProps {
   climate?: 'Present' | 'Future';
@@ -253,7 +254,7 @@ export function ScenarioMatrix({
                   className="col-span-1 text-[10px] text-center text-slate-500 hover:text-blue-600 truncate px-1"
                   title={maintenanceLevels.find((ml) => ml.value === m)?.label}
                 >
-                  {m === 'breaches' ? '2022' : m === 'redcapacity' ? 'RedCap' : 'Perfect'}
+                  {m === 'breaches' ? '2022' : m === 'redcapacity' ? formatMaintenanceLabel(m) : 'Perfect'}
                 </button>
               ))}
             </div>

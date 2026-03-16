@@ -283,6 +283,19 @@ export function formatDepthBinLabel(range: DepthBinRange | string): string {
 }
 
 /**
+ * Format maintenance level label for display
+ * Converts internal 'redcapacity' to user-friendly 'Reduced Capacity'
+ */
+export function formatMaintenanceLabel(maintenance: string): string {
+  const labels: Record<string, string> = {
+    'breaches': 'Flood 2022 (Breaches)',
+    'redcapacity': 'Reduced Capacity',
+    'perfect': 'Perfect',
+  };
+  return labels[maintenance] || maintenance;
+}
+
+/**
  * Format depth value for display
  */
 export function formatDepthValue(depth: number): string {

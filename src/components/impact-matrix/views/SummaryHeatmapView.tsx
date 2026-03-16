@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary } from '@/types/impact';
 import { returnPeriods, maintenanceLevels } from '@/types/layers';
+import { formatMaintenanceLabel } from '@/types/impact';
 import { ImpactCell } from '../components/ImpactCell';
 
 // Return period intensity levels for color gradient (lightest to darkest)
@@ -205,7 +206,7 @@ export function SummaryHeatmapView({
                 className="text-center text-[10px] font-medium text-slate-600"
               >
                 {ml.value === 'breaches' ? '2022' :
-                 ml.value === 'redcapacity' ? 'Reduced Cap.' :
+                 ml.value === 'redcapacity' ? formatMaintenanceLabel(ml.value) :
                  ml.label}
               </div>
             ))}

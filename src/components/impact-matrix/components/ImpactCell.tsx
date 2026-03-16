@@ -1,6 +1,7 @@
 import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { ScenarioImpactSummary } from '@/types/impact';
+import { formatMaintenanceLabel } from '@/types/impact';
 
 // Return period intensity levels for color gradient (lightest to darkest)
 const RETURN_PERIOD_COLORS = {
@@ -107,12 +108,8 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
     onHoverLeave?.();
   };
 
-  // Maintenance label (shortened)
-  const maintenanceLabel = {
-    breaches: '2022',
-    redcapacity: 'Reduced Cap.',
-    perfect: 'Perfect',
-  }[maintenance] || maintenance;
+  // Maintenance label
+  const maintenanceLabel = formatMaintenanceLabel(maintenance);
 
   if (mode === 'detailed') {
     return (
