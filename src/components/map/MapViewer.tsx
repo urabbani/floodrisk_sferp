@@ -84,6 +84,9 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
       controls: [],
     });
 
+    console.log('[MapViewer] Map initialized. Base layers:', baseLayerRefs.current.size);
+    console.log('[MapViewer] Initial map layer count:', map.getLayers().getLength());
+
     // Fit view to extent on initialization
     const view = map.getView();
     if (view && MAP_CONFIG.extent) {
@@ -218,13 +221,23 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
 
     console.log('[MapViewer] Final layers in layerRefs:', Array.from(layerRefs.current.keys()));
     console.log('[MapViewer] Final map layer count:', map.getLayers().getLength());
+
+    // Debug: List all layers in the map
+    const mapLayers = map.getLayers();
+    console.log('[MapViewer] All map layers:');
+    mapLayers.forEach((layer, index) => {
+      const visible = layer.getVisible();
+      const zIndex = layer.getZIndex();
+      console.log(`  [${index}] zIndex=${zIndex}, visible=${visible}`);
+    });
   }, [visibleLayerIds]);
 
-  // Update opacity and z-index for existing layers when layerOpacities changes
+  // Update opacity for existing layers when layerOpacities changes
+  // NOTE: We DON'T update z-index here because it's set when layers are created
   useEffect(() => {
     if (!mapInstance.current) return;
 
-    console.log('[MapViewer] Opacity/z-index effect triggered');
+    console.log('[MapViewer] Opacity effect triggered');
     console.log('[MapViewer] visibleLayerIds:', visibleLayerIds);
     console.log('[MapViewer] layerRefs keys:', Array.from(layerRefs.current.keys()));
 
@@ -240,7 +253,6 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
         return;
       }
 
-      const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
       const currentOpacity = layerOpacities[layerId] ?? layerInfo.opacity;
       const previousOpacity = layerOpacitiesRef.current[layerId];
 
@@ -249,9 +261,6 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
         layer.setOpacity(currentOpacity);
         layerOpacitiesRef.current[layerId] = currentOpacity;
       }
-
-      console.log(`[MapViewer] Setting z-index for ${layerId}: ${zIndex}`);
-      layer.setZIndex(zIndex);
     });
   }, [visibleLayerIds, layerOpacities, allLayers]);
 
