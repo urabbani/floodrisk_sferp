@@ -134,26 +134,39 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
     const currentLayerIds = new Set(visibleLayerIds);
     const previousLayerIds = prevVisibleIdsRef.current;
 
+    console.log('[MapViewer] Layer management effect triggered');
+    console.log('[MapViewer] Previous visible IDs:', Array.from(previousLayerIds));
+    console.log('[MapViewer] Current visible IDs:', Array.from(currentLayerIds));
+    console.log('[MapViewer] Layers in layerRefs BEFORE:', Array.from(layerRefs.current.keys()));
+
     // Check if the set of visible layers has changed
     const layersChanged =
       currentLayerIds.size !== previousLayerIds.size ||
       Array.from(currentLayerIds).some((id) => !previousLayerIds.has(id)) ||
       Array.from(previousLayerIds).some((id) => !currentLayerIds.has(id));
 
-    if (!layersChanged) return;
+    if (!layersChanged) {
+      console.log('[MapViewer] No layers changed, returning');
+      return;
+    }
 
     prevVisibleIdsRef.current = currentLayerIds;
 
     // Remove layers that are no longer visible
+    console.log('[MapViewer] Checking for layers to remove...');
     Array.from(layerRefs.current.entries()).forEach(([id, layer]) => {
       if (!currentLayerIds.has(id)) {
+        console.log(`[MapViewer] Removing layer: ${id}`);
         map.removeLayer(layer);
         layerRefs.current.delete(id);
         delete layerOpacitiesRef.current[id];
       }
     });
 
+    console.log('[MapViewer] Layers in layerRefs AFTER removal:', Array.from(layerRefs.current.keys()));
+
     // Add new layers
+    console.log('[MapViewer] Adding new layers...');
     visibleLayerIds.forEach((layerId) => {
       if (!layerRefs.current.has(layerId)) {
         const layerInfo = allLayers.find((l) => l.id === layerId);
@@ -198,8 +211,13 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
         map.addLayer(wmsLayer);
         layerRefs.current.set(layerId, wmsLayer);
         console.log(`[MapViewer] Layer added to map. Total layers: ${map.getLayers().getLength()}`);
+      } else {
+        console.log(`[MapViewer] Layer ${layerId} already exists in layerRefs, skipping`);
       }
     });
+
+    console.log('[MapViewer] Final layers in layerRefs:', Array.from(layerRefs.current.keys()));
+    console.log('[MapViewer] Final map layer count:', map.getLayers().getLength());
   }, [visibleLayerIds]);
 
   // Update opacity and z-index for existing layers when layerOpacities changes
