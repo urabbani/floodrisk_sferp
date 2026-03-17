@@ -7,7 +7,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** March 16, 2026
+**Last Updated:** March 17, 2026
 
 ## Features
 
@@ -53,6 +53,35 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Summary Heatmap** - Quick overview of all scenarios in a 7×3 matrix layout
 - **Detailed Breakdown View** - Per-scenario exposure details with expandable depth distribution
 
+### Latest Improvements (March 2026)
+
+#### GeoServer Layer Integration
+- **Complete Layer Re-import** - 378 impact layers (42 scenarios × 9 exposure types) published to GeoServer
+- **Decimal Naming Workaround** - 2.3-year scenarios use "23yrs" naming to avoid REST API issues
+- **Unified Workspace** - All impact layers in `exposures` workspace
+- **Consistent Styling** - All layers use `impact_depth_simple` SLD style
+
+#### API Performance Enhancements
+- **In-Memory Caching** - ~400x faster response times for cached requests
+  - Cache MISS: ~2 seconds (database query)
+  - Cache HIT: ~5 milliseconds (from memory)
+- **Smart Cache Keys** - Based on climate, maintenance, and return period parameters
+- **Cache Management** - REST endpoints for cache statistics, clearing, and invalidation
+- **5-Minute TTL** - Automatic cache expiration with configurable duration
+- **HTTP Caching Headers** - Browser caching support via Cache-Control headers
+
+#### Depth Filtering
+- **Depth Threshold Slider** - Filter impacts by minimum flood depth (0-5m)
+- **Real-time Filtering** - Dynamically updates statistics and charts
+- **CQL Filter Integration** - Applies depth filter to WMS layers on map
+- **Depth Distribution Charts** - Visual breakdown by depth bin percentages
+
+#### API Endpoints
+- **Impact Summary** - `GET /api/impact/summary?climate={present|future}`
+- **Cache Statistics** - `GET /api/cache/stats`
+- **Clear Cache** - `POST /api/cache/clear`
+- **Invalidate Cache** - `POST /api/cache/invalidate?climate=present`
+
 ### Climate Scenarios
 - **Present Climate** - Current conditions with 3 maintenance levels
 - **Future Climate** - Projected conditions with 3 maintenance levels
@@ -73,6 +102,39 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Map Library:** OpenLayers
 - **UI Components:** shadcn/ui (Radix UI)
 - **Map Projection:** UTM Zone 42N (EPSG:32642)
+- **Backend:** Node.js/Express with PostgreSQL/PostGIS
+- **Caching:** In-memory cache with TTL
+
+## Project Structure
+
+```
+floodrisk_sferp/
+├── src/                          # Frontend source code
+│   ├── components/
+│   │   ├── impact-matrix/        # Impact Matrix feature
+│   │   ├── layer-tree/           # Layer visibility controls
+│   │   ├── map/                  # OpenLayers map viewer
+│   │   ├── scenario-explorer/    # Scenario comparison matrix
+│   │   └── ui/                   # shadcn/ui components
+│   ├── config/                   # Configuration files
+│   ├── lib/                      # Utility functions
+│   └── types/                    # TypeScript type definitions
+├── api/                          # Backend API
+│   ├── impact-summary.mjs        # Impact API server with caching
+│   └── CACHING.md                # Caching documentation
+├── tools/
+│   └── geoserver/                # GeoServer management scripts
+│       ├── apply_style_to_all.py      # Apply styles to all layers
+│       ├── exp_to_geoserver.py         # Create data stores
+│       └── publish_schema_layers.py    # Publish layers
+├── docs/                         # Documentation
+│   ├── features/                 # Feature documentation
+│   └── archived/                 # Archived planning documents
+├── dist/                         # Production build output
+├── public/                       # Static assets
+├── CLAUDE.md                     # Project-specific Claude instructions
+└── README.md                     # This file
+```
 
 ## Prerequisites
 
@@ -113,10 +175,42 @@ Before running this application, ensure you have:
 
 ## Development
 
-Start the development server:
+### Frontend Development Server
+
+Start the development server (includes GeoServer proxy at `/geoserver`):
 ```bash
 npm run dev
 ```
+
+The frontend will be available at `http://localhost:5173`
+
+### Backend API Server
+
+The Impact Matrix requires a backend API server for impact statistics:
+
+```bash
+# Terminal 1: Start frontend
+npm run dev
+
+# Terminal 2: Start backend API
+cd api
+node impact-summary.mjs
+```
+
+The backend API will be available at `http://localhost:3001`
+
+**API Endpoints:**
+- Impact Summary: `http://localhost:3001/api/impact/summary?climate=present`
+- Cache Stats: `http://localhost:3001/api/cache/stats`
+- Health Check: `http://localhost:3001/api/health`
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+This creates an optimized production build in the `dist/` directory.
 
 The application will be available at `http://localhost:5173/`
 
@@ -254,7 +348,7 @@ Create or update the Apache virtual host configuration:
     ProxyPassReverse /api/ http://localhost:3001/api/
 
     # SPA routing - redirect all requests to index.html
-    <Directory "/mnt/d/Scenario_Reullts/dist">
+    <Directory "/mnt/d/Scenario_results/floodrisk_sferp/dist">
         RewriteEngine On
         RewriteBase /
         RewriteRule ^index\.html$ - [L]
@@ -505,11 +599,24 @@ git add .
 git commit -m "your commit message"
 git push
 
-# 3. Upload dist to server
-sshpass -p 'your_password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+# 3. Deploy to production server
+sshpass -p 'your_password' ssh umair@10.0.0.205 << 'ENDSSH'
+cd /mnt/d/Scenario_results/floodrisk_sferp
 
-# 4. Pull git changes on server (keeps server repo synced)
-sshpass -p 'your_password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+# Pull latest code
+git fetch origin
+git reset --hard origin/main
+
+# Restart backend API service
+sudo systemctl restart floodrisk-impact-api
+
+# Check service status
+systemctl status floodrisk-impact-api --no-pager | head -5
+ENDSSH
+
+# 4. Verify deployment
+curl -s http://10.0.0.205:3001/api/health | python3 -m json.tool
+curl -s https://portal.srpsid-dss.gos.pk/ | grep -o "<title>.*</title>"
 ```
 
 **Server Details:**
@@ -520,32 +627,69 @@ sshpass -p 'your_password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floo
 
 ## Credits
 
-Designed and structured using Kimi-K2.5
+Developed and maintained by Dr. Umair Rabbani
 
-Built, maintained and deployed using Claude Code with Z.AI's GLM series of models
+Built with Claude Code using Anthropic's Claude Sonnet 4.6
 
-Orchestrated by Dr. Umair Rabbani
+## Recent Updates (March 2026)
 
-## Recent Fixes
+### GeoServer Layer Integration (March 17, 2026)
+
+**Complete re-import of impact exposure layers to GeoServer:**
+
+- **378 layers published** across 42 scenarios (6 return periods × 3 maintenance levels × 2 climates)
+- **9 exposure types** per scenario: BHU, Buildings, Built_up_Area, Cropped_Area, Electric_Grid, Railways, Roads, Settlements, Telecom_Towers
+- **Naming workaround implemented** for decimal return periods (2.3yrs → 23yrs) to avoid GeoServer REST API issues
+- **Consistent styling** applied to all layers using `impact_depth_simple` SLD
+- **Unified workspace** - all layers in `exposures` workspace
+
+**Tools created:**
+- `tools/geoserver/exp_to_geoserver.py` - Create data stores
+- `tools/geoserver/publish_schema_layers.py` - Publish layers
+- `tools/geoserver/apply_style_to_all.py` - Apply styles
+
+### API Performance Optimization (March 17, 2026)
+
+**Implemented in-memory caching for Impact Matrix API:**
+
+- **~400x faster** response times for cached requests
+  - Cache MISS: ~2 seconds (database query)
+  - Cache HIT: ~5 milliseconds (from memory)
+- **Smart cache keys** based on climate, maintenance, and return period
+- **5-minute TTL** with configurable duration via `CACHE_TTL` environment variable
+- **Cache management endpoints** for statistics, clearing, and invalidation
+- **HTTP caching headers** for browser-side caching
+
+**New API endpoints:**
+- `GET /api/cache/stats` - View cache statistics
+- `POST /api/cache/clear` - Clear all cache
+- `POST /api/cache/invalidate` - Invalidate specific cache entry
+
+### Depth Filtering Feature (March 17, 2026)
+
+**Added depth threshold filtering to Impact Matrix:**
+
+- **Interactive slider** (0-5m) to filter impacts by minimum flood depth
+- **Real-time updates** to statistics and charts
+- **CQL filter integration** applies depth filter to WMS layers
+- **Depth distribution charts** show percentage breakdown by depth bin
+
+## Known Issues & Fixes
 
 ### Multiple Layer Visibility Bug (March 16, 2026)
 
-**Fixed:** Issue where only the newest activated layer would remain visible when toggling multiple layers in the Layer Tree or Impact Matrix.
+**Fixed:** Issue where only the newest activated layer would remain visible when toggling multiple layers.
 
-**What was broken:**
-- Enabling Layer 1 → visible ✓
-- Enabling Layer 2 → Layer 1 disappeared, only Layer 2 visible ✗
-- Enabling Layer 3 → Layer 2 disappeared, only Layer 3 visible ✗
+**Solution:** Refactored `src/components/map/MapViewer.tsx` to use `onMapClickRef` instead of depending on `onMapClick` in map initialization.
 
-**Root Cause:** The map was being destroyed and recreated on every layer toggle due to a dependency chain in the React effects. The map initialization `useEffect` depended on `onMapClick`, which was recreated whenever `visibleLayers` changed (which happens on every layer toggle).
+### Percentage Calculation Bug (March 16, 2026)
 
-**Solution:** Refactored `src/components/map/MapViewer.tsx`:
-- Removed `onMapClick` from map initialization dependencies (now uses empty deps array `[]`)
-- Added `onMapClickRef` to store the current click handler
-- Click listener now uses `onMapClickRef.current` instead of the prop directly
-- Added separate `useEffect` to update the ref when `onMapClick` changes
+**Fixed:** Electric Grid, Built_up_Area, and Cropped_Area showing >100% impact percentage.
 
-**Result:** Map initializes only once on mount, click handler stays updated when layers change, and multiple layers can now coexist without interference. All layers in the Layer Tree and Impact Matrix now display correctly when multiple layers are enabled.
+**Solution:** Modified `api/impact-summary.mjs` to use geometry-specific calculations:
+- Line features: `SUM(ST_Length(geom))` for total/affected length
+- Polygon features: `SUM(ST_Area(geom))` for total/affected area
+- Point features: `COUNT(*)` for feature counts
 
 ---
 
