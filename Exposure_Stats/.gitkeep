@@ -1,0 +1,3 @@
+# This folder is for storing population statistics Excel files
+# Files are loaded into the database via api/load-population-stats.mjs
+# After loading, files are removed and only this folder structure remains
