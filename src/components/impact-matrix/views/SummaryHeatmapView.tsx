@@ -6,6 +6,7 @@ import type { ScenarioImpactSummary } from '@/types/impact';
 import { returnPeriods, maintenanceLevels } from '@/types/layers';
 import { formatMaintenanceLabel } from '@/types/impact';
 import { ImpactCell } from '../components/ImpactCell';
+import { DepthThresholdSlider } from '../components/DepthThresholdSlider';
 
 // Return period intensity levels for color gradient (lightest to darkest)
 const RETURN_PERIOD_COLORS = {
@@ -40,6 +41,16 @@ interface SummaryHeatmapViewProps {
   onScenarioClick: (scenario: ScenarioImpactSummary) => void;
 
   /**
+   * Current depth threshold value (in meters)
+   */
+  depthThreshold: number;
+
+  /**
+   * Callback when depth threshold changes
+   */
+  onDepthThresholdChange: (threshold: number) => void;
+
+  /**
    * Additional class names
    */
   className?: string;
@@ -62,6 +73,8 @@ export function SummaryHeatmapView({
   selectedScenario,
   isLoading = false,
   onScenarioClick,
+  depthThreshold,
+  onDepthThresholdChange,
   className,
 }: SummaryHeatmapViewProps) {
   const [hoveredScenario, setHoveredScenario] = useState<ScenarioImpactSummary | null>(null);
@@ -192,6 +205,17 @@ export function SummaryHeatmapView({
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Depth Threshold Slider */}
+      <div className="px-4 py-3 bg-white rounded-lg border border-slate-200">
+        <DepthThresholdSlider
+          value={depthThreshold}
+          onChange={onDepthThresholdChange}
+          min={0}
+          max={5}
+          step={0.1}
+        />
       </div>
 
       {/* Heatmap Matrix */}

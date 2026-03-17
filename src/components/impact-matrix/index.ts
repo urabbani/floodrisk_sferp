@@ -3,3 +3,4 @@
 
 export { ImpactMatrix } from './ImpactMatrix';
 export type { ImpactMatrixProps } from './ImpactMatrix';
+export { DepthThresholdSlider } from './components/DepthThresholdSlider';

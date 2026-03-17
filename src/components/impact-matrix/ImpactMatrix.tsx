@@ -12,6 +12,7 @@ import { SummaryHeatmapView } from './views/SummaryHeatmapView';
 import { DetailedBreakdownView } from './views/DetailedBreakdownView';
 import type { LayerInfo } from '@/types/layers';
 import { EXPOSURE_LAYER_GEOMETRY, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
+import { filterScenariosByThreshold, createCQLFilterForThreshold } from '@/lib/depth-filter';
 
 // View types for the impact matrix
 type ImpactView = 'summary' | 'detail' | 'compare';
@@ -66,6 +67,7 @@ export function ImpactMatrix({
   const [currentView, setCurrentView] = useState<ImpactView>('summary');
   const [selectedClimate, setSelectedClimate] = useState<'present' | 'future'>(initialClimate);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioImpactSummary | null>(null);
+  const [depthThreshold, setDepthThreshold] = useState<number>(0); // Depth filter in meters
 
   // Build query for the hook (memoized to prevent unnecessary refetches)
   const query: ImpactSummaryQuery = useMemo(() => ({
@@ -76,6 +78,41 @@ export function ImpactMatrix({
   const { data: impactData, isLoading, error, refetch } = useImpactData(query, {
     enabled: true,
   });
+
+  /**
+   * Handle depth threshold change
+   * This filters both the impact data and the map layers
+   */
+  const handleDepthThresholdChange = useCallback((threshold: number) => {
+    setDepthThreshold(threshold);
+    console.log('[ImpactMatrix] Depth threshold changed:', threshold);
+  }, []);
+
+  /**
+   * Filter impact data based on depth threshold
+   */
+  const filteredImpactData = useMemo(() => {
+    if (!impactData) return null;
+
+    if (depthThreshold === 0) {
+      // No filtering needed
+      return impactData;
+    }
+
+    // Apply depth threshold filtering
+    return {
+      ...impactData,
+      summaries: filterScenariosByThreshold(impactData.summaries, depthThreshold),
+    };
+  }, [impactData, depthThreshold]);
+
+  /**
+   * Get CQL filter for map layers based on depth threshold
+   */
+  const cqlFilter = useMemo(() => {
+    if (depthThreshold === 0) return undefined;
+    return createCQLFilterForThreshold(depthThreshold, true); // Use discrete bins
+  }, [depthThreshold]);
 
   /**
    * Handle climate change
@@ -164,6 +201,7 @@ export function ImpactMatrix({
           style: undefined,
           legendUrl: undefined,
           zIndex: geometryType === 'point' ? 150 : geometryType === 'line' ? 100 : 50,
+          filter: cqlFilter, // Apply CQL filter based on depth threshold
         };
       }
     );
@@ -171,11 +209,11 @@ export function ImpactMatrix({
     console.log('[ImpactMatrix] Impact layers created:', {
       scenarioId: selectedScenario.scenarioId,
       totalLayers: impactLayers.length,
-      layers: impactLayers.map(l => ({ id: l.id, workspace: l.workspace, name: l.name }))
+      layers: impactLayers.map(l => ({ id: l.id, workspace: l.workspace, name: l.name, filter: l.filter }))
     });
 
     onImpactLayersChange(impactLayers);
-  }, [selectedScenario, onImpactLayersChange]);
+  }, [selectedScenario, onImpactLayersChange, cqlFilter]);
 
   return (
     <div className={cn('bg-white rounded-lg border border-slate-200 flex flex-col h-full', className)}>
@@ -276,12 +314,14 @@ export function ImpactMatrix({
         )}
 
         {/* Summary View */}
-        {currentView === 'summary' && !isLoading && !error && impactData && (
+        {currentView === 'summary' && !isLoading && !error && filteredImpactData && (
           <SummaryHeatmapView
-            scenarios={impactData.summaries}
+            scenarios={filteredImpactData.summaries}
             selectedScenario={selectedScenario}
             isLoading={isLoading}
             onScenarioClick={handleScenarioClick}
+            depthThreshold={depthThreshold}
+            onDepthThresholdChange={handleDepthThresholdChange}
           />
         )}
 
@@ -293,6 +333,9 @@ export function ImpactMatrix({
             onLayerToggle={handleExposureToggle}
             onClose={handleBackToSummary}
             onRefresh={refetch}
+            depthThreshold={depthThreshold}
+            onDepthThresholdChange={handleDepthThresholdChange}
+            cqlFilter={cqlFilter}
           />
         )}
 

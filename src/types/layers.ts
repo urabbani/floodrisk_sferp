@@ -14,6 +14,11 @@ export interface LayerInfo {
   style?: string;
   legendUrl?: string;
   zIndex?: number;
+  /**
+   * CQL filter for WMS layers (e.g., "depth_bin >= 1.5")
+   * Used to filter features on the server side
+   */
+  filter?: string;
 }
 
 // Z-index priority based on geometry type

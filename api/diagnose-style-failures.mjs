@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Apply impact_depth_simple style to all impact layers in exposures workspace
+ * Diagnose which layers are failing to apply the style
  */
 
 import http from 'http';
 
 const GEOSERVER_HOST = '10.0.0.205';
 const GEOSERVER_PORT = 8080;
-const WORKSPACE = 'exp_revised';
+const WORKSPACE = 'exposures';
 const STYLE_NAME = 'impact_depth_simple';
 const AUTH = Buffer.from('admin:geoserver').toString('base64');
 
@@ -42,7 +42,7 @@ async function getLayers() {
   });
 }
 
-async function applyStyle(layerName, index, total) {
+async function applyStyle(layerName) {
   return new Promise((resolve) => {
     const payload = JSON.stringify({
       layer: {
@@ -69,19 +69,16 @@ async function applyStyle(layerName, index, total) {
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
-        const success = res.statusCode === 200;
-        if (success) {
-          process.stdout.write('.');
+        if (res.statusCode === 200) {
+          resolve({ success: true, layer: layerName });
         } else {
-          process.stdout.write('x');
+          resolve({ success: false, layer: layerName, status: res.statusCode, error: data });
         }
-        resolve(success);
       });
     });
 
     req.on('error', () => {
-      process.stdout.write('E');
-      resolve(false);
+      resolve({ success: false, layer: layerName, error: 'Connection error' });
     });
 
     req.write(payload);
@@ -93,29 +90,52 @@ async function main() {
   try {
     console.log('📋 Fetching layers from exposures workspace...');
     const layers = await getLayers();
-    console.log(`\n✅ Found ${layers.length} layers`);
-    console.log(`🎨 Applying ${STYLE_NAME} to all layers...\n`);
+    console.log(`✅ Found ${layers.length} layers\n`);
 
-    let successCount = 0;
-    let failCount = 0;
+    console.log('🔍 Testing style application...\n');
 
-    // Process in batches of 10 to avoid overwhelming the server
-    const batchSize = 10;
-    for (let i = 0; i < layers.length; i += batchSize) {
-      const batch = layers.slice(i, Math.min(i + batchSize, layers.length));
-      await Promise.all(batch.map((layerName) => applyStyle(layerName, i, layers.length)));
+    const failedLayers = [];
+    const successLayers = [];
 
-      // Progress indicator
-      const processed = Math.min(i + batchSize, layers.length);
-      console.log(`  ${processed}/${layers.length} processed...`);
+    for (let i = 0; i < layers.length; i++) {
+      const result = await applyStyle(layers[i]);
+      if (result.success) {
+        successLayers.push(result.layer);
+        process.stdout.write('.');
+      } else {
+        failedLayers.push(result);
+        process.stdout.write('x');
+      }
+
+      // Progress indicator every 50 layers
+      if ((i + 1) % 50 === 0) {
+        console.log(`  ${i + 1}/${layers.length} processed...`);
+      }
     }
 
-    console.log(`\n\n✨ Done! Style applied to layers`);
-    console.log('\n🔄 CRITICAL: Reload GeoServer NOW:');
-    console.log('   1. Go to: http://10.0.0.205:8080/geoserver/');
-    console.log('   2. Click "Config" in left sidebar');
-    console.log('   3. Click "Reload" button');
-    console.log('   4. Click "OK" to confirm');
+    console.log(`\n\n✅ Success: ${successLayers.length}`);
+    console.log(`❌ Failed: ${failedLayers.length}`);
+
+    if (failedLayers.length > 0) {
+      console.log('\n📋 Failed layers:');
+      failedLayers.forEach(f => {
+        console.log(`  - ${f.layer} (status: ${f.status || 'error'})`);
+      });
+
+      // Analyze patterns
+      console.log('\n🔍 Pattern analysis:');
+      const failedByType = {};
+      failedLayers.forEach(f => {
+        const parts = f.layer.split('_');
+        const layerType = parts[parts.length - 1]; // Last part is the layer type
+        failedByType[layerType] = (failedByType[layerType] || 0) + 1;
+      });
+
+      console.log('  Failures by layer type:');
+      Object.entries(failedByType).forEach(([type, count]) => {
+        console.log(`    ${type}: ${count}`);
+      });
+    }
 
   } catch (error) {
     console.error('❌ Error:', error.message);

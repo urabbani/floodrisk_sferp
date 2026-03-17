@@ -7,7 +7,7 @@ import http from 'http';
 
 const GEOSERVER_HOST = '10.0.0.205';
 const GEOSERVER_PORT = 8080;
-const WORKSPACE = 'exposures';
+const WORKSPACE = 'exp_revised';
 const STYLE_NAME = 'impact_depth_style';
 const AUTH = Buffer.from('admin:geoserver').toString('base64');
 

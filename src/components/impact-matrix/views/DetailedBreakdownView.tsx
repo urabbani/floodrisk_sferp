@@ -6,6 +6,8 @@ import type { ScenarioImpactSummary, ExposureLayerType } from '@/types/impact';
 import { EXPOSURE_LAYER_TYPES, formatDepthBinLabel, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
 import { ExposureRow } from '../components/ExposureRow';
 import { DepthDistributionChart } from '../components/DepthDistributionChart';
+import { DepthThresholdSlider } from '../components/DepthThresholdSlider';
+import { filterScenarioByThreshold } from '@/lib/depth-filter';
 
 interface DetailedBreakdownViewProps {
   /**
@@ -39,6 +41,21 @@ interface DetailedBreakdownViewProps {
   isLoading?: boolean;
 
   /**
+   * Current depth threshold value (in meters)
+   */
+  depthThreshold: number;
+
+  /**
+   * Callback when depth threshold changes
+   */
+  onDepthThresholdChange: (threshold: number) => void;
+
+  /**
+   * CQL filter to apply to map layers (based on depth threshold)
+   */
+  cqlFilter?: string;
+
+  /**
    * Additional class names
    */
   className?: string;
@@ -63,9 +80,18 @@ export function DetailedBreakdownView({
   onClose,
   onRefresh,
   isLoading = false,
+  depthThreshold,
+  onDepthThresholdChange,
+  cqlFilter,
   className,
 }: DetailedBreakdownViewProps) {
   const [sortBy, setSortBy] = useState<'name' | 'affected' | 'depth'>('affected');
+
+  // Filter scenario based on depth threshold
+  const filteredScenario = useMemo(() => {
+    if (depthThreshold === 0) return scenario;
+    return filterScenarioByThreshold(scenario, depthThreshold);
+  }, [scenario, depthThreshold]);
 
   // Sort exposure layers
   const sortedExposures = useMemo(() => {
@@ -77,8 +103,8 @@ export function DetailedBreakdownView({
 
       case 'affected':
         return exposures.sort((a, b) => {
-          const aImpact = scenario.impacts[a];
-          const bImpact = scenario.impacts[b];
+          const aImpact = filteredScenario.impacts[a];
+          const bImpact = filteredScenario.impacts[b];
           const aCount = aImpact?.affectedFeatures || 0;
           const bCount = bImpact?.affectedFeatures || 0;
           return bCount - aCount;
@@ -86,8 +112,8 @@ export function DetailedBreakdownView({
 
       case 'depth':
         return exposures.sort((a, b) => {
-          const aImpact = scenario.impacts[a];
-          const bImpact = scenario.impacts[b];
+          const aImpact = filteredScenario.impacts[a];
+          const bImpact = filteredScenario.impacts[b];
           const aDepth = aImpact?.maxDepthBin || '';
           const bDepth = bImpact?.maxDepthBin || '';
           const depthOrder = ['15-100cm', '1-2m', '2-3m', '3-4m', '4-5m', 'above5m'];
@@ -97,17 +123,17 @@ export function DetailedBreakdownView({
       default:
         return exposures;
     }
-  }, [scenario.impacts, sortBy]);
+  }, [filteredScenario.impacts, sortBy]);
 
   // Calculate summary stats for new 4-card design
   const summaryStats = useMemo(() => {
-    const impacts = scenario.impacts;
+    const impacts = filteredScenario.impacts;
 
     // Population Impact (if available)
-    const populationImpact = scenario.populationImpact ? {
-      total: scenario.populationImpact.totalPopulation,
-      affected: scenario.populationImpact.affectedPopulation,
-      percentage: scenario.populationImpact.affectedPercentage,
+    const populationImpact = filteredScenario.populationImpact ? {
+      total: filteredScenario.populationImpact.totalPopulation,
+      affected: filteredScenario.populationImpact.affectedPopulation,
+      percentage: filteredScenario.populationImpact.affectedPercentage,
     } : null;
 
     // Infrastructure Impact (Roads, Railways, Electric Grid, Telecom)
@@ -144,13 +170,13 @@ export function DetailedBreakdownView({
       infrastructurePercentage,
       agBuildingPercentage,
       affectedLayersCount,
-      severity: scenario.severity,
+      severity: filteredScenario.severity,
     };
-  }, [scenario.impacts, scenario.populationImpact, scenario.severity]);
+  }, [filteredScenario.impacts, filteredScenario.populationImpact, filteredScenario.severity]);
 
   // Handle layer visibility toggle
   const handleLayerToggle = useCallback((layerType: ExposureLayerType, visible: boolean) => {
-    // Get the GeoServer layer name from the impact data
+    // Get the GeoServer layer name from the impact data (use original scenario, not filtered)
     const impact = scenario.impacts[layerType];
     const layerName = impact?.geoserverLayer || `${scenario.scenarioId}_${layerType}`;
     onLayerToggle(layerName, visible);
@@ -158,7 +184,7 @@ export function DetailedBreakdownView({
 
   // Check if a layer is visible
   const isLayerVisible = useCallback((layerType: ExposureLayerType) => {
-    // Get the GeoServer layer name from the impact data
+    // Get the GeoServer layer name from the impact data (use original scenario, not filtered)
     const impact = scenario.impacts[layerType];
     const layerName = impact?.geoserverLayer || `${scenario.scenarioId}_${layerType}`;
     return visibleLayers.includes(layerName);
@@ -167,12 +193,12 @@ export function DetailedBreakdownView({
   // Toggle all layers on/off
   const handleToggleAll = useCallback((visible: boolean) => {
     EXPOSURE_LAYER_TYPES.forEach((layerType) => {
-      const impact = scenario.impacts[layerType];
+      const impact = filteredScenario.impacts[layerType];
       if (impact && impact.affectedFeatures > 0) {
         handleLayerToggle(layerType, visible);
       }
     });
-  }, [scenario.impacts, handleLayerToggle]);
+  }, [filteredScenario.impacts, handleLayerToggle]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -272,6 +298,17 @@ export function DetailedBreakdownView({
         </div>
       </div>
 
+      {/* Depth Threshold Slider */}
+      <div className="px-4 py-3 bg-white rounded-lg border border-slate-200">
+        <DepthThresholdSlider
+          value={depthThreshold}
+          onChange={onDepthThresholdChange}
+          min={0}
+          max={5}
+          step={0.1}
+        />
+      </div>
+
       {/* Actions Bar */}
       <div className="px-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -323,7 +360,7 @@ export function DetailedBreakdownView({
       {/* Exposure Layers List */}
       <div className="px-4 space-y-2">
         {/* Population Depth Distribution (if available) */}
-        {scenario.populationImpact && (
+        {filteredScenario.populationImpact && (
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <button
               onClick={() => {/* Population chart always expanded for now */}}
@@ -332,14 +369,14 @@ export function DetailedBreakdownView({
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-slate-800">Population Impact</span>
                 <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
-                  {scenario.populationImpact.affectedPopulation.toLocaleString(undefined, {maximumFractionDigits: 0})} people affected
+                  {filteredScenario.populationImpact.affectedPopulation.toLocaleString(undefined, {maximumFractionDigits: 0})} people affected
                 </span>
               </div>
             </button>
 
             <div className="p-4">
               <DepthDistributionChart
-                depthBins={scenario.populationImpact.depthBins.map(bin => ({
+                depthBins={filteredScenario.populationImpact.depthBins.map(bin => ({
                   range: bin.range,
                   count: bin.population,
                   percentage: bin.percentage,
@@ -350,7 +387,7 @@ export function DetailedBreakdownView({
         )}
 
         {sortedExposures.map((layerType) => {
-          const impact = scenario.impacts[layerType];
+          const impact = filteredScenario.impacts[layerType];
           const isVisible = isLayerVisible(layerType);
 
           return (

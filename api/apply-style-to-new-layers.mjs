@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * Apply impact_depth_simple style to all impact layers in exposures workspace
+ * Apply impact_depth_simple style to all newly published impact layers in exposures workspace
  */
 
 import http from 'http';
 
 const GEOSERVER_HOST = '10.0.0.205';
 const GEOSERVER_PORT = 8080;
-const WORKSPACE = 'exp_revised';
+const WORKSPACE = 'exposures';
 const STYLE_NAME = 'impact_depth_simple';
 const AUTH = Buffer.from('admin:geoserver').toString('base64');
 
@@ -42,7 +42,7 @@ async function getLayers() {
   });
 }
 
-async function applyStyle(layerName, index, total) {
+async function applyStyle(layerName) {
   return new Promise((resolve) => {
     const payload = JSON.stringify({
       layer: {
@@ -103,14 +103,19 @@ async function main() {
     const batchSize = 10;
     for (let i = 0; i < layers.length; i += batchSize) {
       const batch = layers.slice(i, Math.min(i + batchSize, layers.length));
-      await Promise.all(batch.map((layerName) => applyStyle(layerName, i, layers.length)));
+      const results = await Promise.all(batch.map((layerName) => applyStyle(layerName)));
+      successCount += results.filter(r => r).length;
+      failCount += results.filter(r => !r).length;
 
       // Progress indicator
       const processed = Math.min(i + batchSize, layers.length);
       console.log(`  ${processed}/${layers.length} processed...`);
     }
 
-    console.log(`\n\n✨ Done! Style applied to layers`);
+    console.log(`\n\n✨ Done! Applied style to ${successCount}/${layers.length} layers`);
+    if (failCount > 0) {
+      console.log(`⚠️  Failed: ${failCount} layers`);
+    }
     console.log('\n🔄 CRITICAL: Reload GeoServer NOW:');
     console.log('   1. Go to: http://10.0.0.205:8080/geoserver/');
     console.log('   2. Click "Config" in left sidebar');

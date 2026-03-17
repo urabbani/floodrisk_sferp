@@ -181,6 +181,7 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
               VERSION: GEOSERVER_CONFIG.wmsVersion,
               FORMAT: 'image/png',
               TRANSPARENT: true,
+              ...(layerInfo.filter && { CQL_FILTER: layerInfo.filter }), // Add CQL filter if present
             },
             serverType: 'geoserver',
             transition: 0,
@@ -214,6 +215,36 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
       }
     });
   }, [visibleLayerIds, layerOpacities, allLayers]);
+
+  // Update CQL filters for existing layers when allLayers change
+  useEffect(() => {
+    if (!mapInstance.current) return;
+
+    visibleLayerIds.forEach((layerId) => {
+      const layer = layerRefs.current.get(layerId);
+      const layerInfo = allLayers.find((l) => l.id === layerId);
+      if (!layer || !layerInfo) return;
+
+      const source = layer.getSource();
+      if (!source) return;
+
+      const currentFilter = layerInfo.filter;
+      const params = source.getParams();
+      const previousFilter = params.CQL_FILTER;
+
+      // Update filter if it has changed
+      if (currentFilter !== previousFilter) {
+        if (currentFilter) {
+          source.updateParams({ CQL_FILTER: currentFilter });
+          console.log(`[MapViewer] Applied CQL filter to ${layerId}:`, currentFilter);
+        } else {
+          // Remove filter by setting it to undefined
+          source.updateParams({ CQL_FILTER: undefined });
+          console.log(`[MapViewer] Removed CQL filter from ${layerId}`);
+        }
+      }
+    });
+  }, [visibleLayerIds, allLayers]);
 
   // Switch base map
   const switchBaseMap = useCallback((baseMapId: string) => {

@@ -442,7 +442,8 @@ async function processResults(rows, depthThreshold, pool) {
       affectedFeatures: affectedFeatures, // Use geometry-corrected affected measurement
       maxDepthBin: row.max_depth_bin,
       depthBins,
-      geoserverLayer: `T3_${row.return_period}yrs_${row.climate.charAt(0).toUpperCase() + row.climate.slice(1)}_${row.maintenance === 'redcapacity' ? 'RedCapacity' : row.maintenance.charAt(0).toUpperCase() + row.maintenance.slice(1)}_Impacted_${row.exposure_type}`,
+      // Handle 2.3yrs → 23yrs for GeoServer layer naming (decimal workaround)
+      geoserverLayer: `T3_${row.return_period.replace('2.3', '23')}yrs_${row.climate.charAt(0).toUpperCase() + row.climate.slice(1)}_${row.maintenance === 'redcapacity' ? 'RedCapacity' : row.maintenance.charAt(0).toUpperCase() + row.maintenance.slice(1)}_Impacted_${row.exposure_type}`,
       workspace: 'exposures',
       geometryType: geometryType,
     };

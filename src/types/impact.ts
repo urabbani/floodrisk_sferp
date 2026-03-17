@@ -240,6 +240,9 @@ export function buildImpactSchemaName(
  * Build GeoServer layer name for an impact layer
  * Pattern: {schema}_{exposureType}
  * Example: T3_25yrs_Present_Breaches_Impacted_Buildings
+ *
+ * NOTE: Handles 2.3yrs → 23yrs conversion for GeoServer compatibility
+ * (decimal points in layer names cause REST API issues)
  */
 export function buildImpactLayerName(
   returnPeriod: string,
@@ -248,12 +251,16 @@ export function buildImpactLayerName(
   exposureType: ExposureLayerType
 ): string {
   const schema = buildImpactSchemaName(returnPeriod, climate, maintenance);
-  return `${schema}_${exposureType}`;
+  // Replace 2.3yrs with 23yrs for GeoServer layer naming (decimal workaround)
+  const sanitizedSchema = schema.replace('2.3yrs', '23yrs');
+  return `${sanitizedSchema}_${exposureType}`;
 }
 
 /**
  * Parse scenario ID into components
  * Example: 'T3_25yrs_Present_Breaches_Impacted' -> { returnPeriod: '25', climate: 'present', maintenance: 'breaches' }
+ *
+ * Handles both 2.3yrs (database) and 23yrs (GeoServer) formats
  */
 export function parseScenarioId(scenarioId: string): {
   returnPeriod: string;
@@ -261,7 +268,9 @@ export function parseScenarioId(scenarioId: string): {
   maintenance: 'breaches' | 'redcapacity' | 'perfect';
 } | null {
   // Pattern: T3_{rp}yrs_{Climate}_{Maintenance}_Impacted
-  const match = scenarioId.match(/^T3_(\d+(?:\.\d+)?)yrs_(Present|Future)_(Breaches|RedCapacity|Perfect)_Impacted$/);
+  // Reverse the 23yrs → 2.3yrs conversion for parsing
+  const normalizedId = scenarioId.replace('23yrs', '2.3yrs');
+  const match = normalizedId.match(/^T3_(\d+(?:\.\d+)?)yrs_(Present|Future)_(Breaches|RedCapacity|Perfect)_Impacted$/);
   if (!match) return null;
 
   return {
