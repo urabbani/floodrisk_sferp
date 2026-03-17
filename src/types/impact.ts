@@ -216,7 +216,7 @@ export const SEVERITY_COLORS: Record<SeverityLevel, string> = {
 /**
  * GeoServer workspace for impact layers
  */
-export const IMPACT_LAYER_WORKSPACE = 'results';
+export const IMPACT_LAYER_WORKSPACE = 'exp_revised';
 
 /**
  * Build database schema name for an impact scenario
@@ -238,8 +238,8 @@ export function buildImpactSchemaName(
 
 /**
  * Build GeoServer layer name for an impact layer
- * Pattern: {schema}.{exposureType}
- * Example: T3_25yrs_Present_Breaches_Impacted.Buildings
+ * Pattern: {schema}_{exposureType}
+ * Example: T3_25yrs_Present_Breaches_Impacted_Buildings
  */
 export function buildImpactLayerName(
   returnPeriod: string,
@@ -248,7 +248,7 @@ export function buildImpactLayerName(
   exposureType: ExposureLayerType
 ): string {
   const schema = buildImpactSchemaName(returnPeriod, climate, maintenance);
-  return `${schema}.${exposureType}`;
+  return `${schema}_${exposureType}`;
 }
 
 /**
