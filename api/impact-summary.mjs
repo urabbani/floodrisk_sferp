@@ -19,6 +19,92 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// ============================================
+// SIMPLE IN-MEMORY CACHE WITH TTL
+// ============================================
+class Cache {
+  constructor(ttl = 300000) { // Default TTL: 5 minutes
+    this.cache = new Map();
+    this.ttl = ttl;
+  }
+
+  set(key, value) {
+    const expiry = Date.now() + this.ttl;
+    this.cache.set(key, { value, expiry });
+    console.log(`📦 Cache SET: ${key} (TTL: ${this.ttl}ms)`);
+  }
+
+  get(key) {
+    const item = this.cache.get(key);
+    if (!item) return null;
+
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      console.log(`📦 Cache EXPIRED: ${key}`);
+      return null;
+    }
+
+    console.log(`📦 Cache HIT: ${key}`);
+    return item.value;
+  }
+
+  has(key) {
+    const item = this.cache.get(key);
+    if (!item) return false;
+
+    if (Date.now() > item.expiry) {
+      this.cache.delete(key);
+      return false;
+    }
+
+    return true;
+  }
+
+  clear() {
+    this.cache.clear();
+    console.log('📦 Cache CLEARED');
+  }
+
+  delete(key) {
+    this.cache.delete(key);
+    console.log(`📦 Cache DELETE: ${key}`);
+  }
+
+  // Get cache statistics
+  getStats() {
+    const now = Date.now();
+    let validCount = 0;
+    let expiredCount = 0;
+
+    for (const [key, item] of this.cache.entries()) {
+      if (now > item.expiry) {
+        expiredCount++;
+      } else {
+        validCount++;
+      }
+    }
+
+    return {
+      totalEntries: this.cache.size,
+      validEntries: validCount,
+      expiredEntries: expiredCount,
+      ttl: this.ttl
+    };
+  }
+}
+
+// Initialize cache with 5-minute TTL (configurable via env var)
+const CACHE_TTL = parseInt(process.env.CACHE_TTL) || 300000; // 5 minutes default
+const cache = new Cache(CACHE_TTL);
+
+// Generate cache key from query parameters
+function generateCacheKey(climate, maintenance, returnPeriod) {
+  const parts = ['impact', climate];
+  if (maintenance && maintenance !== 'all') parts.push(maintenance);
+  if (returnPeriod) parts.push(returnPeriod);
+  return parts.join(':');
+}
+
 // Database connection
 const pool = new Pool({
   host: process.env.DB_HOST || '10.0.0.205',
@@ -259,6 +345,22 @@ app.get('/api/impact/summary', async (req, res) => {
       });
     }
 
+    // Check cache first (only cache when no depthThreshold filter)
+    const useCache = depthThreshold === '0';
+    const cacheKey = generateCacheKey(climate, maintenance, returnPeriod);
+
+    if (useCache && cache.has(cacheKey)) {
+      const cachedData = cache.get(cacheKey);
+
+      // Add cache headers
+      res.set('X-Cache', 'HIT');
+      res.set('Cache-Control', `public, max-age=${CACHE_TTL / 1000}`);
+
+      return res.json(cachedData);
+    }
+
+    res.set('X-Cache', 'MISS');
+
     // Build the query - use materialized view for better performance
     // Include population stats via LEFT JOIN
     let query = `
@@ -326,9 +428,22 @@ app.get('/api/impact/summary', async (req, res) => {
         metadata: {
           lastUpdated: new Date().toISOString(),
           totalScenarios: summaries.length,
+          cached: useCache, // Indicate if this response can be cached
         },
       },
     };
+
+    // Cache the response if appropriate
+    if (useCache) {
+      cache.set(cacheKey, response);
+    }
+
+    // Add cache headers for browser caching
+    if (useCache) {
+      res.set('Cache-Control', `public, max-age=${CACHE_TTL / 1000}`);
+    } else {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
 
     res.json(response);
   } catch (error) {
@@ -558,12 +673,66 @@ process.on('SIGTERM', () => {
 });
 
 /**
+ * Cache Management Endpoints
+ */
+
+// GET /api/cache/stats - Get cache statistics
+app.get('/api/cache/stats', (req, res) => {
+  const stats = cache.getStats();
+  res.json({
+    success: true,
+    data: stats,
+    message: `Cache: ${stats.validEntries} valid entries, ${stats.expiredEntries} expired entries`
+  });
+});
+
+// POST /api/cache/clear - Clear all cache
+app.post('/api/cache/clear', (req, res) => {
+  const beforeStats = cache.getStats();
+  cache.clear();
+  res.json({
+    success: true,
+    message: `Cache cleared. Removed ${beforeStats.totalEntries} entries.`,
+    data: {
+      entriesCleared: beforeStats.totalEntries
+    }
+  });
+});
+
+// POST /api/cache/invalidate - Invalidate specific cache entry
+app.post('/api/cache/invalidate', (req, res) => {
+  const { climate, maintenance, returnPeriod } = req.query;
+
+  if (!climate) {
+    return res.status(400).json({
+      success: false,
+      error: 'climate parameter is required'
+    });
+  }
+
+  const cacheKey = generateCacheKey(climate, maintenance || 'all', returnPeriod);
+  const existed = cache.has(cacheKey);
+  cache.delete(cacheKey);
+
+  res.json({
+    success: true,
+    message: existed ? `Cache entry invalidated: ${cacheKey}` : `Cache entry not found: ${cacheKey}`,
+    data: {
+      cacheKey,
+      invalidated: existed
+    }
+  });
+});
+
+/**
  * Start server
  */
 app.listen(PORT, () => {
   console.log(`Impact API server running on port ${PORT}`);
+  console.log(`Cache TTL: ${CACHE_TTL}ms (${CACHE_TTL / 1000}s)`);
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Impact summary: http://localhost:${PORT}/api/impact/summary?climate=present`);
+  console.log(`Cache stats: http://localhost:${PORT}/api/cache/stats`);
 });
 
 /**
