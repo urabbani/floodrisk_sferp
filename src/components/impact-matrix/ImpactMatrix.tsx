@@ -39,6 +39,12 @@ export interface ImpactMatrixProps {
   onImpactLayersChange?: (layers: LayerInfo[]) => void;
 
   /**
+   * Callback when the current view changes
+   * Notifies parent component of view state for dynamic UI adjustments
+   */
+  onViewChange?: (view: 'summary' | 'detail' | 'compare') => void;
+
+  /**
    * Initial climate to display
    */
   initialClimate?: 'present' | 'future';
@@ -61,6 +67,7 @@ export function ImpactMatrix({
   onLayerToggle,
   visibleLayers,
   onImpactLayersChange,
+  onViewChange,
   initialClimate = 'present',
   className,
 }: ImpactMatrixProps) {
@@ -165,6 +172,14 @@ export function ImpactMatrix({
     console.log('[ImpactMatrix] Climate changed, clearing impact layers');
     onImpactLayersChange?.([]);
   }, [selectedClimate, onImpactLayersChange]);
+
+  /**
+   * Notify parent when current view changes
+   * This allows parent to adjust UI constraints (e.g., max sidebar width)
+   */
+  useEffect(() => {
+    onViewChange?.(currentView);
+  }, [currentView, onViewChange]);
 
   /**
    * Build LayerInfo objects from impact data for the selected scenario

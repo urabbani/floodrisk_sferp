@@ -53,6 +53,7 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarView, setSidebarView] = useState<'layers' | 'impact'>('layers');
+  const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
   const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
@@ -63,7 +64,10 @@ function App() {
 
   // Minimum and maximum sidebar width
   const MIN_WIDTH = 200;
-  const MAX_WIDTH = 600;
+  // Dynamic max width: 75% for Compare view, 600px otherwise
+  const MAX_WIDTH = currentImpactView === 'compare'
+    ? Math.floor(window.innerWidth * 0.75)
+    : 600;
 
   // Handle sidebar resize
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -339,6 +343,7 @@ function App() {
                 onLayerToggle={handleLayerVisibilityChange}
                 visibleLayers={visibleLayerIds}
                 onImpactLayersChange={handleImpactLayersChange}
+                onViewChange={setCurrentImpactView}
                 className="h-full"
               />
             )}
