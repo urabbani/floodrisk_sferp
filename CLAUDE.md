@@ -328,6 +328,56 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
 - `src/lib/utils.ts`
 
+---
+
+### Dynamic Sidebar Width for Compare View (ADDED - March 18, 2026)
+
+**Feature:** Sidebar automatically expands to 75% width in Compare View for better chart readability.
+
+**Problem:** Compare View displays multiple charts and statistical visualizations that need more horizontal space. The 600px max-width constraint made charts feel cramped and reduced readability.
+
+**Solution:** Implemented view-aware dynamic max-width that adjusts based on current Impact Matrix view:
+
+1. **App Component State Tracking**:
+   ```typescript
+   const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
+   ```
+
+2. **Dynamic MAX_WIDTH Calculation**:
+   ```typescript
+   const MAX_WIDTH = currentImpactView === 'compare'
+     ? Math.floor(window.innerWidth * 0.75)
+     : 600;
+   ```
+
+3. **ImpactMatrix View Callback**:
+   ```typescript
+   // In ImpactMatrix.tsx
+   useEffect(() => {
+     onViewChange?.(currentView);
+   }, [currentView, onViewChange]);
+   ```
+
+**View-Aware Constraints:**
+- **Compare View**: 75% of viewport width (optimal for charts)
+- **Summary/Detail/Layers Views**: 600px max (sufficient for text content)
+
+**Technical Details:**
+- `onViewChange` prop added to `ImpactMatrixProps` interface
+- Parent App component tracks current view state
+- Resize logic remains unchanged, only max constraint adjusts
+- Seamless transition when switching between views
+
+**User Experience:**
+- Automatic adjustment when clicking between tabs
+- No user action required
+- Drag handle continues to work within new constraints
+- Charts have more space for labels, bars, and legends
+
+**Files Modified:**
+- `src/App.tsx` - Added currentImpactView state and dynamic MAX_WIDTH
+- `src/components/impact-matrix/ImpactMatrix.tsx` - Added onViewChange callback and useEffect
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior

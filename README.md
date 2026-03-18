@@ -94,6 +94,41 @@ The Compare View provides an intuitive way to compare Present vs Future climate 
 - Parallel API fetching (Present + Future)
 - Client-side delta calculations
 - Responsive design (works on all screen sizes)
+- **Dynamic Sidebar Width** - Expands to 75% for better chart readability
+
+---
+
+#### Dynamic Sidebar Width for Compare View (NEW - March 18, 2026)
+
+The sidebar automatically adjusts its maximum width based on the current view to optimize readability:
+
+**View-Aware Width Constraints:**
+- **Compare View**: Sidebar can expand to **75% of viewport width**
+- **Other Views** (Layers, Summary, Detail): Sidebar constrained to **600px max**
+
+**Why This Matters:**
+- Compare View displays multiple charts and statistical visualizations
+- Charts need more horizontal space for labels, bars, and legends
+- 75% width provides optimal viewing experience for graphical content
+- Other views (Layer Tree, Detail panels) work well with narrower width
+
+**Technical Implementation:**
+```typescript
+// Dynamic max-width calculation in App.tsx
+const MAX_WIDTH = currentImpactView === 'compare'
+  ? Math.floor(window.innerWidth * 0.75)
+  : 600;
+```
+
+**User Experience:**
+- Automatic adjustment when switching between views
+- Drag handle still works within the new constraints
+- No manual intervention required
+- Seamless transition between views
+
+**Files Modified:**
+- `src/App.tsx` - Added view state tracking and dynamic MAX_WIDTH
+- `src/components/impact-matrix/ImpactMatrix.tsx` - Added onViewChange callback
 
 ### Latest Improvements (March 2026)
 
