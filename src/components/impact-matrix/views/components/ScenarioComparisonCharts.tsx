@@ -139,12 +139,17 @@ function prepareExposureChartData(comparison: ScenarioComparison) {
     const delta = comparison.deltas[layerType];
 
     // Calculate percentage affected for Present and Future
-    const presentPercent = presentImpact
-      ? (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100
-      : 0;
-    const futurePercent = futureImpact
-      ? (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100
-      : 0;
+    // Handle null/undefined impacts safely
+    let presentPercent = 0;
+    let futurePercent = 0;
+
+    if (presentImpact && presentImpact.totalFeatures > 0) {
+      presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+    }
+
+    if (futureImpact && futureImpact.totalFeatures > 0) {
+      futurePercent = (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
+    }
 
     return {
       name: EXPOSURE_LAYER_LABELS[layerType],
@@ -165,6 +170,16 @@ function CustomTooltip({ active, payload }: any) {
   const presentBar = payload.find((p: any) => p.dataKey === 'present');
   const futureBar = payload.find((p: any) => p.dataKey === 'future');
 
+  // Safely extract and format values, handling undefined/NaN
+  const presentValue = presentBar?.value;
+  const futureValue = futureBar?.value;
+  const formattedPresent = (presentValue !== undefined && presentValue !== null && !isNaN(presentValue))
+    ? presentValue.toFixed(1)
+    : '0.0';
+  const formattedFuture = (futureValue !== undefined && futureValue !== null && !isNaN(futureValue))
+    ? futureValue.toFixed(1)
+    : '0.0';
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
       <p className="text-sm font-medium text-slate-800 mb-2">{data.name}</p>
@@ -172,19 +187,19 @@ function CustomTooltip({ active, payload }: any) {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-blue-500" />
           <span className="text-slate-600">Present:</span>
-          <span className="font-semibold tabular-nums">{presentBar?.value?.toFixed(1) || 0}%</span>
+          <span className="font-semibold tabular-nums">{formattedPresent}%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-red-500" />
           <span className="text-slate-600">Future:</span>
-          <span className="font-semibold tabular-nums">{futureBar?.value?.toFixed(1) || 0}%</span>
+          <span className="font-semibold tabular-nums">{formattedFuture}%</span>
         </div>
         <div className="pt-1 border-t border-slate-100">
           <span className={cn(
             'font-bold tabular-nums',
             data.delta > 5 ? 'text-red-600' : data.delta < -5 ? 'text-blue-600' : 'text-gray-400'
           )}>
-            {formatDelta(data.delta)}
+            {formatDelta(data.delta || 0)}
           </span>
         </div>
       </div>
@@ -200,17 +215,19 @@ function PopulationDepthComparison({ comparison }: { comparison: ScenarioCompari
     return null;
   }
 
-  const presentBins = comparison.baseline.populationImpact.depthBins;
-  const futureBins = comparison.comparison.populationImpact.depthBins;
+  const presentBins = comparison.baseline.populationImpact.depthBins || [];
+  const futureBins = comparison.comparison.populationImpact.depthBins || [];
 
   const chartData = presentBins.map((bin, index) => {
     const futureBin = futureBins[index];
+    const presentPopulation = bin?.population ?? 0;
+    const futurePopulation = futureBin?.population ?? 0;
     return {
-      range: formatDepthBinLabel(bin.range),
-      present: bin.population,
-      future: futureBin?.population || 0,
+      range: bin?.range ? formatDepthBinLabel(bin.range) : `Bin ${index + 1}`,
+      present: presentPopulation,
+      future: futurePopulation,
     };
-  });
+  }).filter(item => item !== null);
 
   return (
     <div className="bg-white rounded-lg border border-slate-200 p-4">
@@ -276,21 +293,28 @@ export function ScenarioComparisonCharts({
   infrastructureTypes.forEach((type) => {
     const presentImpact = comparison.baseline.impacts[type];
     const futureImpact = comparison.comparison.impacts[type];
-    if (presentImpact && futureImpact) {
-      infrastructurePresentAvg += (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
-      infrastructureFutureAvg += (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
-      infrastructureCount++;
+    if (presentImpact && futureImpact && presentImpact.totalFeatures > 0 && futureImpact.totalFeatures > 0) {
+      const presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+      const futurePercent = (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
+      if (!isNaN(presentPercent) && !isNaN(futurePercent)) {
+        infrastructurePresentAvg += presentPercent;
+        infrastructureFutureAvg += futurePercent;
+        infrastructureCount++;
+      }
     }
   });
 
   if (infrastructureCount > 0) {
     infrastructurePresentAvg /= infrastructureCount;
     infrastructureFutureAvg /= infrastructureCount;
+  } else {
+    infrastructurePresentAvg = 0;
+    infrastructureFutureAvg = 0;
   }
 
   const infrastructureDelta = {
     absolute: infrastructureFutureAvg - infrastructurePresentAvg,
-    relative: infrastructurePresentAvg !== 0
+    relative: infrastructurePresentAvg !== 0 && !isNaN(infrastructurePresentAvg)
       ? ((infrastructureFutureAvg - infrastructurePresentAvg) / infrastructurePresentAvg) * 100
       : 0,
     direction: infrastructureFutureAvg > infrastructurePresentAvg + 5 ? ('increase' as const)
@@ -308,21 +332,28 @@ export function ScenarioComparisonCharts({
   agBuildingTypes.forEach((type) => {
     const presentImpact = comparison.baseline.impacts[type];
     const futureImpact = comparison.comparison.impacts[type];
-    if (presentImpact && futureImpact) {
-      agBuildingPresentAvg += (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
-      agBuildingFutureAvg += (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
-      agBuildingCount++;
+    if (presentImpact && futureImpact && presentImpact.totalFeatures > 0 && futureImpact.totalFeatures > 0) {
+      const presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+      const futurePercent = (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
+      if (!isNaN(presentPercent) && !isNaN(futurePercent)) {
+        agBuildingPresentAvg += presentPercent;
+        agBuildingFutureAvg += futurePercent;
+        agBuildingCount++;
+      }
     }
   });
 
   if (agBuildingCount > 0) {
     agBuildingPresentAvg /= agBuildingCount;
     agBuildingFutureAvg /= agBuildingCount;
+  } else {
+    agBuildingPresentAvg = 0;
+    agBuildingFutureAvg = 0;
   }
 
   const agBuildingDelta = {
     absolute: agBuildingFutureAvg - agBuildingPresentAvg,
-    relative: agBuildingPresentAvg !== 0
+    relative: agBuildingPresentAvg !== 0 && !isNaN(agBuildingPresentAvg)
       ? ((agBuildingFutureAvg - agBuildingPresentAvg) / agBuildingPresentAvg) * 100
       : 0,
     direction: agBuildingFutureAvg > agBuildingPresentAvg + 5 ? ('increase' as const)
@@ -400,7 +431,10 @@ export function ScenarioComparisonCharts({
               type="number"
               stroke="#64748b"
               tick={{ fill: '#64748b', fontSize: 11 }}
-              tickFormatter={(value: number) => `${value.toFixed(0)}%`}
+              tickFormatter={(value: number) => {
+                if (value === undefined || value === null || isNaN(value)) return '0%';
+                return `${value.toFixed(0)}%`;
+              }}
             />
             <YAxis
               dataKey="name"
