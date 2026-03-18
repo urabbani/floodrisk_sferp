@@ -378,6 +378,81 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - `src/App.tsx` - Added currentImpactView state and dynamic MAX_WIDTH
 - `src/components/impact-matrix/ImpactMatrix.tsx` - Added onViewChange callback and useEffect
 
+---
+
+### Compare View UI Improvements (ADDED - March 18, 2026)
+
+**Enhancements:** Improved labels and formatting in Compare View for better user experience.
+
+#### 1. Maintenance Level Label Clarity
+
+**Issue:** "Flood 2022" label didn't indicate it was the Breaches maintenance level.
+
+**Solution:** Changed to "Flood 2022 (Breaches)" using the centralized `formatMaintenanceLabel()` utility.
+
+**Before:**
+```typescript
+// Hardcoded labels
+{comparison.baseline.maintenance === 'breaches'
+  ? 'Flood 2022'
+  : comparison.baseline.maintenance === 'redcapacity'
+    ? 'Reduced Capacity'
+    : 'Perfect Maintenance'}
+```
+
+**After:**
+```typescript
+// Using centralized formatting function
+{formatMaintenanceLabel(comparison.baseline.maintenance)}
+```
+
+**Result:** The word "Breaches" is now prominently displayed everywhere in the UI, making it unambiguous which maintenance level is being viewed.
+
+#### 2. Population Chart Integer Formatting
+
+**Issue:** Population Impact by Flood Depth chart showed:
+- Population with % sign (e.g., "262993.4%")
+- Decimal values on axis (e.g., "12345.6")
+- Misleading Depth Scale legend
+
+**Solution:** Created separate tooltip components and proper integer formatting.
+
+**Implementation:**
+
+1. **Created Two Tooltip Components:**
+   ```typescript
+   // For exposure percentages (keeps % sign)
+   function ExposureTooltip({ active, payload }: any) {
+     const formattedPresent = presentValue.toFixed(1);
+     return <span>{formattedPresent}%</span>;
+   }
+
+   // For population counts (integers only)
+   function PopulationTooltip({ active, payload }: any) {
+     const formattedPresent = Math.round(presentValue).toLocaleString();
+     return <span>{formattedPresent} people</span>;
+   }
+   ```
+
+2. **Updated XAxis Formatter:**
+   ```typescript
+   <XAxis
+     tickFormatter={(value: number) => Math.round(value).toLocaleString()}
+   />
+   ```
+
+3. **Removed Irrelevant Legend:**
+   - Removed "Depth Scale" legend from Population Depth Distribution chart
+   - Not relevant for Present vs Future comparison
+
+**Result:**
+- Population: "262,993 people" (integer with comma separators)
+- X-axis: "12,345" (whole numbers, no decimals)
+- Clean view without confusing legend
+
+**Files Modified:**
+- `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior

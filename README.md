@@ -80,7 +80,7 @@ The Compare View provides an intuitive way to compare Present vs Future climate 
 3. **Population Depth Distribution** - Horizontal bar chart showing:
    - Population in each depth bin (15-100cm, 1-2m, 2-3m, 3-4m, 4-5m, >5m)
    - Present vs Future comparison
-   - Color-coded depth scale legend
+   - Integer population counts with comma separators (e.g., "262,993 people")
 
 **Design Philosophy:**
 - Minimal UI, maximum insights
@@ -984,6 +984,48 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - `src/lib/utils.ts`
 
 **Performance Impact:** None - validation adds negligible overhead
+
+---
+
+### UI Improvements for Compare View (March 18, 2026)
+
+**Enhanced:** Compare View user experience with better labels and formatting.
+
+#### 1. Maintenance Level Labels
+**Fixed:** "Flood 2022" label now shows "Flood 2022 (Breaches)" for clarity.
+
+**What was changed:**
+- Compare View title now displays "25 Years • Flood 2022 (Breaches)"
+- Uses centralized `formatMaintenanceLabel()` utility function
+- Makes it unambiguous that Flood 2022 corresponds to Breaches maintenance level
+- The word "Breaches" is now prominently displayed everywhere in UI
+
+#### 2. Population Chart Formatting
+**Fixed:** Population Impact by Flood Depth chart shows integer counts instead of percentages.
+
+**What was changed:**
+- Removed % sign from population values (people count cannot be in %)
+- Format population as integers using `Math.round()` and `toLocaleString()`
+- X-axis now shows whole numbers with comma separators (e.g., "12,345")
+- Custom tooltip shows "X people" instead of "X%"
+- Removed Depth Scale legend (not relevant in this comparison view)
+
+**Before:**
+- Population: "262993.4%" ❌
+- X-axis: "12345.6" ❌
+
+**After:**
+- Population: "262,993 people" ✅
+- X-axis: "12,345" ✅
+
+**Technical Implementation:**
+- Created separate `PopulationTooltip` component for population data
+- Created `ExposureTooltip` for exposure percentages (keeps % sign)
+- Updated XAxis tickFormatter: `tickFormatter={(value) => Math.round(value).toLocaleString()}`
+- Each chart now has appropriate tooltip formatting
+
+**Files Modified:**
+- `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
 
 ## Known Issues
 
