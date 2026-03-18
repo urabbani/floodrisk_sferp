@@ -270,6 +270,64 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - Updated `src/types/impact.ts` - TypeScript types
 - Updated `src/components/impact-matrix/views/DetailedBreakdownView.tsx` - UI changes
 
+---
+
+### Compare View toFixed() Error (FIXED - March 18, 2026)
+
+**Issue:** Random white screen error in Compare View: `Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')`
+
+**Root Cause:** Chart components didn't validate for `undefined`, `null`, or `NaN` values before passing them to `toFixed()` calls and Recharts components. This occurred when:
+- API returned incomplete data for certain exposure layers
+- Division operations resulted in `NaN` (e.g., dividing by zero)
+- Population impact data had missing depth bins
+- Chart tooltips received undefined values
+
+**Solution:** Added comprehensive null/undefined/NaN validation throughout chart components:
+
+1. **CustomTooltip Component** - Safe value extraction:
+   ```typescript
+   const presentValue = presentBar?.value;
+   const formattedPresent = (presentValue !== undefined && presentValue !== null && !isNaN(presentValue))
+     ? presentValue.toFixed(1)
+     : '0.0';
+   ```
+
+2. **Chart Data Preparation** - Null checks before calculations:
+   ```typescript
+   if (presentImpact && presentImpact.totalFeatures > 0) {
+     presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+   }
+   ```
+
+3. **Infrastructure & Ag/Building Calculations** - NaN validation:
+   ```typescript
+   if (!isNaN(presentPercent) && !isNaN(futurePercent)) {
+     infrastructurePresentAvg += presentPercent;
+     infrastructureFutureAvg += futurePercent;
+   }
+   ```
+
+4. **Utility Functions** - Safe formatting:
+   ```typescript
+   export function formatCount(count: number): string {
+     if (count === undefined || count === null || isNaN(count)) {
+       return '0';
+     }
+     return count.toLocaleString();
+   }
+   ```
+
+5. **Population Depth Distribution** - Null coalescing:
+   ```typescript
+   const presentPopulation = bin?.population ?? 0;
+   ```
+
+**Result:** Compare View is now fully resilient to missing or invalid data. All chart components handle edge cases gracefully.
+
+**Files Modified:**
+- `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
+- `src/lib/utils.ts`
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior

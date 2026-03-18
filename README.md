@@ -7,7 +7,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** March 17, 2026
+**Last Updated:** March 18, 2026
 
 ## Features
 
@@ -863,6 +863,92 @@ psql -h 10.0.0.205 -U postgres -d postgres \
   -c "SELECT COUNT(*) FROM impact.population_stats;"
 # Expected: 42 scenarios
 ```
+
+---
+
+### Compare View toFixed() Error Fix (March 18, 2026)
+
+**Fixed:** Random white screen error in Compare View caused by undefined values being passed to `toFixed()`.
+
+**What was broken:**
+- Compare View would randomly crash with: `Uncaught TypeError: Cannot read properties of undefined (reading 'toFixed')`
+- White screen would appear, requiring page refresh
+- Error occurred intermittently when viewing Present vs Future climate comparisons
+
+**Root Cause:** Chart data preparation functions didn't validate for `undefined`, `null`, or `NaN` values before passing them to Recharts components and `toFixed()` calls. This could happen when:
+- API returned incomplete data for certain exposure layers
+- Division operations resulted in `NaN` (e.g., dividing by zero)
+- Population impact data had missing depth bins
+- Chart tooltips received undefined values
+
+**Solution:** Added comprehensive null/undefined/NaN validation throughout the chart components:
+
+1. **Enhanced CustomTooltip Component** (`ScenarioComparisonCharts.tsx`):
+   ```typescript
+   // Before: Would crash if value was undefined
+   <span>{presentBar?.value?.toFixed(1) || 0}%</span>
+
+   // After: Safe extraction with validation
+   const presentValue = presentBar?.value;
+   const formattedPresent = (presentValue !== undefined && presentValue !== null && !isNaN(presentValue))
+     ? presentValue.toFixed(1)
+     : '0.0';
+   ```
+
+2. **Safe Chart Data Preparation**:
+   ```typescript
+   // Check for null/undefined impacts before calculation
+   if (presentImpact && presentImpact.totalFeatures > 0) {
+     presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+   }
+   ```
+
+3. **Infrastructure & Ag/Building Calculations**:
+   ```typescript
+   // Validate before division and check for NaN
+   if (presentImpact && futureImpact && presentImpact.totalFeatures > 0 && futureImpact.totalFeatures > 0) {
+     const presentPercent = (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100;
+     const futurePercent = (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100;
+     if (!isNaN(presentPercent) && !isNaN(futurePercent)) {
+       infrastructurePresentAvg += presentPercent;
+       infrastructureFutureAvg += futurePercent;
+       infrastructureCount++;
+     }
+   }
+   ```
+
+4. **Enhanced Utility Functions** (`lib/utils.ts`):
+   ```typescript
+   export function formatCount(count: number): string {
+     if (count === undefined || count === null || isNaN(count)) {
+       return '0';
+     }
+     return count.toLocaleString();
+   }
+
+   export function formatDelta(delta: number): string {
+     if (delta === undefined || delta === null || isNaN(delta)) {
+       return '0.0%';
+     }
+     const sign = delta > 0 ? '+' : '';
+     return `${sign}${delta.toFixed(1)}%`;
+   }
+   ```
+
+5. **Population Depth Distribution**:
+   ```typescript
+   // Use null coalescing for safe defaults
+   const presentPopulation = bin?.population ?? 0;
+   const futurePopulation = futureBin?.population ?? 0;
+   ```
+
+**Result:** Compare View is now fully resilient to missing or invalid data. All chart components handle edge cases gracefully, preventing crashes and displaying "0" or "0.0%" for undefined values.
+
+**Files Modified:**
+- `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
+- `src/lib/utils.ts`
+
+**Performance Impact:** None - validation adds negligible overhead
 
 ## Known Issues
 
