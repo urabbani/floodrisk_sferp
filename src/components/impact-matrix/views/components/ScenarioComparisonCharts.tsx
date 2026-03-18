@@ -43,6 +43,7 @@ import {
   EXPOSURE_LAYER_TYPES,
   DEPTH_BIN_COLORS,
   formatDepthBinLabel,
+  formatMaintenanceLabel,
 } from '@/types/impact';
 import { cn } from '@/lib/utils';
 
@@ -366,11 +367,7 @@ export function ScenarioComparisonCharts({
       {/* Scenario Header */}
       <div className="text-center pb-4 border-b border-slate-200">
         <h2 className="text-lg font-semibold text-slate-800 text-balance">
-          {comparison.baseline.returnPeriod} Years • {comparison.baseline.maintenance === 'breaches'
-            ? 'Flood 2022'
-            : comparison.baseline.maintenance === 'redcapacity'
-              ? 'Reduced Capacity'
-              : 'Perfect Maintenance'}
+          {comparison.baseline.returnPeriod} Years • {formatMaintenanceLabel(comparison.baseline.maintenance)}
         </h2>
         <p className="text-sm text-slate-500 mt-1">Present vs Future Climate Comparison</p>
       </div>
