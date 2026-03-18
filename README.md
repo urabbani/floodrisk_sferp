@@ -59,7 +59,10 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Complete Layer Re-import** - 378 impact layers (42 scenarios × 9 exposure types) published to GeoServer
 - **Decimal Naming Workaround** - 2.3-year scenarios use "23yrs" naming to avoid REST API issues
 - **Unified Workspace** - All impact layers in `exposures` workspace
-- **Consistent Styling** - All layers use `impact_depth_simple` SLD style
+- **Geometry-Specific Styling** - Each layer type uses its own optimized style
+  - Point layers: `impact_depth_point` with 8px circles
+  - Line layers: `impact_depth_line` with 3px strokes
+  - Polygon layers: `impact_depth_polygon` with 80% opacity fills
 
 #### API Performance Enhancements
 - **In-Memory Caching** - ~400x faster response times for cached requests
@@ -640,7 +643,7 @@ Built with Claude Code using Anthropic's Claude Sonnet 4.6
 - **378 layers published** across 42 scenarios (6 return periods × 3 maintenance levels × 2 climates)
 - **9 exposure types** per scenario: BHU, Buildings, Built_up_Area, Cropped_Area, Electric_Grid, Railways, Roads, Settlements, Telecom_Towers
 - **Naming workaround implemented** for decimal return periods (2.3yrs → 23yrs) to avoid GeoServer REST API issues
-- **Consistent styling** applied to all layers using `impact_depth_simple` SLD
+- **Geometry-specific styling** applied using `impact_depth_point`, `impact_depth_line`, and `impact_depth_polygon` SLDs
 - **Unified workspace** - all layers in `exposures` workspace
 
 **Tools created:**

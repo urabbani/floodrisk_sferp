@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <StyledLayerDescriptor version="1.0.0" xmlns="http://www.opengis.net/sld" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink">
   <NamedLayer>
-    <Name>impact_depth_style</Name>
+    <Name>impact_depth_polygon</Name>
     <UserStyle>
-      <Title>Impact Depth Style</Title>
+      <Title>Impact Depth - Polygon Layers</Title>
       <FeatureTypeStyle>
         <Rule>
           <Name>above5m</Name>
@@ -16,7 +16,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#8B0000</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#5A0000</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
         <Rule>
@@ -30,7 +36,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#DC143C</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#A00E2A</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
         <Rule>
@@ -44,7 +56,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#FF6347</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#CC3F2E</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
         <Rule>
@@ -58,7 +76,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#FFA500</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#CC8400</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
         <Rule>
@@ -72,7 +96,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#FFD700</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#CCAD00</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
         <Rule>
@@ -86,7 +116,13 @@
           <PolygonSymbolizer>
             <Fill>
               <CssParameter name="fill">#90EE90</CssParameter>
+              <CssParameter name="fill-opacity">0.8</CssParameter>
             </Fill>
+            <Stroke>
+              <CssParameter name="stroke">#73BC73</CssParameter>
+              <CssParameter name="stroke-width">1</CssParameter>
+              <CssParameter name="stroke-opacity">0.8</CssParameter>
+            </Stroke>
           </PolygonSymbolizer>
         </Rule>
       </FeatureTypeStyle>

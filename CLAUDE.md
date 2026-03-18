@@ -152,7 +152,10 @@ sudo journalctl -u floodrisk-impact-api -f
 - **WMS Version:** 1.1.1
 - **Legend Graphics:** Dynamically generated via `GetLegendGraphic` request
 - **Development Proxy:** Vite proxies `/geoserver` → `http://10.0.0.205:8080`
-- **Impact Layer Styling:** All exposure layers use `impact_depth_simple` SLD style (depth-based coloring)
+- **Impact Layer Styling:** All exposure layers use geometry-specific SLD styles
+  - `impact_depth_point` - Point layers (BHU, Telecom_Towers, Settlements) with 8px circles
+  - `impact_depth_line` - Line layers (Electric_Grid, Railways, Roads) with 3px strokes
+  - `impact_depth_polygon` - Polygon layers (Buildings, Built_up_Area, Cropped_Area) with 80% opacity fills
 
 ### shadcn/ui Integration
 
