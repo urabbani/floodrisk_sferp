@@ -52,6 +52,48 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Interactive Layer Controls** - Toggle impact layers on the map directly from the Impact panel
 - **Summary Heatmap** - Quick overview of all scenarios in a 7×3 matrix layout
 - **Detailed Breakdown View** - Per-scenario exposure details with expandable depth distribution
+- **Compare View** - Side-by-side Present vs Future climate comparison with insightful charts
+
+#### Compare View Features (NEW - March 18, 2026)
+
+The Compare View provides an intuitive way to compare Present vs Future climate impacts:
+
+**Simple Scenario Selection:**
+- Return Period selector: 7 buttons (2.3, 5, 10, 25, 50, 100, 500 years)
+- Maintenance Level selector: 3 buttons (Breaches, Reduced Capacity, Perfect)
+- One-click scenario selection
+
+**Insightful Charts:**
+1. **Summary Cards** - 4 key metrics with delta indicators:
+   - Population Affected (with count change)
+   - Infrastructure Impact % (with percentage change)
+   - Agriculture & Buildings % (with percentage change)
+   - Severity Level (with change indicator: Medium→High, etc.)
+
+2. **Exposure Impact Comparison Chart** - Horizontal bar chart showing:
+   - All 9 exposure types side-by-side
+   - Present (blue) vs Future (red) bars
+   - Percentage scale (0-100%) for fair comparison
+   - Sorted by change magnitude (biggest increases first)
+   - Hover tooltips with exact values and percentages
+
+3. **Population Depth Distribution** - Horizontal bar chart showing:
+   - Population in each depth bin (15-100cm, 1-2m, 2-3m, 3-4m, 4-5m, >5m)
+   - Present vs Future comparison
+   - Color-coded depth scale legend
+
+**Design Philosophy:**
+- Minimal UI, maximum insights
+- No complex grids or multiple views
+- Everything visible on one screen
+- Diverging colors: 🔴 Red = increase, 🟢 Blue = decrease, ⚪ Gray = neutral
+- tabular-nums for all numeric data
+
+**Technical Implementation:**
+- Uses Recharts for visualizations
+- Parallel API fetching (Present + Future)
+- Client-side delta calculations
+- Responsive design (works on all screen sizes)
 
 ### Latest Improvements (March 2026)
 
@@ -635,6 +677,44 @@ Developed and maintained by Dr. Umair Rabbani
 Built with Claude Code using Anthropic's Claude Sonnet 4.6
 
 ## Recent Updates (March 2026)
+
+### Climate Comparison View (March 18, 2026)
+
+**Added Compare View to Impact Matrix for Present vs Future climate analysis:**
+
+**Key Features:**
+- Simple scenario selection (Return Period × Maintenance Level)
+- 4 summary cards showing key metrics with delta indicators
+- Exposure Impact Comparison chart using percentages (0-100% scale)
+- Population Depth Distribution chart by depth bin
+- All charts use Present (blue) vs Future (red) color coding
+- Diverging colors: 🔴 Red = increase, 🟢 Blue = decrease, ⚪ Gray = neutral
+
+**Charts Implemented:**
+1. Summary Cards: Population, Infrastructure, Ag/Buildings, Severity
+2. Exposure Impact Comparison: Horizontal bar chart for all 9 exposure types
+3. Population Depth Distribution: Horizontal bar chart by flood depth bin
+
+**Files Added:**
+- `src/components/impact-matrix/views/CompareView.tsx` - Main container with simple selectors
+- `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx` - Chart components
+- `src/components/impact-matrix/hooks/useCompareData.ts` - Data fetching with delta calculations
+- `src/hooks/use-media-query.ts` - Responsive design utilities
+
+**Design Philosophy:**
+- "Select a scenario, see the insights" - Minimal UI, maximum data
+- No complex grids, just clear visual comparisons
+- Percentage-based visualization makes all exposure types comparable
+- One-screen view, no scrolling needed
+
+**Usage:**
+1. Navigate to Flood Impact & Exposure panel
+2. Click "Compare" tab
+3. Select Return Period (e.g., "25 years")
+4. Select Maintenance Level (e.g., "Breaches")
+5. View charts showing Present vs Future comparison
+
+### GeoServer Layer Integration (March 17, 2026)
 
 ### GeoServer Layer Integration (March 17, 2026)
 
