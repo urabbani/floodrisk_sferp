@@ -320,8 +320,6 @@ export function ImpactMatrix({
             selectedScenario={selectedScenario}
             isLoading={isLoading}
             onScenarioClick={handleScenarioClick}
-            depthThreshold={depthThreshold}
-            onDepthThresholdChange={handleDepthThresholdChange}
           />
         )}
 
