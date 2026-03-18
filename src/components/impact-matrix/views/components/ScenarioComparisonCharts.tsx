@@ -130,6 +130,7 @@ function SummaryCard({
 
 /**
  * Exposure comparison chart data preparation
+ * Uses percentages instead of raw counts for better visualization
  */
 function prepareExposureChartData(comparison: ScenarioComparison) {
   return EXPOSURE_LAYER_TYPES.map((layerType) => {
@@ -137,10 +138,18 @@ function prepareExposureChartData(comparison: ScenarioComparison) {
     const futureImpact = comparison.comparison.impacts[layerType];
     const delta = comparison.deltas[layerType];
 
+    // Calculate percentage affected for Present and Future
+    const presentPercent = presentImpact
+      ? (presentImpact.affectedFeatures / presentImpact.totalFeatures) * 100
+      : 0;
+    const futurePercent = futureImpact
+      ? (futureImpact.affectedFeatures / futureImpact.totalFeatures) * 100
+      : 0;
+
     return {
       name: EXPOSURE_LAYER_LABELS[layerType],
-      present: presentImpact?.affectedFeatures || 0,
-      future: futureImpact?.affectedFeatures || 0,
+      present: presentPercent,
+      future: futurePercent,
       delta: delta?.relative || 0,
     };
   }).sort((a, b) => b.delta - a.delta); // Sort by delta magnitude
@@ -163,12 +172,12 @@ function CustomTooltip({ active, payload }: any) {
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-blue-500" />
           <span className="text-slate-600">Present:</span>
-          <span className="font-semibold tabular-nums">{presentBar?.value || 0}</span>
+          <span className="font-semibold tabular-nums">{presentBar?.value?.toFixed(1) || 0}%</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-red-500" />
           <span className="text-slate-600">Future:</span>
-          <span className="font-semibold tabular-nums">{futureBar?.value || 0}</span>
+          <span className="font-semibold tabular-nums">{futureBar?.value?.toFixed(1) || 0}%</span>
         </div>
         <div className="pt-1 border-t border-slate-100">
           <span className={cn(
@@ -382,11 +391,17 @@ export function ScenarioComparisonCharts({
         <h3 className="text-sm font-semibold text-slate-800 mb-4 text-balance">
           Exposure Impact Comparison (Present vs Future)
         </h3>
+        <p className="text-xs text-slate-500 mb-3">Percentage of features affected by flooding</p>
 
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={exposureChartData} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-            <XAxis type="number" stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
+            <XAxis
+              type="number"
+              stroke="#64748b"
+              tick={{ fill: '#64748b', fontSize: 11 }}
+              tickFormatter={(value: number) => `${value.toFixed(0)}%`}
+            />
             <YAxis
               dataKey="name"
               type="category"
