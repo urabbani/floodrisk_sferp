@@ -74,7 +74,7 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
   className,
   mode = 'compact',
 }) {
-  const { totalAffectedExposures, severity, returnPeriod, maintenance } = scenario;
+  const { severity, returnPeriod, maintenance } = scenario;
 
   // Get background color based on return period intensity
   const getBackgroundColor = () => {
@@ -139,13 +139,13 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
           {maintenanceLabel}
         </div>
 
-        {/* Affected Count */}
+        {/* Severity Indicator */}
         <div className="flex items-center justify-between">
-          <div className="text-xs">
-            <span className="font-semibold">{totalAffectedExposures}</span>
+          <div className="text-[9px] uppercase tracking-wider opacity-75">
+            {severity}
           </div>
 
-          {/* Severity Indicator */}
+          {/* Severity Dots */}
           <div className="flex gap-0.5">
             {[...Array(3)].map((_, i) => (
               <div
@@ -159,11 +159,6 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
               />
             ))}
           </div>
-        </div>
-
-        {/* Severity Label */}
-        <div className="text-[9px] uppercase tracking-wider opacity-75 mt-1">
-          {severity}
         </div>
       </button>
     );
@@ -187,17 +182,27 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
         backgroundColor: getBackgroundColor(),
         color: getTextColor(),
       }}
-      title={`${returnPeriod}yrs • ${maintenanceLabel} • ${totalAffectedExposures} affected (${severity})`}
+      title={`${returnPeriod}yrs • ${maintenanceLabel} • ${severity}`}
     >
-      {/* Affected Count */}
-      <div className="text-sm font-bold leading-none">
-        {totalAffectedExposures}
+      {/* Severity Dots */}
+      <div className="flex gap-0.5">
+        {[...Array(3)].map((_, i) => (
+          <div
+            key={i}
+            className="w-2 h-2 rounded-full"
+            style={{
+              backgroundColor: i < (severity === 'extreme' ? 3 : severity === 'high' ? 2 : severity === 'medium' ? 1 : 0)
+                ? 'currentColor'
+                : 'rgba(0,0,0,0.2)',
+            }}
+          />
+        ))}
       </div>
 
       {/* Hover Tooltip (CSS-based) */}
       {isHovered && (
         <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded whitespace-nowrap pointer-events-none">
-          {returnPeriod}yrs • {maintenanceLabel} • {totalAffectedExposures} affected
+          {returnPeriod}yrs • {maintenanceLabel} • {severity}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
         </div>
       )}

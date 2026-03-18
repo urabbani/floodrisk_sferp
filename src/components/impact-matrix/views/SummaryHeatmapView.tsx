@@ -265,10 +265,10 @@ export function SummaryHeatmapView({
           <div className="text-xs text-blue-900">
             <p className="font-medium mb-1">How to read this matrix:</p>
             <ul className="space-y-0.5 text-blue-800">
-              <li>• Each cell shows the number of exposure types affected (out of 9)</li>
               <li>• Colors indicate return period intensity: Light red (2.3yrs) → Dark red (500yrs)</li>
+              <li>• Dots show severity level: Low (1 dot) → Medium (2 dots) → High/Extreme (3 dots)</li>
               <li>• Click any cell to see detailed breakdown of affected exposures</li>
-              <li>• Hover over cells for quick info</li>
+              <li>• Hover over cells for quick scenario info</li>
             </ul>
           </div>
         </div>
