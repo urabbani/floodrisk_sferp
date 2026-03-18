@@ -342,10 +342,7 @@ export function ImpactMatrix({
 
         {/* Compare View */}
         {currentView === 'compare' && !isLoading && !error && (
-          <CompareView
-            onScenarioSelect={handleScenarioClick}
-            className="h-full"
-          />
+          <CompareView className="h-full" />
         )}
       </div>
 
