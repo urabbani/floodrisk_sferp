@@ -10,6 +10,7 @@ import type {
 import { useImpactData } from './hooks/useImpactData';
 import { SummaryHeatmapView } from './views/SummaryHeatmapView';
 import { DetailedBreakdownView } from './views/DetailedBreakdownView';
+import { CompareView } from './views/CompareView';
 import type { LayerInfo } from '@/types/layers';
 import { EXPOSURE_LAYER_GEOMETRY, formatClimateLabel, formatMaintenanceLabel } from '@/types/impact';
 import { filterScenariosByThreshold, createCQLFilterForThreshold } from '@/lib/depth-filter';
@@ -250,30 +251,32 @@ export function ImpactMatrix({
       </div>
 
       {/* Controls Bar */}
-      <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
-        <div className="flex items-center justify-between gap-4">
-          {/* Climate Selector */}
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-slate-600">Climate:</label>
-            <div className="flex gap-1">
-              {['present', 'future'].map((climate) => (
-                <button
-                  key={climate}
-                  onClick={() => handleClimateChange(climate as 'present' | 'future')}
-                  className={cn(
-                    'px-3 py-1.5 text-xs rounded-md transition-all capitalize',
-                    selectedClimate === climate
-                      ? 'bg-blue-600 text-white font-medium'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
-                  )}
-                >
-                  {climate}
-                </button>
-              ))}
+      {currentView !== 'compare' && (
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex-shrink-0">
+          <div className="flex items-center justify-between gap-4">
+            {/* Climate Selector */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-slate-600">Climate:</label>
+              <div className="flex gap-1">
+                {['present', 'future'].map((climate) => (
+                  <button
+                    key={climate}
+                    onClick={() => handleClimateChange(climate as 'present' | 'future')}
+                    className={cn(
+                      'px-3 py-1.5 text-xs rounded-md transition-all capitalize',
+                      selectedClimate === climate
+                        ? 'bg-blue-600 text-white font-medium'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
+                    )}
+                  >
+                    {climate}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Content Area */}
       <div className="relative flex-1 overflow-y-auto">
@@ -339,15 +342,10 @@ export function ImpactMatrix({
 
         {/* Compare View */}
         {currentView === 'compare' && !isLoading && !error && (
-          <div className="p-4">
-            <p className="text-sm text-slate-600 text-center py-8">
-              Comparative Analysis View
-              <br />
-              <span className="text-xs text-slate-500">
-                (To be implemented)
-              </span>
-            </p>
-          </div>
+          <CompareView
+            onScenarioSelect={handleScenarioClick}
+            className="h-full"
+          />
         )}
       </div>
 

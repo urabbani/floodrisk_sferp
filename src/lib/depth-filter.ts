@@ -131,8 +131,18 @@ export function filterScenarioByThreshold(
   scenario: ScenarioImpactSummary,
   threshold: number
 ): ScenarioImpactSummary {
-  // Filter each exposure impact
-  const filteredImpacts: ScenarioImpactSummary['impacts'] = {};
+  // Initialize filtered impacts with all exposure types set to null
+  const filteredImpacts: ScenarioImpactSummary['impacts'] = {
+    BHU: null,
+    Buildings: null,
+    Built_up_Area: null,
+    Cropped_Area: null,
+    Electric_Grid: null,
+    Railways: null,
+    Roads: null,
+    Settlements: null,
+    Telecom_Towers: null,
+  };
 
   Object.entries(scenario.impacts).forEach(([exposureType, impact]) => {
     if (!impact) {

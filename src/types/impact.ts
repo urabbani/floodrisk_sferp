@@ -352,3 +352,154 @@ export function formatDepthValue(depth: number): string {
 export function formatCount(count: number): string {
   return count.toLocaleString();
 }
+
+// ============================================================================
+// COMPARISON TYPES
+// ============================================================================
+
+/**
+ * Comparison mode for the Compare view
+ */
+export type ComparisonMode = 'climate' | 'maintenance' | 'trend';
+
+/**
+ * Delta calculation result for comparing two values
+ */
+export type ClimateDelta = {
+  absolute: number;  // Future - Present (or similar comparison)
+  relative: number;  // Percentage change
+  direction: 'increase' | 'decrease' | 'neutral';
+};
+
+/**
+ * Scenario comparison pair with delta calculations
+ */
+export type ScenarioComparison = {
+  baseline: ScenarioImpactSummary;  // Present or Perfect maintenance
+  comparison: ScenarioImpactSummary; // Future or other maintenance
+  deltas: Record<ExposureLayerType, ClimateDelta>;
+  populationDelta?: ClimateDelta;
+  infrastructureDelta?: ClimateDelta;
+  agBuildingDelta?: ClimateDelta;
+  severityChange?: 'increased' | 'decreased' | 'unchanged';
+};
+
+/**
+ * Complete comparison data for Present vs Future
+ */
+export type CompareData = {
+  present: ScenarioImpactSummary[];
+  future: ScenarioImpactSummary[];
+  deltas: ScenarioComparison[];
+  metadata: {
+    presentLastUpdated: string;
+    futureLastUpdated: string;
+  };
+};
+
+/**
+ * Props for ClimateComparisonView component
+ */
+export type ClimateComparisonViewProps = {
+  data: CompareData;
+  onScenarioSelect?: (scenario: ScenarioImpactSummary) => void;
+};
+
+/**
+ * Props for DeltaHeatmapCell component
+ */
+export type DeltaHeatmapCellProps = {
+  presentValue: number;
+  futureValue: number;
+  delta: number;
+  returnPeriod: string;
+  maintenance: string;
+  onClick?: () => void;
+};
+
+/**
+ * Props for ClimateSummaryCards component
+ */
+export type ClimateSummaryCardsProps = {
+  deltas: {
+    population: ClimateDelta;
+    infrastructure: ClimateDelta;
+    agBuilding: ClimateDelta;
+    severityChange: 'increased' | 'decreased' | 'unchanged';
+  };
+};
+
+// ============================================================================
+// COMPARISON CONSTANTS
+// ============================================================================
+
+/**
+ * Diverging color scale for delta visualization (ColorBrewer RdBu)
+ * Colorblind-safe, perceptually uniform
+ */
+export const DELTA_COLORS = {
+  largeDecrease: '#5E4FA2',    // Purple (-50% to -100%)
+  moderateDecrease: '#9E9AC8', // Lavender (-20% to -50%)
+  smallDecrease: '#D8DADD',    // Gray-blue (-5% to -20%)
+  neutral: '#F7F7F7',          // Light gray (-5% to +5%)
+  smallIncrease: '#FDD0A2',    // Light orange (+5% to +20%)
+  moderateIncrease: '#Fdae61', // Orange (+20% to +50%)
+  largeIncrease: '#D73027',    // Red (+50% to +100%)
+} as const;
+
+/**
+ * Get delta color based on percentage change
+ */
+export function getDeltaColor(delta: number): string {
+  if (delta < -50) return DELTA_COLORS.largeDecrease;
+  if (delta < -20) return DELTA_COLORS.moderateDecrease;
+  if (delta < -5) return DELTA_COLORS.smallDecrease;
+  if (delta <= 5) return DELTA_COLORS.neutral;
+  if (delta <= 20) return DELTA_COLORS.smallIncrease;
+  if (delta <= 50) return DELTA_COLORS.moderateIncrease;
+  return DELTA_COLORS.largeIncrease;
+}
+
+/**
+ * Calculate delta between two values
+ */
+export function calculateDelta(baseline: number, comparison: number): ClimateDelta {
+  const absolute = comparison - baseline;
+  const relative = baseline !== 0 ? (absolute / baseline) * 100 : 0;
+
+  let direction: 'increase' | 'decrease' | 'neutral' = 'neutral';
+  if (relative > 5) direction = 'increase';
+  else if (relative < -5) direction = 'decrease';
+
+  return { absolute, relative, direction };
+}
+
+/**
+ * Format delta for display with sign
+ */
+export function formatDelta(delta: number): string {
+  const sign = delta > 0 ? '+' : '';
+  return `${sign}${delta.toFixed(1)}%`;
+}
+
+/**
+ * Get severity change between two scenarios
+ */
+export function getSeverityChange(
+  baselineSeverity: SeverityLevel,
+  comparisonSeverity: SeverityLevel
+): 'increased' | 'decreased' | 'unchanged' {
+  const severityOrder: Record<SeverityLevel, number> = {
+    low: 0,
+    medium: 1,
+    high: 2,
+    extreme: 3,
+  };
+
+  const baselineLevel = severityOrder[baselineSeverity];
+  const comparisonLevel = severityOrder[comparisonSeverity];
+
+  if (comparisonLevel > baselineLevel) return 'increased';
+  if (comparisonLevel < baselineLevel) return 'decreased';
+  return 'unchanged';
+}

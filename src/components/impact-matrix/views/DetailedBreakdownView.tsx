@@ -82,7 +82,7 @@ export function DetailedBreakdownView({
   isLoading = false,
   depthThreshold,
   onDepthThresholdChange,
-  cqlFilter,
+  cqlFilter: _cqlFilter,
   className,
 }: DetailedBreakdownViewProps) {
   const [sortBy, setSortBy] = useState<'name' | 'affected' | 'depth'>('affected');
