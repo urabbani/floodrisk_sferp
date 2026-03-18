@@ -41,7 +41,6 @@ import {
   formatDelta,
   EXPOSURE_LAYER_LABELS,
   EXPOSURE_LAYER_TYPES,
-  DEPTH_BIN_COLORS,
   formatDepthBinLabel,
   formatMaintenanceLabel,
 } from '@/types/impact';
@@ -162,9 +161,9 @@ function prepareExposureChartData(comparison: ScenarioComparison) {
 }
 
 /**
- * Custom tooltip for bar chart
+ * Custom tooltip for exposure impact bar chart (percentages)
  */
-function CustomTooltip({ active, payload }: any) {
+function ExposureTooltip({ active, payload }: any) {
   if (!active || !payload || !payload.length) return null;
 
   const data = payload[0].payload;
@@ -209,6 +208,41 @@ function CustomTooltip({ active, payload }: any) {
 }
 
 /**
+ * Custom tooltip for population depth chart (integer counts)
+ */
+function PopulationTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0].payload;
+  const presentBar = payload.find((p: any) => p.dataKey === 'present');
+  const futureBar = payload.find((p: any) => p.dataKey === 'future');
+
+  // Format as integers (people count cannot be decimal)
+  const presentValue = presentBar?.value ?? 0;
+  const futureValue = futureBar?.value ?? 0;
+  const formattedPresent = Math.round(presentValue).toLocaleString();
+  const formattedFuture = Math.round(futureValue).toLocaleString();
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3">
+      <p className="text-sm font-medium text-slate-800 mb-2">{data.range}</p>
+      <div className="space-y-1 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-blue-500" />
+          <span className="text-slate-600">Present:</span>
+          <span className="font-semibold tabular-nums">{formattedPresent} people</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded bg-red-500" />
+          <span className="text-slate-600">Future:</span>
+          <span className="font-semibold tabular-nums">{formattedFuture} people</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Population depth distribution comparison
  */
 function PopulationDepthComparison({ comparison }: { comparison: ScenarioComparison }) {
@@ -239,7 +273,12 @@ function PopulationDepthComparison({ comparison }: { comparison: ScenarioCompari
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={chartData} layout="vertical">
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis type="number" stroke="#64748b" tick={{ fill: '#64748b', fontSize: 11 }} />
+          <XAxis
+            type="number"
+            stroke="#64748b"
+            tick={{ fill: '#64748b', fontSize: 11 }}
+            tickFormatter={(value: number) => Math.round(value).toLocaleString()}
+          />
           <YAxis
             dataKey="range"
             type="category"
@@ -247,31 +286,12 @@ function PopulationDepthComparison({ comparison }: { comparison: ScenarioCompari
             stroke="#64748b"
             tick={{ fill: '#64748b', fontSize: 11 }}
           />
-          <Tooltip content={<CustomTooltip />} />
+          <Tooltip content={<PopulationTooltip />} />
           <Legend />
           <Bar dataKey="present" fill="#3b82f6" name="Present" radius={[0, 4, 4, 0]} />
           <Bar dataKey="future" fill="#ef4444" name="Future" radius={[0, 4, 4, 0]} />
         </BarChart>
       </ResponsiveContainer>
-
-      {/* Legend with depth bin colors */}
-      <div className="mt-3 pt-3 border-t border-slate-100">
-        <p className="text-xs text-slate-500 mb-2">Depth Scale:</p>
-        <div className="flex flex-wrap gap-2">
-          {presentBins.map((bin) => (
-            <div
-              key={bin.range}
-              className="flex items-center gap-1 text-[10px] text-slate-600"
-            >
-              <div
-                className="w-3 h-3 rounded"
-                style={{ backgroundColor: DEPTH_BIN_COLORS[bin.range] }}
-              />
-              <span>{formatDepthBinLabel(bin.range)}</span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -440,7 +460,7 @@ export function ScenarioComparisonCharts({
               stroke="#64748b"
               tick={{ fill: '#64748b', fontSize: 10 }}
             />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+            <Tooltip content={<ExposureTooltip />} cursor={{ fill: 'transparent' }} />
             <Legend />
             <Bar dataKey="present" fill="#3b82f6" name="Present" radius={[0, 4, 4, 0]} />
             <Bar dataKey="future" fill="#ef4444" name="Future" radius={[0, 4, 4, 0]} />
