@@ -209,7 +209,7 @@ export function DetailedBreakdownView({
             {scenario.returnPeriod}yrs • {formatClimateLabel(scenario.climate)} • Maintenance Level: {formatMaintenanceLabel(scenario.maintenance)}
           </h3>
           <p className="text-xs text-slate-600">
-            {summaryStats.affectedLayersCount} of 9 exposure types affected
+            {summaryStats.affectedLayersCount} exposure types affected
           </p>
         </div>
 
@@ -293,7 +293,7 @@ export function DetailedBreakdownView({
             {summaryStats.severity.charAt(0).toUpperCase() + summaryStats.severity.slice(1)}
           </div>
           <div className="text-[9px] text-slate-400">
-            {summaryStats.affectedLayersCount} of 9 layers affected
+            {summaryStats.affectedLayersCount} layers affected
           </div>
         </div>
       </div>

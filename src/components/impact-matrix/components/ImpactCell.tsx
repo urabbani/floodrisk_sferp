@@ -143,7 +143,6 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
         <div className="flex items-center justify-between">
           <div className="text-xs">
             <span className="font-semibold">{totalAffectedExposures}</span>
-            <span className="opacity-75">/9</span>
           </div>
 
           {/* Severity Indicator */}
@@ -188,18 +187,17 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
         backgroundColor: getBackgroundColor(),
         color: getTextColor(),
       }}
-      title={`${returnPeriod}yrs • ${maintenanceLabel} • ${totalAffectedExposures}/9 affected (${severity})`}
+      title={`${returnPeriod}yrs • ${maintenanceLabel} • ${totalAffectedExposures} affected (${severity})`}
     >
       {/* Affected Count */}
       <div className="text-sm font-bold leading-none">
         {totalAffectedExposures}
-        <span className="text-[10px] font-normal opacity-75 leading-none">/9</span>
       </div>
 
       {/* Hover Tooltip (CSS-based) */}
       {isHovered && (
         <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded whitespace-nowrap pointer-events-none">
-          {returnPeriod}yrs • {maintenanceLabel} • {totalAffectedExposures}/9 affected
+          {returnPeriod}yrs • {maintenanceLabel} • {totalAffectedExposures} affected
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
         </div>
       )}

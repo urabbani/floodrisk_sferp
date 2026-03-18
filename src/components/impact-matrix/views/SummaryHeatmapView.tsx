@@ -162,7 +162,7 @@ export function SummaryHeatmapView({
           </div>
           <div>
             <div className="text-slate-500">Avg Affected</div>
-            <div className="font-semibold text-slate-800">{stats.averageAffected.toFixed(1)}/9</div>
+            <div className="font-semibold text-slate-800">{stats.averageAffected.toFixed(1)}</div>
           </div>
           <div>
             <div className="text-slate-500">High/Extreme</div>
