@@ -97,14 +97,14 @@ function SummaryCard({
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-slate-500">Present</span>
           <span className="text-sm font-semibold tabular-nums text-slate-800">
-            {formatCount(presentValue)}
+            {unit ? formatCount(presentValue) : formatCount(Math.round(presentValue))}
             {unit}
           </span>
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-slate-500">Future</span>
           <span className="text-sm font-semibold tabular-nums text-slate-800">
-            {formatCount(futureValue)}
+            {unit ? formatCount(futureValue) : formatCount(Math.round(futureValue))}
             {unit}
           </span>
         </div>
