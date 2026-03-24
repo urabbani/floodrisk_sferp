@@ -290,7 +290,7 @@ function App() {
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-slate-800">
-                {sidebarView === 'layers' ? 'Layers' : 'Impact Analysis'}
+                {sidebarView === 'layers' ? 'Hazard' : 'Impact Analysis'}
               </h2>
               <Button
                 variant="ghost"
@@ -313,7 +313,7 @@ function App() {
                 className="flex-1 gap-1.5 h-8 text-xs"
               >
                 <Layers className="w-3.5 h-3.5" />
-                Layers
+                Hazard
               </Button>
               <Button
                 variant={sidebarView === 'impact' ? 'default' : 'ghost'}
