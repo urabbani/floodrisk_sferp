@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<StyledLayerDescriptor version="1.0.0"
+  xsi:schemaLocation="http://www.opengis.net/sld StyledLayerDescriptor.xsd"
+  xmlns="http://www.opengis.net/sld"
+  xmlns:ogc="http://www.opengis.net/ogc"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <NamedLayer>
+    <Name>hydrosheds_streamnetwork</Name>
+    <UserStyle>
+      <Title>HydroSHEDS Stream Network</Title>
+      <Abstract>Stream network with flow accumulation threshold of 500. Values below 500 are transparent. Gradient coloring from light blue (small streams) to navy blue (major rivers).</Abstract>
+
+      <FeatureTypeStyle>
+        <!-- Rule 1: No data / Below threshold (0-500) - TRANSPARENT -->
+        <Rule>
+          <Name>Below Threshold (Transparent)</Name>
+          <ogc:Filter>
+            <ogc:PropertyIsLessThan>
+              <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+              <ogc:Literal>500</ogc:Literal>
+            </ogc:PropertyIsLessThan>
+          </ogc:Filter>
+          <RasterSymbolizer>
+            <Opacity>0</Opacity>
+          </RasterSymbolizer>
+        </Rule>
+
+        <!-- Rule 2: Small streams (500-1000) - Light Blue -->
+        <Rule>
+          <Name>Small Streams (500-1000)</Name>
+          <ogc:Filter>
+            <ogc:And>
+              <ogc:PropertyIsGreaterThanOrEqualTo>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>500</ogc:Literal>
+              </ogc:PropertyIsGreaterThanOrEqualTo>
+              <ogc:PropertyIsLessThan>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>1000</ogc:Literal>
+              </ogc:PropertyIsLessThan>
+            </ogc:And>
+          </ogc:Filter>
+          <RasterSymbolizer>
+            <Opacity>0.7</Opacity>
+            <ColorMap>
+              <ColorMapEntry color="#64B5F6" quantity="500" opacity="0.7"/>
+              <ColorMapEntry color="#42A5F5" quantity="1000" opacity="0.75"/>
+            </ColorMap>
+          </RasterSymbolizer>
+        </Rule>
+
+        <!-- Rule 3: Tributaries (1000-5000) - Medium Blue -->
+        <Rule>
+          <Name>Tributaries (1000-5000)</Name>
+          <ogc:Filter>
+            <ogc:And>
+              <ogc:PropertyIsGreaterThanOrEqualTo>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>1000</ogc:Literal>
+              </ogc:PropertyIsGreaterThanOrEqualTo>
+              <ogc:PropertyIsLessThan>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>5000</ogc:Literal>
+              </ogc:PropertyIsLessThan>
+            </ogc:And>
+          </ogc:Filter>
+          <RasterSymbolizer>
+            <Opacity>0.8</Opacity>
+            <ColorMap>
+              <ColorMapEntry color="#42A5F5" quantity="1000" opacity="0.75"/>
+              <ColorMapEntry color="#1E88E5" quantity="5000" opacity="0.8"/>
+            </ColorMap>
+          </RasterSymbolizer>
+        </Rule>
+
+        <!-- Rule 4: Major rivers (5000-10000) - Dark Blue -->
+        <Rule>
+          <Name>Major Rivers (5000-10000)</Name>
+          <ogc:Filter>
+            <ogc:And>
+              <ogc:PropertyIsGreaterThanOrEqualTo>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>5000</ogc:Literal>
+              </ogc:PropertyIsGreaterThanOrEqualTo>
+              <ogc:PropertyIsLessThan>
+                <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+                <ogc:Literal>10000</ogc:Literal>
+              </ogc:PropertyIsLessThan>
+            </ogc:And>
+          </ogc:Filter>
+          <RasterSymbolizer>
+            <Opacity>0.85</Opacity>
+            <ColorMap>
+              <ColorMapEntry color="#1E88E5" quantity="5000" opacity="0.8"/>
+              <ColorMapEntry color="#1565C0" quantity="10000" opacity="0.85"/>
+            </ColorMap>
+          </RasterSymbolizer>
+        </Rule>
+
+        <!-- Rule 5: Main stem rivers (10000+) - Navy Blue -->
+        <Rule>
+          <Name>Main Stem Rivers (10000+)</Name>
+          <ogc:Filter>
+            <ogc:PropertyIsGreaterThanOrEqualTo>
+              <ogc:PropertyName>GRAY_INDEX</ogc:PropertyName>
+              <ogc:Literal>10000</ogc:Literal>
+            </ogc:PropertyIsGreaterThanOrEqualTo>
+          </ogc:Filter>
+          <RasterSymbolizer>
+            <Opacity>0.9</Opacity>
+            <ColorMap>
+              <ColorMapEntry color="#1565C0" quantity="10000" opacity="0.85"/>
+              <ColorMapEntry color="#0D47A1" quantity="50000" opacity="0.9"/>
+            </ColorMap>
+          </RasterSymbolizer>
+        </Rule>
+      </FeatureTypeStyle>
+    </UserStyle>
+  </NamedLayer>
+</StyledLayerDescriptor>

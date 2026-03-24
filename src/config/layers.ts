@@ -141,9 +141,10 @@ export const layerTree: LayerGroup = {
       expanded: false,
       visible: false,
       children: [
-        createVectorLayer('Area of Interest', 'aoi', false, 0.6, GEOSERVER_CONFIG.workspaces.dem, 'polygon'),
-        createVectorLayer('Sindh Province', 'sindh_province', false, 0.4, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
-        createVectorLayer('Sub-Catchments', 'SubCatchments', false, 0.5, GEOSERVER_CONFIG.workspaces.dem, 'polygon'),
+        createRasterLayer('Area of Interest', 'aoi', false, 0.6, GEOSERVER_CONFIG.workspaces.dem, 'polygon'),
+        createRasterLayer('Sindh Province', 'sindh_province', false, 0.4, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
+        createRasterLayer('Sub-Catchments', 'SubCatchments', false, 0.5, GEOSERVER_CONFIG.workspaces.dem, 'polygon'),
+        createRasterLayer('Stream Network', 'hydrosheds_streamnetwork', false, 0.8, GEOSERVER_CONFIG.workspaces.dem, 'raster'),
       ],
     },
     
