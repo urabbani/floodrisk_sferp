@@ -46,7 +46,7 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   const layerOpacitiesRef = useRef<Record<string, number>>({});
   const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
   const onMapClickRef = useRef(onMapClick);
-  const [activeBaseMap, setActiveBaseMap] = useState('satellite');
+  const [activeBaseMap, setActiveBaseMap] = useState(baseMaps.find(bm => bm.visible)?.id || 'esri-dark');
   const [rotation, setRotation] = useState(0);
   const [mousePosition, setMousePosition] = useState<{ utm: string; latlon: string } | null>(null);
   const [copied, setCopied] = useState(false);
