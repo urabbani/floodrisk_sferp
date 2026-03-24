@@ -6,6 +6,7 @@ export const GEOSERVER_CONFIG = {
   workspaces: {
     results: 'results',
     dem: 'DEM',
+    public: 'public', // PostgreSQL database-backed layers (schema: public)
   },
   wmsVersion: '1.1.1',
 };
@@ -107,7 +108,7 @@ function generateFloodScenarioLayers(
 // Main layer tree structure matching QGIS project
 export const layerTree: LayerGroup = {
   id: 'root',
-  name: 'Layers',
+  name: 'Hazard',
   expanded: true,
   visible: true,
   children: [
@@ -141,9 +142,9 @@ export const layerTree: LayerGroup = {
       expanded: false,
       visible: false,
       children: [
-        createVectorLayer('Area of Interest', 'aoi', false, 0.6, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
+        createVectorLayer('Area of Interest', 'AOI', false, 0.6, GEOSERVER_CONFIG.workspaces.public, 'polygon'),
         createVectorLayer('Sindh Province', 'sindh_province', false, 0.4, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
-        createVectorLayer('Sub-Catchments', 'subcatchments', false, 0.5, GEOSERVER_CONFIG.workspaces.results, 'polygon'),
+        createVectorLayer('Sub-Catchments', 'SubCatchments', false, 0.5, GEOSERVER_CONFIG.workspaces.public, 'polygon'),
       ],
     },
     
