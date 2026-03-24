@@ -49,16 +49,22 @@ The application is built around a hierarchical layer tree structure defined in `
 
 **Layer Hierarchy:**
 ```
-Supporting Layers (AOI, Sindh Province, Sub-Catchments)
-Survey (DGPS points)
-Structures (Canal Network, Drains)
-Present Climate / Future Climate
-  └─ Maintenance: Breaches, Reduced Capacity, Perfect
-      └─ Parameters: Depth, Velocity, Duration, V×h
-          └─ Return Periods: 2.3, 5, 10, 25, 50, 100, 500 years
-Flood 2022 (Actual Event data)
-HDTM (GeoServer layer in DEM workspace: HDTM_1-9_1m)
+Hazard
+├─ Supporting Layers (AOI, Sindh Province, Sub-Catchments, Stream Network)
+├─ Survey (DGPS points)
+├─ Structures (Canal Network, Drains)
+├─ Present Climate / Future Climate
+│   └─ Maintenance: Breaches, Reduced Capacity, Perfect
+│       └─ Parameters: Depth, Velocity, Duration, V×h
+│           └─ Return Periods: 2.3, 5, 10, 25, 50, 100, 500 years
+├─ Flood 2022 (Actual Event data)
+└─ HDTM (GeoServer layer in DEM workspace: HDTM_1-9_1m)
 ```
+
+**GeoServer Workspaces:**
+- **results**: Static flood scenario layers (raster), survey points, structures
+- **DEM**: DEM layers (HDTM), AOI, SubCatchments, Stream Network (database-backed from public schema)
+- **exposures**: Impact exposure layers (378 layers across 42 scenarios, database-backed)
 
 ### Key Components
 

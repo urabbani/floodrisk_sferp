@@ -5,24 +5,25 @@ All notable changes to the Flood Risk Assessment application are documented in t
 ## [Unreleased]
 
 ### Added
-- In-memory caching for Impact Matrix API (~400x performance improvement)
-- Depth threshold filtering (0-5m slider) for impact analysis
-- Cache management endpoints (stats, clear, invalidate)
-- GeoServer layer management tools in `tools/geoserver/`
+- Stream Network layer (HydroSHEDS-derived, DEM:hydrosheds_streamnetwork)
+  - Flow accumulation threshold of 500 (values below transparent)
+  - Gradient coloring from light blue (small streams) to navy (major rivers)
+  - SLD styles provided in `styles/` directory
+- SLD styles for stream network with continuous gradient and rule-based options
+- Database-backed layers: AOI and SubCatchments from public schema
 
 ### Changed
-- GeoServer layer naming: 2.3yrs → 23yrs (decimal workaround)
-- Impact Matrix API returns cached metadata
-- Improved error handling for database connection pool
+- **BREAKING**: "Layers" sidebar tab renamed to "Hazard" for better clarity
+- AOI layer: results workspace → DEM workspace (database-backed, public.AOI)
+- SubCatchments layer: results workspace → DEM workspace (database-backed, public.SubCatchments)
+- Updated documentation to reflect new layer architecture and workspace configuration
+- Project structure cleanup (removed planning documents)
 
 ### Fixed
-- Apache config typo: "Scenario_Reullts" → "Scenario_results"
-- Cache population issue with API responses
+- N/A
 
 ### Performance
-- Cached API requests: ~5ms (down from ~2000ms)
-- Database query optimization with materialized views
-- Connection pool tuning (max: 10, min: 2, idle timeout: 10s)
+- N/A
 
 ## [1.2.0] - 2026-03-17
 

@@ -7,23 +7,25 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** March 18, 2026
+**Last Updated:** March 24, 2026
 
 ## Features
 
 ### Core Features
 - **Interactive Map Viewer** - OpenLayers-based map with dynamic north arrow and multiple base map options (Google Satellite, OpenStreetMap, Terrain)
-- **GeoServer Integration** - WMS services for flood scenario layers
+- **GeoServer Integration** - WMS services for flood scenario layers from multiple workspaces
 - **Layer Management** - Hierarchical layer tree with:
   - Group and individual layer visibility toggles
   - Opacity control for each layer
   - Expandable/collapsible groups
   - Active layers overlay showing all visible layers
   - Resizable sidebar panel
+- **Two-Panel Interface** - "Hazard" and "Impact" tabs for different analytical views
 - **Feature Identification** - Click on any layer (raster or vector) to view attributes via GeoServer WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position display in both UTM (Zone 42N) and Lat/Lon formats with copy-to-clipboard
 - **Swipe Compare Tool** - Side-by-side comparison of two different flood scenarios with synchronized pan/zoom
 - **Mobile Responsive** - Adaptive UI with sidebar toggle for mobile/desktop
+- **Stream Network** - HydroSHEDS-derived stream network visualization with flow accumulation threshold
 
 ### NEW: Impact Matrix Module
 - **Real-time Impact Analysis** - Comprehensive flood impact assessment across 42 scenarios per climate
@@ -350,16 +352,17 @@ floodrisk_sferp/
 All layers are defined in `src/config/layers.ts`. The layer tree structure is:
 
 ```
-Layers
+Hazard
 ├── Survey
 │   └── DGPS Survey Points
 ├── Structures
 │   ├── Canal Network
 │   └── Drains
 ├── Supporting Layers
-│   ├── Area of Interest
+│   ├── Area of Interest (database-backed, public.AOI)
 │   ├── Sindh Province
-│   └── Sub-Catchments
+│   ├── Sub-Catchments (database-backed, public.SubCatchments)
+│   └── Stream Network (HydroSHEDS-derived, flow accumulation >500)
 ├── Present Climate
 │   ├── Maintenance - Breaches
 │   │   └── Depth, Velocity, Duration, V×h
