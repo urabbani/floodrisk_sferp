@@ -13,8 +13,9 @@
  */
 
 import express from 'express';
-import { Pool } from 'pg';
+import pool from './db.mjs';
 import cors from 'cors';
+import annotationsRouter from './annotations.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -104,34 +105,6 @@ function generateCacheKey(climate, maintenance, returnPeriod) {
   if (returnPeriod) parts.push(returnPeriod);
   return parts.join(':');
 }
-
-// Database connection
-const pool = new Pool({
-  host: process.env.DB_HOST || '10.0.0.205',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'postgres',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'maltanadirSRV0',
-  max: 10, // Reduced from 20 to prevent connection exhaustion
-  min: 2, // Keep minimum connections alive
-  idleTimeoutMillis: 10000, // Reduced from 30000 - release idle connections faster
-  connectionTimeoutMillis: 5000, // Increased from 2000 - give more time for connection
-  idleInTransactionSessionTimeout: 60000, // Kill idle transactions after 60 seconds
-  statement_timeout: 30000, // Kill queries running longer than 30 seconds
-});
-
-// Handle pool errors
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
-
-// Cleanup on shutdown
-process.on('SIGINT', async () => {
-  console.log('Received SIGINT, closing pool...');
-  await pool.end();
-  process.exit(0);
-});
 
 // Middleware
 app.use(cors());
@@ -662,17 +635,6 @@ app.post('/api/impact/refresh', async (req, res) => {
 });
 
 /**
- * Graceful shutdown
- */
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  pool.end(() => {
-    console.log('Database pool closed');
-    process.exit(0);
-  });
-});
-
-/**
  * Cache Management Endpoints
  */
 
@@ -724,6 +686,9 @@ app.post('/api/cache/invalidate', (req, res) => {
   });
 });
 
+// Mount annotations router
+app.use('/api/annotations', annotationsRouter);
+
 /**
  * Start server
  */
@@ -733,6 +698,7 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/api/health`);
   console.log(`Impact summary: http://localhost:${PORT}/api/impact/summary?climate=present`);
   console.log(`Cache stats: http://localhost:${PORT}/api/cache/stats`);
+  console.log(`Annotations API: http://localhost:${PORT}/api/annotations`);
 });
 
 /**

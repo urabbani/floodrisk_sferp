@@ -1,5 +1,6 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
-import { Map, View } from 'ol';
+import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
+import type { Map } from 'ol';
+import { View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import XYZ from 'ol/source/XYZ';
@@ -32,6 +33,14 @@ function getZIndexForGeometryType(geometryType?: GeometryType): number {
   return Z_INDEX_PRIORITY[geometryType] || 50;
 }
 
+/**
+ * Imperative handle for MapViewer component
+ * Allows parent components to access the OpenLayers map instance
+ */
+export interface MapViewerHandle {
+  getMap: () => Map | null;
+}
+
 interface MapViewerProps {
   visibleLayerIds: string[];
   allLayers: LayerInfo[];
@@ -39,7 +48,8 @@ interface MapViewerProps {
   onMapClick?: (coordinate: number[], pixel: number[]) => void;
 }
 
-export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick }: MapViewerProps) {
+export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
+  function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick }, ref) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
   const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
@@ -51,6 +61,11 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
   const [mousePosition, setMousePosition] = useState<{ utm: string; latlon: string } | null>(null);
   const [copied, setCopied] = useState(false);
   const initializedRef = useRef(false);
+
+  // Expose map instance via imperative handle
+  useImperativeHandle(ref, () => ({
+    getMap: () => mapInstance.current,
+  }), []);
 
   // Initialize map (only once)
   useEffect(() => {
@@ -372,4 +387,4 @@ export function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapCli
       )}
     </div>
   );
-}
+});

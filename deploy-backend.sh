@@ -17,6 +17,8 @@ sshpass -p "$PASSWORD" ssh $SERVER "mkdir -p $SERVER_PATH"
 
 # Upload API files
 echo "📤 Uploading API files..."
+sshpass -p "$PASSWORD" scp api/db.mjs $SERVER:$SERVER_PATH/
+sshpass -p "$PASSWORD" scp api/annotations.mjs $SERVER:$SERVER_PATH/
 sshpass -p "$PASSWORD" scp api/impact-summary.mjs $SERVER:$SERVER_PATH/
 sshpass -p "$PASSWORD" scp api/package.json $SERVER:$SERVER_PATH/
 sshpass -p "$PASSWORD" scp api/ecosystem.config.cjs $SERVER:$SERVER_PATH/

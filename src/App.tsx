@@ -1,18 +1,32 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import GeoJSON from 'ol/format/GeoJSON';
 import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
+import type { MapViewerHandle } from '@/components/map/MapViewer';
 import { LegendPanel } from '@/components/map/LegendPanel';
 import { FeaturePopup } from '@/components/popups/FeaturePopup';
 import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import { ImpactMatrix } from '@/components/impact-matrix';
+import {
+  UsernamePrompt,
+  AnnotationPanel,
+  AnnotationDialog,
+} from '@/components/annotations';
+import { useDrawingInteractions } from '@/components/annotations/hooks/useDrawingInteractions';
+import { useAnnotationLayer } from '@/components/annotations/hooks/useAnnotationLayer';
+import { useAnnotations } from '@/components/annotations/hooks/useAnnotations';
+import { useAnnotationExport } from '@/components/annotations/hooks/useAnnotationExport';
+import { featureToAnnotation, annotationToFeature } from '@/components/annotations/lib/conversion';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft, X, GripVertical, ArrowLeftRight, Layers, BarChart3 } from 'lucide-react';
+import { PanelLeft, X, GripVertical, ArrowLeftRight, Layers, BarChart3, MessageSquarePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import type { DrawingTool, NewAnnotation } from '@/types/annotations';
+import type Feature from 'ol/Feature';
 
 // Recursively collect all layers from the tree
 function collectAllLayers(tree: LayerGroup): LayerInfo[] {
@@ -52,7 +66,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
-  const [sidebarView, setSidebarView] = useState<'layers' | 'impact'>('layers');
+  const [sidebarView, setSidebarView] = useState<'layers' | 'impact' | 'annotations'>('layers');
   const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
   const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
@@ -61,6 +75,77 @@ function App() {
   const [swipeCompareOpen, setSwipeCompareOpen] = useState(false);
   const [impactLayers, setImpactLayers] = useState<LayerInfo[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
+
+  // Annotations state
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>('none');
+  const [username, setUsername] = useState(() => localStorage.getItem('floodrisk_username') || '');
+  const mapViewerRef = useRef<MapViewerHandle>(null);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Feature | null>(null);
+  const [editingAnnotation, setEditingAnnotation] = useState<{ id: number; feature: Feature } | null>(null);
+  const [annotationDialogOpen, setAnnotationDialogOpen] = useState(false);
+  const [annotationDialogMode, setAnnotationDialogMode] = useState<'create' | 'edit'>('create');
+  const [pendingDrawFeature, setPendingDrawFeature] = useState<Feature | null>(null);
+
+  // Get map instance for hooks
+  const map = mapViewerRef.current?.getMap() || null;
+
+  // Annotations hooks
+  const {
+    annotations,
+    isLoading: annotationsLoading,
+    createAnnotation,
+    updateAnnotation,
+    deleteAnnotation,
+  } = useAnnotations({ enabled: !!map });
+
+  const {
+    vectorSource,
+    vectorLayer,
+  } = useAnnotationLayer({
+    map,
+  });
+
+  const { activeTool, setActiveTool } = useDrawingInteractions({
+    map,
+    vectorSource,
+    username,
+    onDrawStart: () => {
+      // Clear selection when starting to draw
+      setSelectedAnnotation(null);
+    },
+    onDrawEnd: (feature) => {
+      // Open dialog to enter annotation details
+      setPendingDrawFeature(feature);
+      setAnnotationDialogMode('create');
+      setAnnotationDialogOpen(true);
+    },
+    onSelect: (feature) => {
+      if (feature) {
+        setEditingAnnotation({ id: feature.get('id'), feature });
+        setAnnotationDialogMode('edit');
+        setAnnotationDialogOpen(true);
+      }
+    },
+  });
+
+  const { exportToGeoJSON } = useAnnotationExport();
+
+  // Sync drawingTool state with setActiveTool
+  useEffect(() => {
+    setActiveTool(drawingTool);
+  }, [drawingTool, setActiveTool]);
+
+  // Add vector layer to map (managed by useAnnotationLayer, but we need to ensure it's there)
+  useEffect(() => {
+    if (map && vectorLayer && !map.getLayers().getArray().includes(vectorLayer)) {
+      map.addLayer(vectorLayer);
+    }
+    return () => {
+      if (map && vectorLayer) {
+        // Don't remove - useAnnotationLayer manages this
+      }
+    };
+  }, [map, vectorLayer]);
 
   // Minimum and maximum sidebar width
   const MIN_WIDTH = 200;
@@ -161,8 +246,121 @@ function App() {
     setImpactLayers(layers);
   }, []);
 
+  // Annotation handlers
+  const handleAnnotationSubmit = useCallback(async (data: {
+    title: string;
+    description: string;
+    category: string;
+    styleConfig: Record<string, unknown>;
+  }) => {
+    if (!username) {
+      alert('Please set your username first');
+      return;
+    }
+
+    if (annotationDialogMode === 'create' && pendingDrawFeature) {
+      // Create new annotation
+      const newAnnotation: NewAnnotation = {
+        title: data.title,
+        description: data.description,
+        category: data.category as any,
+        geometry_type: pendingDrawFeature.get('geometry_type') || 'point',
+        geometry: JSON.parse(JSON.stringify(
+          JSON.parse(new GeoJSON().writeGeometry(pendingDrawFeature.getGeometry()!, {
+            featureProjection: 'EPSG:32642',
+            dataProjection: 'EPSG:4326',
+          }))
+        )),
+        style_config: data.styleConfig as any,
+        created_by: username,
+      };
+
+      try {
+        const created = await createAnnotation(newAnnotation);
+        // Update feature with ID from server
+        pendingDrawFeature.set('id', created.id);
+        pendingDrawFeature.set('title', data.title);
+        pendingDrawFeature.set('description', data.description);
+        pendingDrawFeature.set('category', data.category);
+        pendingDrawFeature.set('styleConfig', data.styleConfig);
+        vectorSource?.addFeature(pendingDrawFeature);
+      } catch (error) {
+        console.error('Failed to create annotation:', error);
+        alert('Failed to save annotation');
+      }
+    } else if (annotationDialogMode === 'edit' && editingAnnotation) {
+      // Update existing annotation
+      try {
+        const updated = await updateAnnotation(editingAnnotation.id, {
+          title: data.title,
+          description: data.description,
+          category: data.category as any,
+          style_config: data.styleConfig as any,
+        });
+        // Update feature
+        editingAnnotation.feature.set('title', data.title);
+        editingAnnotation.feature.set('description', data.description);
+        editingAnnotation.feature.set('category', data.category);
+        editingAnnotation.feature.set('styleConfig', data.styleConfig);
+        editingAnnotation.feature.set('updated_at', updated.updated_at);
+      } catch (error) {
+        console.error('Failed to update annotation:', error);
+        alert('Failed to update annotation');
+      }
+    }
+
+    setAnnotationDialogOpen(false);
+    setPendingDrawFeature(null);
+    setEditingAnnotation(null);
+    setActiveTool('none');
+    setDrawingTool('none');
+  }, [username, annotationDialogMode, pendingDrawFeature, editingAnnotation, createAnnotation, updateAnnotation, vectorSource, setActiveTool, setDrawingTool]);
+
+  const handleAnnotationDelete = useCallback(async (id: number) => {
+    try {
+      await deleteAnnotation(id);
+    } catch (error) {
+      console.error('Failed to delete annotation:', error);
+      alert('Failed to delete annotation');
+    }
+  }, [deleteAnnotation]);
+
+  const handleAnnotationClick = useCallback((annotation: any) => {
+    // Find feature and zoom to it
+    const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === annotation.id);
+    if (feature && feature.getGeometry()) {
+      const extent = feature.getGeometry()!.getExtent();
+      const mapInstance = mapViewerRef.current?.getMap();
+      if (mapInstance) {
+        mapInstance.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 500 });
+      }
+    }
+  }, [vectorSource]);
+
+  const handleExportAnnotations = useCallback(() => {
+    const features = vectorSource?.getFeatures() || [];
+    if (features.length === 0) {
+      alert('No annotations to export');
+      return;
+    }
+    exportToGeoJSON(features);
+  }, [vectorSource, exportToGeoJSON]);
+
+  const handleToggleAnnotationsPanel = useCallback(() => {
+    setSidebarView('annotations');
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
+    }
+  }, [sidebarOpen]);
+
   // Handle map click (stable reference to prevent map re-initialization)
   const handleMapClick = useCallback(async (coord: number[], pixel: number[]) => {
+    // Skip WMS feature identification when in drawing mode
+    if (drawingMode || drawingTool !== 'none') {
+      console.log('Drawing mode active, skipping feature identification');
+      return;
+    }
+
     console.log('Map clicked at:', coord, 'pixel:', pixel);
 
     // Show identify popup at click position
@@ -252,7 +450,7 @@ function App() {
       position: { x: pixel[0], y: pixel[1] },
       features,
     });
-  }, [visibleLayers]);
+  }, [visibleLayers, drawingTool, drawingMode]);
 
   // Toggle sidebar
   const toggleSidebar = useCallback(() => {
@@ -262,7 +460,18 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-slate-50">
       {/* Header */}
-      <Header onToggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
+      <Header
+        onToggleSidebar={toggleSidebar}
+        sidebarOpen={sidebarOpen}
+        activeTool={activeTool}
+        onToolChange={(tool) => {
+          setActiveTool(tool);
+          setDrawingTool(tool);
+        }}
+        onExport={handleExportAnnotations}
+        onToggleAnnotationsPanel={handleToggleAnnotationsPanel}
+        annotationsCount={annotations.length}
+      />
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden min-w-0 relative">
@@ -290,7 +499,7 @@ function App() {
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-slate-800">
-                {sidebarView === 'layers' ? 'Hazard' : 'Impact Analysis'}
+                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Annotations'}
               </h2>
               <Button
                 variant="ghost"
@@ -324,6 +533,15 @@ function App() {
                 <BarChart3 className="w-3.5 h-3.5" />
                 Impact
               </Button>
+              <Button
+                variant={sidebarView === 'annotations' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSidebarView('annotations')}
+                className="flex-1 gap-1.5 h-8 text-xs"
+              >
+                <MessageSquarePlus className="w-3.5 h-3.5" />
+                Annotations
+              </Button>
             </div>
           )}
 
@@ -338,13 +556,40 @@ function App() {
                 selectedLayerId={selectedLayer?.id}
                 visibleLayerIds={visibleLayerIds}
               />
-            ) : (
+            ) : sidebarView === 'impact' ? (
               <ImpactMatrix
                 onLayerToggle={handleLayerVisibilityChange}
                 visibleLayers={visibleLayerIds}
                 onImpactLayersChange={handleImpactLayersChange}
                 onViewChange={setCurrentImpactView}
                 className="h-full"
+              />
+            ) : (
+              <AnnotationPanel
+                annotations={annotations}
+                isLoading={annotationsLoading}
+                onAnnotationClick={handleAnnotationClick}
+                onAnnotationEdit={(annotation) => {
+                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === annotation.id);
+                  if (feature) {
+                    setEditingAnnotation({ id: annotation.id, feature });
+                    setAnnotationDialogMode('edit');
+                    setAnnotationDialogOpen(true);
+                  }
+                }}
+                onAnnotationDelete={handleAnnotationDelete}
+                onAnnotationToggleVisibility={(id, visible) => {
+                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
+                  if (feature) {
+                    feature.setStyle(visible ? undefined : null);
+                    // Trigger re-render
+                    feature.changed();
+                  }
+                }}
+                onToolChange={(tool) => {
+                  setActiveTool(tool);
+                  setDrawingTool(tool);
+                }}
               />
             )}
           </div>
@@ -392,6 +637,7 @@ function App() {
         {/* Map container */}
         <main className="flex-1 relative overflow-hidden">
           <MapViewer
+            ref={mapViewerRef}
             visibleLayerIds={visibleLayerIds}
             allLayers={combinedLayers}
             layerOpacities={layerOpacities}
@@ -445,6 +691,38 @@ function App() {
           onClose={() => setSwipeCompareOpen(false)}
         />
       )}
+
+      {/* Annotation Dialog */}
+      <AnnotationDialog
+        isOpen={annotationDialogOpen}
+        onClose={() => {
+          setAnnotationDialogOpen(false);
+          setPendingDrawFeature(null);
+          setEditingAnnotation(null);
+          // Clear the drawn feature if cancelling from create mode
+          if (annotationDialogMode === 'create' && pendingDrawFeature) {
+            vectorSource?.removeFeature(pendingDrawFeature);
+          }
+        }}
+        onSubmit={handleAnnotationSubmit}
+        defaultValues={
+          editingAnnotation
+            ? {
+                title: editingAnnotation.feature.get('title'),
+                description: editingAnnotation.feature.get('description'),
+                category: editingAnnotation.feature.get('category'),
+              }
+            : undefined
+        }
+        mode={annotationDialogMode}
+      />
+
+      {/* Username Prompt */}
+      <UsernamePrompt
+        onUsernameSet={(name) => {
+          setUsername(name);
+        }}
+      />
     </div>
   );
 }

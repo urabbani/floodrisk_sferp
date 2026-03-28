@@ -8,13 +8,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { AnnotationToolbar } from '@/components/annotations';
+import type { DrawingTool } from '@/types/annotations';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
+  // Annotations props
+  activeTool?: DrawingTool;
+  onToolChange?: (tool: DrawingTool) => void;
+  onExport?: () => void;
+  onToggleAnnotationsPanel?: () => void;
+  annotationsCount?: number;
 }
 
-export function Header({ onToggleSidebar, sidebarOpen }: HeaderProps) {
+export function Header({
+  onToggleSidebar,
+  sidebarOpen,
+  activeTool = 'none',
+  onToolChange,
+  onExport,
+  onToggleAnnotationsPanel,
+  annotationsCount = 0,
+}: HeaderProps) {
   return (
     <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-4 shadow-sm z-20">
       {/* Left side */}
@@ -49,6 +65,18 @@ export function Header({ onToggleSidebar, sidebarOpen }: HeaderProps) {
 
       {/* Right side */}
       <div className="flex items-center gap-1">
+        {/* Annotation Toolbar */}
+        {onToolChange && (
+          <AnnotationToolbar
+            activeTool={activeTool}
+            onToolChange={onToolChange}
+            onExport={onExport}
+            onToggleAnnotationsPanel={onToggleAnnotationsPanel}
+            annotationsCount={annotationsCount}
+            variant="header"
+          />
+        )}
+
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="ghost" size="icon" className="h-10 w-10 sm:h-9 sm:w-9">
