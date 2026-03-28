@@ -7,7 +7,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 ![Vite](https://img.shields.io/badge/Vite-7.3-646CFF?logo=vite)
 ![OpenLayers](https://img.shields.io/badge/OpenLayers-Latest-1F6F75)
 
-**Last Updated:** March 24, 2026
+**Last Updated:** March 28, 2026
 
 ## Features
 
@@ -20,10 +20,18 @@ A web-based interactive flood risk assessment tool for the Indus River region in
   - Expandable/collapsible groups
   - Active layers overlay showing all visible layers
   - Resizable sidebar panel
-- **Two-Panel Interface** - "Hazard" and "Impact" tabs for different analytical views
+- **Three-Panel Interface** - "Hazard", "Impact", and "Interventions" tabs for different analytical views
 - **Feature Identification** - Click on any layer (raster or vector) to view attributes via GeoServer WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position display in both UTM (Zone 42N) and Lat/Lon formats with copy-to-clipboard
 - **Swipe Compare Tool** - Side-by-side comparison of two different flood scenarios with synchronized pan/zoom
+- **Interventions** - Collaborative drawing and annotation on the map:
+  - Draw points, lines, and polygons on the map
+  - Add details (title, description, category, color) to each intervention
+  - Edit and delete interventions
+  - Search and filter interventions by category
+  - Toggle individual intervention visibility
+  - Export interventions as GeoJSON
+  - Multi-user support with username identification
 - **Mobile Responsive** - Adaptive UI with sidebar toggle for mobile/desktop
 - **Stream Network** - HydroSHEDS-derived stream network visualization with flow accumulation threshold
 
@@ -193,10 +201,13 @@ const MAX_WIDTH = currentImpactView === 'compare'
 floodrisk_sferp/
 ├── src/                          # Frontend source code
 │   ├── components/
+│   │   ├── annotations/          # Interventions (drawing & annotation)
 │   │   ├── impact-matrix/        # Impact Matrix feature
 │   │   ├── layer-tree/           # Layer visibility controls
 │   │   ├── map/                  # OpenLayers map viewer
+│   │   ├── popups/               # Feature info popups
 │   │   ├── scenario-explorer/    # Scenario comparison matrix
+│   │   ├── swipe/                # Swipe compare component
 │   │   └── ui/                   # shadcn/ui components
 │   ├── config/                   # Configuration files
 │   ├── lib/                      # Utility functions
@@ -572,7 +583,7 @@ cd /mnt/d/Scenario_results/floodrisk_sferp
 node api/load-population-stats.mjs
 
 # Verify population data in database
-PGPASSWORD='maltanadirSRV0' psql -h 10.0.0.205 -U postgres -d postgres \
+PGPASSWORD='<your_password>' psql -h 10.0.0.205 -U postgres -d postgres \
   -c "SELECT climate, maintenance, return_period, affected_population FROM impact.population_stats ORDER BY return_period LIMIT 10;"
 ```
 
@@ -590,7 +601,7 @@ PGPASSWORD='maltanadirSRV0' psql -h 10.0.0.205 -U postgres -d postgres \
 - `DB_PORT`: 5432
 - `DB_NAME`: postgres
 - `DB_USER`: postgres
-- `DB_PASSWORD`: maltanadirSRV0
+- `DB_PASSWORD`: (set via environment)
 
 ### 5. GeoServer Configuration
 

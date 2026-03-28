@@ -1,10 +1,10 @@
 /**
- * Annotations Module Barrel Export
+ * Interventions Module Barrel Export
  */
 
 export { UsernamePrompt } from './UsernamePrompt';
-export { AnnotationDialog } from './AnnotationDialog';
-export { AnnotationPanel } from './AnnotationPanel';
+export { InterventionDialog } from './InterventionDialog';
+export { InterventionPanel } from './InterventionPanel';
 export { AnnotationToolbar } from './AnnotationToolbar';
 
 export { useDrawingInteractions, useAnnotationLayer } from './hooks';

@@ -8,16 +8,14 @@ import { LegendPanel } from '@/components/map/LegendPanel';
 import { FeaturePopup } from '@/components/popups/FeaturePopup';
 import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import { ImpactMatrix } from '@/components/impact-matrix';
-import {
-  UsernamePrompt,
-  AnnotationPanel,
-  AnnotationDialog,
-} from '@/components/annotations';
+import { InterventionPanel } from '@/components/annotations/InterventionPanel';
+import { InterventionDialog } from '@/components/annotations/InterventionDialog';
+import { UsernamePrompt } from '@/components/annotations/UsernamePrompt';
 import { useDrawingInteractions } from '@/components/annotations/hooks/useDrawingInteractions';
 import { useAnnotationLayer } from '@/components/annotations/hooks/useAnnotationLayer';
 import { useAnnotations } from '@/components/annotations/hooks/useAnnotations';
 import { useAnnotationExport } from '@/components/annotations/hooks/useAnnotationExport';
-import { featureToAnnotation, annotationToFeature } from '@/components/annotations/lib/conversion';
+import { annotationToFeature } from '@/components/annotations/lib/conversion';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
@@ -27,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { DrawingTool, NewAnnotation } from '@/types/annotations';
 import type Feature from 'ol/Feature';
+import type { Annotation } from '@/types/annotations';
 
 // Recursively collect all layers from the tree
 function collectAllLayers(tree: LayerGroup): LayerInfo[] {
@@ -66,7 +65,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
-  const [sidebarView, setSidebarView] = useState<'layers' | 'impact' | 'annotations'>('layers');
+  const [sidebarView, setSidebarView] = useState<'layers' | 'impact' | 'interventions'>('layers');
   const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
   const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
@@ -76,11 +75,11 @@ function App() {
   const [impactLayers, setImpactLayers] = useState<LayerInfo[]>([]);
   const sidebarRef = useRef<HTMLElement>(null);
 
-  // Annotations state
+  // Interventions state
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none');
   const [username, setUsername] = useState(() => localStorage.getItem('floodrisk_username') || '');
   const mapViewerRef = useRef<MapViewerHandle>(null);
-  const [selectedAnnotation, setSelectedAnnotation] = useState<Feature | null>(null);
+  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [editingAnnotation, setEditingAnnotation] = useState<{ id: number; feature: Feature } | null>(null);
   const [annotationDialogOpen, setAnnotationDialogOpen] = useState(false);
   const [annotationDialogMode, setAnnotationDialogMode] = useState<'create' | 'edit'>('create');
@@ -89,10 +88,10 @@ function App() {
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
 
-  // Annotations hooks
+  // Interventions hooks (using the annotations hook for interventions)
   const {
-    annotations,
-    isLoading: annotationsLoading,
+    annotations: interventions,
+    isLoading: interventionsLoading,
     createAnnotation,
     updateAnnotation,
     deleteAnnotation,
@@ -259,7 +258,7 @@ function App() {
     }
 
     if (annotationDialogMode === 'create' && pendingDrawFeature) {
-      // Create new annotation
+      // Create new intervention
       const newAnnotation: NewAnnotation = {
         title: data.title,
         description: data.description,
@@ -285,11 +284,11 @@ function App() {
         pendingDrawFeature.set('styleConfig', data.styleConfig);
         vectorSource?.addFeature(pendingDrawFeature);
       } catch (error) {
-        console.error('Failed to create annotation:', error);
-        alert('Failed to save annotation');
+        console.error('Failed to create intervention:', error);
+        alert('Failed to save intervention');
       }
     } else if (annotationDialogMode === 'edit' && editingAnnotation) {
-      // Update existing annotation
+      // Update existing intervention
       try {
         const updated = await updateAnnotation(editingAnnotation.id, {
           title: data.title,
@@ -304,8 +303,8 @@ function App() {
         editingAnnotation.feature.set('styleConfig', data.styleConfig);
         editingAnnotation.feature.set('updated_at', updated.updated_at);
       } catch (error) {
-        console.error('Failed to update annotation:', error);
-        alert('Failed to update annotation');
+        console.error('Failed to update intervention:', error);
+        alert('Failed to update intervention');
       }
     }
 
@@ -320,12 +319,12 @@ function App() {
     try {
       await deleteAnnotation(id);
     } catch (error) {
-      console.error('Failed to delete annotation:', error);
-      alert('Failed to delete annotation');
+      console.error('Failed to delete intervention:', error);
+      alert('Failed to delete intervention');
     }
   }, [deleteAnnotation]);
 
-  const handleAnnotationClick = useCallback((annotation: any) => {
+  const handleAnnotationClick = useCallback((annotation: Annotation) => {
     // Find feature and zoom to it
     const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === annotation.id);
     if (feature && feature.getGeometry()) {
@@ -340,14 +339,14 @@ function App() {
   const handleExportAnnotations = useCallback(() => {
     const features = vectorSource?.getFeatures() || [];
     if (features.length === 0) {
-      alert('No annotations to export');
+      alert('No interventions to export');
       return;
     }
     exportToGeoJSON(features);
   }, [vectorSource, exportToGeoJSON]);
 
   const handleToggleAnnotationsPanel = useCallback(() => {
-    setSidebarView('annotations');
+    setSidebarView('interventions');
     if (!sidebarOpen) {
       setSidebarOpen(true);
     }
@@ -469,8 +468,8 @@ function App() {
           setDrawingTool(tool);
         }}
         onExport={handleExportAnnotations}
-        onToggleAnnotationsPanel={handleToggleAnnotationsPanel}
-        annotationsCount={annotations.length}
+        onToggleInterventionsPanel={handleToggleAnnotationsPanel}
+        interventionsCount={interventions.length}
       />
 
       {/* Main content */}
@@ -499,7 +498,7 @@ function App() {
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-slate-800">
-                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Annotations'}
+                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Interventions'}
               </h2>
               <Button
                 variant="ghost"
@@ -534,13 +533,13 @@ function App() {
                 Impact
               </Button>
               <Button
-                variant={sidebarView === 'annotations' ? 'default' : 'ghost'}
+                variant={sidebarView === 'interventions' ? 'default' : 'ghost'}
                 size="sm"
-                onClick={() => setSidebarView('annotations')}
+                onClick={() => setSidebarView('interventions')}
                 className="flex-1 gap-1.5 h-8 text-xs"
               >
                 <MessageSquarePlus className="w-3.5 h-3.5" />
-                Annotations
+                Interventions
               </Button>
             </div>
           )}
@@ -565,20 +564,20 @@ function App() {
                 className="h-full"
               />
             ) : (
-              <AnnotationPanel
-                annotations={annotations}
-                isLoading={annotationsLoading}
-                onAnnotationClick={handleAnnotationClick}
-                onAnnotationEdit={(annotation) => {
-                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === annotation.id);
+              <InterventionPanel
+                interventions={interventions}
+                isLoading={interventionsLoading}
+                onInterventionClick={handleAnnotationClick}
+                onInterventionEdit={(intervention) => {
+                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === intervention.id);
                   if (feature) {
-                    setEditingAnnotation({ id: annotation.id, feature });
+                    setEditingAnnotation({ id: intervention.id, feature });
                     setAnnotationDialogMode('edit');
                     setAnnotationDialogOpen(true);
                   }
                 }}
-                onAnnotationDelete={handleAnnotationDelete}
-                onAnnotationToggleVisibility={(id, visible) => {
+                onInterventionDelete={handleAnnotationDelete}
+                onInterventionToggleVisibility={(id, visible) => {
                   const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
                   if (feature) {
                     feature.setStyle(visible ? undefined : null);
@@ -692,8 +691,8 @@ function App() {
         />
       )}
 
-      {/* Annotation Dialog */}
-      <AnnotationDialog
+      {/* Intervention Dialog */}
+      <InterventionDialog
         isOpen={annotationDialogOpen}
         onClose={() => {
           setAnnotationDialogOpen(false);

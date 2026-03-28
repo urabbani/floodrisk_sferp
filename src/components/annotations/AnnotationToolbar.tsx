@@ -34,8 +34,8 @@ interface AnnotationToolbarProps {
   activeTool: DrawingTool;
   onToolChange: (tool: DrawingTool) => void;
   onExport?: () => void;
-  onToggleAnnotationsPanel?: () => void;
-  annotationsCount?: number;
+  onToggleInterventionsPanel?: () => void;
+  interventionsCount?: number;
   variant?: 'header' | 'floating';
 }
 
@@ -43,8 +43,8 @@ export function AnnotationToolbar({
   activeTool,
   onToolChange,
   onExport,
-  onToggleAnnotationsPanel,
-  annotationsCount = 0,
+  onToggleInterventionsPanel,
+  interventionsCount = 0,
   variant = 'header',
 }: AnnotationToolbarProps) {
   const drawTools: DrawingTool[] = ['point', 'line', 'polygon'];
@@ -114,8 +114,8 @@ export function AnnotationToolbar({
   // Header toolbar variant
   return (
     <div className="flex items-center gap-1">
-      {/* Annotations panel toggle */}
-      {onToggleAnnotationsPanel && (
+      {/* Interventions panel toggle */}
+      {onToggleInterventionsPanel && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -123,17 +123,17 @@ export function AnnotationToolbar({
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 relative"
-                onClick={onToggleAnnotationsPanel}
+                onClick={onToggleInterventionsPanel}
               >
                 <MessageSquarePlus className="w-4 h-4" />
-                {annotationsCount > 0 && (
+                {interventionsCount > 0 && (
                   <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {annotationsCount > 99 ? '99+' : annotationsCount}
+                    {interventionsCount > 99 ? '99+' : interventionsCount}
                   </span>
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Annotations Panel</TooltipContent>
+            <TooltipContent>Interventions Panel</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -227,7 +227,7 @@ export function AnnotationToolbar({
                 <Download className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Export Annotations (GeoJSON)</TooltipContent>
+            <TooltipContent>Export Interventions (GeoJSON)</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -246,7 +246,7 @@ export function AnnotationToolbar({
               <Trash2 className="w-4 h-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Delete Selected Annotation</TooltipContent>
+          <TooltipContent>Delete Selected Intervention</TooltipContent>
         </Tooltip>
       </TooltipProvider>
     </div>

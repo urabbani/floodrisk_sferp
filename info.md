@@ -25,10 +25,10 @@
 npm run build
 
 # 2. Upload to server
-sshpass -p 'password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+sshpass -p '<your_password>' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
 
 # 3. Sync git repo on server
-sshpass -p 'password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+sshpass -p '<your_password>' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
 ```
 
 ## Credits

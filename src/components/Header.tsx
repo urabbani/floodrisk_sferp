@@ -14,12 +14,12 @@ import type { DrawingTool } from '@/types/annotations';
 interface HeaderProps {
   onToggleSidebar: () => void;
   sidebarOpen: boolean;
-  // Annotations props
+  // Intervention props
   activeTool?: DrawingTool;
   onToolChange?: (tool: DrawingTool) => void;
   onExport?: () => void;
-  onToggleAnnotationsPanel?: () => void;
-  annotationsCount?: number;
+  onToggleInterventionsPanel?: () => void;
+  interventionsCount?: number;
 }
 
 export function Header({
@@ -28,8 +28,8 @@ export function Header({
   activeTool = 'none',
   onToolChange,
   onExport,
-  onToggleAnnotationsPanel,
-  annotationsCount = 0,
+  onToggleInterventionsPanel,
+  interventionsCount = 0,
 }: HeaderProps) {
   return (
     <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-4 shadow-sm z-20">
@@ -65,14 +65,14 @@ export function Header({
 
       {/* Right side */}
       <div className="flex items-center gap-1">
-        {/* Annotation Toolbar */}
+        {/* Intervention Toolbar */}
         {onToolChange && (
           <AnnotationToolbar
             activeTool={activeTool}
             onToolChange={onToolChange}
             onExport={onExport}
-            onToggleAnnotationsPanel={onToggleAnnotationsPanel}
-            annotationsCount={annotationsCount}
+            onToggleInterventionsPanel={onToggleInterventionsPanel}
+            interventionsCount={interventionsCount}
             variant="header"
           />
         )}

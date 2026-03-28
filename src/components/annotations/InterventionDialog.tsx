@@ -1,7 +1,7 @@
 /**
- * Annotation Dialog Component
+ * Intervention Dialog Component
  *
- * Form dialog for creating/editing annotations.
+ * Form dialog for creating/editing interventions.
  * Uses react-hook-form and shadcn Form components.
  */
 
@@ -49,7 +49,7 @@ const annotationSchema = z.object({
 
 type AnnotationFormValues = z.infer<typeof annotationSchema>;
 
-interface AnnotationDialogProps {
+interface InterventionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: {
@@ -67,7 +67,7 @@ interface AnnotationDialogProps {
   mode: 'create' | 'edit';
 }
 
-export function AnnotationDialog({
+export function InterventionDialog({
   isOpen,
   onClose,
   onSubmit,
@@ -105,12 +105,12 @@ export function AnnotationDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'create' ? 'Create Annotation' : 'Edit Annotation'}
+            {mode === 'create' ? 'Create Intervention' : 'Edit Intervention'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
-              ? 'Add details to your drawn annotation'
-              : 'Update annotation properties'}
+              ? 'Add details to your drawn intervention'
+              : 'Update intervention properties'}
           </DialogDescription>
         </DialogHeader>
 
@@ -123,7 +123,7 @@ export function AnnotationDialog({
                 <FormItem>
                   <FormLabel>Title *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter annotation title" {...field} />
+                    <Input placeholder="Enter intervention title" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -75,6 +75,7 @@ Hazard
 - **FeaturePopup** (`src/components/popups/FeaturePopup.tsx`): Displays feature attributes from WMS GetFeatureInfo
 - **SwipeCompare** (`src/components/swipe/SwipeCompare.tsx`): Side-by-side comparison of two flood scenarios
 - **ImpactMatrix** (`src/components/impact-matrix/`): Real-time flood impact analysis with depth distribution charts
+- **Interventions** (`src/components/annotations/`): Collaborative drawing and annotation on the map (points, lines, polygons with categories and export)
 
 ### Impact Matrix Module
 
@@ -471,6 +472,7 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - **Coordinate Display:** Real-time mouse position in UTM (Zone 42N) and Lat/Lon with copy-to-clipboard
 - **Feature Identification:** Click on any layer to view attributes via WMS GetFeatureInfo (works for raster and vector)
 - **Swipe Compare:** Compare two flood scenarios side-by-side with synchronized pan/zoom and draggable divider
+- **Interventions:** Draw points, lines, polygons on the map with details (title, description, category), search, filter, visibility toggle, and GeoJSON export
 - All groups default to collapsed state except root
 
 ## Production Deployment
@@ -510,10 +512,10 @@ git commit -m "your commit message"
 git push
 
 # 3. Upload dist to server
-sshpass -p 'your_password' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
+sshpass -p '<your_password>' scp -r dist/* umair@10.0.0.205:/mnt/d/Scenario_results/floodrisk_sferp/dist/
 
 # 4. Pull git changes on server (keeps server repo synced)
-sshpass -p 'your_password' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
+sshpass -p '<your_password>' ssh umair@10.0.0.205 "cd /mnt/d/Scenario_results/floodrisk_sferp && git pull"
 ```
 
 See README.md for detailed Apache configuration and deployment instructions.

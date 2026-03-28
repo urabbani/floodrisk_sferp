@@ -76,7 +76,7 @@ export function UsernamePrompt({ onUsernameSet }: UsernamePromptProps) {
             <div>
               <DialogTitle>Welcome!</DialogTitle>
               <DialogDescription>
-                Enter your name to identify your annotations
+                Enter your name to identify your interventions
               </DialogDescription>
             </div>
           </div>
@@ -105,7 +105,7 @@ export function UsernamePrompt({ onUsernameSet }: UsernamePromptProps) {
               <p className="text-sm text-red-600">{error}</p>
             )}
             <p className="text-xs text-slate-500">
-              This helps identify who created each annotation. You can always change it later.
+              This helps identify who created each intervention. You can always change it later.
             </p>
           </div>
         </div>

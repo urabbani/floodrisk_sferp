@@ -1,7 +1,7 @@
 /**
- * Annotation Panel Component
+ * Intervention Panel Component
  *
- * Sidebar panel displaying list of annotations with search and filter.
+ * Sidebar panel displaying list of interventions with search and filter.
  */
 
 import { useState, useMemo, useRef } from 'react';
@@ -32,30 +32,30 @@ import type { Annotation, AnnotationCategory, DrawingTool } from '@/types/annota
 import { CATEGORY_INFO, formatCategory, formatTimestamp, TOOL_INFO } from '@/types/annotations';
 import { cn } from '@/lib/utils';
 
-interface AnnotationPanelProps {
-  annotations: Annotation[];
+interface InterventionPanelProps {
+  interventions: Annotation[];
   isLoading?: boolean;
-  onAnnotationClick?: (annotation: Annotation) => void;
-  onAnnotationEdit?: (annotation: Annotation) => void;
-  onAnnotationDelete?: (id: number) => void;
-  onAnnotationToggleVisibility?: (id: number, visible: boolean) => void;
+  onInterventionClick?: (intervention: Annotation) => void;
+  onInterventionEdit?: (intervention: Annotation) => void;
+  onInterventionDelete?: (id: number) => void;
+  onInterventionToggleVisibility?: (id: number, visible: boolean) => void;
   onToolChange?: (tool: DrawingTool) => void;
 }
 
-export function AnnotationPanel({
-  annotations,
+export function InterventionPanel({
+  interventions,
   isLoading = false,
-  onAnnotationClick,
-  onAnnotationEdit,
-  onAnnotationDelete,
-  onAnnotationToggleVisibility,
+  onInterventionClick,
+  onInterventionEdit,
+  onInterventionDelete,
+  onInterventionToggleVisibility,
   onToolChange,
-}: AnnotationPanelProps) {
+}: InterventionPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Track visibility state for each annotation using useRef to persist across renders
+  // Track visibility state for each intervention using useRef to persist across renders
   // Lazy-initialize to avoid Map iteration issues in React concurrent mode
   const visibilityStateRef = useRef<Map<number, boolean> | null>(null);
 
@@ -64,45 +64,45 @@ export function AnnotationPanel({
     visibilityStateRef.current = new Map();
   }
 
-  // Initialize visibility state for new annotations
-  annotations.forEach((a) => {
+  // Initialize visibility state for new interventions
+  interventions.forEach((a) => {
     if (!visibilityStateRef.current!.has(a.id)) {
       visibilityStateRef.current!.set(a.id, true);
     }
   });
 
-  // Filter annotations based on search and category
-  const filteredAnnotations = useMemo(() => {
-    return annotations.filter((annotation) => {
+  // Filter interventions based on search and category
+  const filteredInterventions = useMemo(() => {
+    return interventions.filter((intervention) => {
       const matchesSearch =
         !searchQuery ||
-        annotation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        annotation.created_by.toLowerCase().includes(searchQuery.toLowerCase());
+        intervention.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        intervention.created_by.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
-        categoryFilter === 'all' || annotation.category === categoryFilter;
+        categoryFilter === 'all' || intervention.category === categoryFilter;
 
       return matchesSearch && matchesCategory;
     });
-  }, [annotations, searchQuery, categoryFilter]);
+  }, [interventions, searchQuery, categoryFilter]);
 
   const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: annotations.length };
-    annotations.forEach((a) => {
-      counts[a.category] = (counts[a.category] || 0) + 1;
+    const counts: Record<string, number> = { all: interventions.length };
+    interventions.forEach((i) => {
+      counts[i.category] = (counts[i.category] || 0) + 1;
     });
     return counts;
-  }, [annotations]);
+  }, [interventions]);
 
   const handleDelete = () => {
     if (deleteId !== null) {
-      onAnnotationDelete?.(deleteId);
+      onInterventionDelete?.(deleteId);
       setDeleteId(null);
     }
   };
 
   const handleZoomTo = (annotation: Annotation) => {
-    onAnnotationClick?.(annotation);
+    onInterventionClick?.(annotation);
     // Switch to select tool when clicking from list
     onToolChange?.('select');
   };
@@ -115,7 +115,7 @@ export function AnnotationPanel({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
-            placeholder="Search annotations..."
+            placeholder="Search interventions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 h-9 text-sm"
@@ -147,47 +147,47 @@ export function AnnotationPanel({
 
         {/* Summary */}
         <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>{filteredAnnotations.length} annotations</span>
-          <span>by {new Set(annotations.map((a) => a.created_by)).size} contributors</span>
+          <span>{filteredInterventions.length} interventions</span>
+          <span>by {new Set(interventions.map((a) => a.created_by)).size} contributors</span>
         </div>
       </div>
 
-      {/* Annotation list */}
+      {/* Intervention list */}
       <ScrollArea className="flex-1">
         {isLoading ? (
           <div className="flex items-center justify-center py-8 text-sm text-slate-500">
-            Loading annotations...
+            Loading interventions...
           </div>
-        ) : filteredAnnotations.length === 0 ? (
+        ) : filteredInterventions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <MapPin className="w-12 h-12 text-slate-300 mb-3" />
             <p className="text-sm text-slate-500">
               {searchQuery || categoryFilter !== 'all'
-                ? 'No annotations match your search'
-                : 'No annotations yet. Start drawing on the map!'}
+                ? 'No interventions match your search'
+                : 'No interventions yet. Start drawing on the map!'}
             </p>
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {filteredAnnotations.map((annotation) => {
-              const isVisible = visibilityStateRef.current.get(annotation.id) ?? true;
-              const categoryInfo = CATEGORY_INFO[annotation.category];
+            {filteredInterventions.map((intervention) => {
+              const isVisible = visibilityStateRef.current.get(intervention.id) ?? true;
+              const categoryInfo = CATEGORY_INFO[intervention.category];
 
               return (
                 <div
-                  key={annotation.id}
+                  key={intervention.id}
                   className={cn(
                     "flex items-start gap-3 p-3 hover:bg-slate-50 cursor-pointer transition-colors",
                     !isVisible && "opacity-50"
                   )}
-                  onClick={() => handleZoomTo(annotation)}
+                  onClick={() => handleZoomTo(intervention)}
                 >
                   {/* Visibility toggle */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      visibilityStateRef.current.set(annotation.id, !isVisible);
-                      onAnnotationToggleVisibility?.(annotation.id, !isVisible);
+                      visibilityStateRef.current.set(intervention.id, !isVisible);
+                      onInterventionToggleVisibility?.(intervention.id, !isVisible);
                     }}
                     className="mt-0.5 text-slate-400 hover:text-slate-600"
                   >
@@ -206,7 +206,7 @@ export function AnnotationPanel({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-medium text-slate-800 truncate">
-                        {annotation.title}
+                        {intervention.title}
                       </h4>
                       <Badge
                         variant="outline"
@@ -215,25 +215,25 @@ export function AnnotationPanel({
                           categoryInfo?.color && `border-[${categoryInfo.color}] text-[${categoryInfo.color}]`
                         )}
                       >
-                        {formatCategory(annotation.category)}
+                        {formatCategory(intervention.category)}
                       </Badge>
                     </div>
 
-                    {annotation.description && (
+                    {intervention.description && (
                       <p className="text-xs text-slate-500 line-clamp-2 mb-1">
-                        {annotation.description}
+                        {intervention.description}
                       </p>
                     )}
 
                     <div className="flex items-center gap-3 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
-                        {annotation.geometry_type === 'point' && <MapPin className="w-3 h-3" />}
-                        {annotation.geometry_type === 'line' && <Minus className="w-3 h-3" />}
-                        {annotation.geometry_type === 'polygon' && <Pentagon className="w-3 h-3" />}
-                        {annotation.geometry_type}
+                        {intervention.geometry_type === 'point' && <MapPin className="w-3 h-3" />}
+                        {intervention.geometry_type === 'line' && <Minus className="w-3 h-3" />}
+                        {intervention.geometry_type === 'polygon' && <Pentagon className="w-3 h-3" />}
+                        {intervention.geometry_type}
                       </span>
-                      <span>by {annotation.created_by}</span>
-                      <span>{formatTimestamp(annotation.updated_at)}</span>
+                      <span>by {intervention.created_by}</span>
+                      <span>{formatTimestamp(intervention.updated_at)}</span>
                     </div>
                   </div>
 
@@ -245,7 +245,7 @@ export function AnnotationPanel({
                       className="h-8 w-8"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAnnotationEdit?.(annotation);
+                        onInterventionEdit?.(intervention);
                       }}
                     >
                       <Edit className="w-3 h-3 text-slate-500" />
@@ -256,7 +256,7 @@ export function AnnotationPanel({
                       className="h-8 w-8 hover:text-red-600"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setDeleteId(annotation.id);
+                        setDeleteId(intervention.id);
                       }}
                     >
                       <Trash2 className="w-3 h-3" />
@@ -273,9 +273,9 @@ export function AnnotationPanel({
       <AlertDialog open={deleteId !== null} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Annotation</AlertDialogTitle>
+            <AlertDialogTitle>Delete Intervention</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this annotation? This action cannot be undone.
+              Are you sure you want to delete this intervention? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

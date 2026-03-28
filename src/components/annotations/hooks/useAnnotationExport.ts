@@ -22,7 +22,7 @@ export function useAnnotationExport() {
     options: ExportOptions = {}
   ) => {
     const {
-      filename = `annotations_${new Date().toISOString().slice(0, 10)}.geojson`,
+      filename = `interventions_${new Date().toISOString().slice(0, 10)}.geojson`,
       projection = 'EPSG:32642',
     } = options;
 

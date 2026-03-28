@@ -13,6 +13,7 @@ All notable changes to the Flood Risk Assessment application are documented in t
 - Database-backed layers: AOI and SubCatchments from public schema
 
 ### Changed
+- **BREAKING**: "Annotations" UI renamed to "Interventions" for clarity (internal code paths unchanged)
 - **BREAKING**: "Layers" sidebar tab renamed to "Hazard" for better clarity
 - AOI layer: results workspace → DEM workspace (database-backed, public.AOI)
 - SubCatchments layer: results workspace → DEM workspace (database-backed, public.SubCatchments)

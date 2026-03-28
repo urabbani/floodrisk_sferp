@@ -42,7 +42,7 @@ This guide explains how to manually configure the `exposures` workspace in GeoSe
 - **database:** `postgres`
 - **schema:** `T3_100yrs_Present_Perfect_Impacted`
 - **user:** `postgres`
-- **passwd:** `maltanadirSRV0`
+- **passwd:** (set your database password)
 - **dbtype:** `postgis`
 
 4. Click **Save**

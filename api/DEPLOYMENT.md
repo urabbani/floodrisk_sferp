@@ -84,7 +84,7 @@ The backend uses these environment variables (configured in systemd service):
 - `DB_PORT`: 5432
 - `DB_NAME`: postgres
 - `DB_USER`: postgres
-- `DB_PASSWORD`: maltanadirSRV0
+- `DB_PASSWORD`: (set via environment)
 
 ## Management Commands
 

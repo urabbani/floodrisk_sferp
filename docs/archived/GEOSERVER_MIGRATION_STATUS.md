@@ -48,7 +48,7 @@
    - database: postgres
    - schema: T3_100yrs_Present_Perfect_Impacted
    - user: postgres
-   - passwd: maltanadirSRV0
+   - passwd: (set your database password)
    - dbtype: postgis
    ```
 
