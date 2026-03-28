@@ -356,7 +356,7 @@ function App() {
   // Handle map click (stable reference to prevent map re-initialization)
   const handleMapClick = useCallback(async (coord: number[], pixel: number[]) => {
     // Skip WMS feature identification when in drawing mode
-    if (drawingMode || drawingTool !== 'none') {
+    if (drawingTool !== 'none') {
       console.log('Drawing mode active, skipping feature identification');
       return;
     }
@@ -450,7 +450,7 @@ function App() {
       position: { x: pixel[0], y: pixel[1] },
       features,
     });
-  }, [visibleLayers, drawingTool, drawingMode]);
+  }, [visibleLayers, drawingTool]);
 
   // Toggle sidebar
   const toggleSidebar = useCallback(() => {
