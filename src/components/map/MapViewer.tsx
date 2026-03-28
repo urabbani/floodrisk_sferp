@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
-import type { Map } from 'ol';
-import { View } from 'ol';
+import { Map as OlMap, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import XYZ from 'ol/source/XYZ';
@@ -52,9 +51,9 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
   function MapViewer({ visibleLayerIds, allLayers, layerOpacities, onMapClick }, ref) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<Map | null>(null);
-  const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>>>(new globalThis.Map());
+  const layerRefs = useRef<globalThis.Map<string, TileLayer<TileWMS>> | null>(null);
   const layerOpacitiesRef = useRef<Record<string, number>>({});
-  const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>>>(new globalThis.Map());
+  const baseLayerRefs = useRef<globalThis.Map<string, TileLayer<XYZ>> | null>(null);
   const onMapClickRef = useRef(onMapClick);
   const [activeBaseMap, setActiveBaseMap] = useState(baseMaps.find(bm => bm.visible)?.id || 'esri-dark');
   const [rotation, setRotation] = useState(0);
@@ -72,6 +71,14 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
     if (initializedRef.current || !mapRef.current) return;
     initializedRef.current = true;
 
+    // Lazy-initialize refs if not already initialized
+    if (!layerRefs.current) {
+      layerRefs.current = new globalThis.Map();
+    }
+    if (!baseLayerRefs.current) {
+      baseLayerRefs.current = new globalThis.Map();
+    }
+
     const projection = getProjection(MAP_CONFIG.projection);
     if (!projection) {
       console.error('Projection not found:', MAP_CONFIG.projection);
@@ -88,10 +95,10 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
         visible: bm.visible,
         zIndex: -1, // FIXED: Always below data layers
       });
-      baseLayerRefs.current.set(bm.id, layer);
+      baseLayerRefs.current!.set(bm.id, layer);
     });
 
-    const map = new Map({
+    const map = new OlMap({
       target: mapRef.current,
       layers: Array.from(baseLayerRefs.current.values()),
       view: new View({
@@ -149,7 +156,7 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
   // to prevent removing/re-adding layers when those change. Layer properties should
   // be updated in-place, not by recreating layers.
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!mapInstance.current || !layerRefs.current) return;
 
     const map = mapInstance.current;
     const currentLayerIds = new Set(visibleLayerIds);
@@ -169,14 +176,14 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
     Array.from(layerRefs.current.entries()).forEach(([id, layer]) => {
       if (!currentLayerIds.has(id)) {
         map.removeLayer(layer);
-        layerRefs.current.delete(id);
+        layerRefs.current!.delete(id);
         delete layerOpacitiesRef.current[id];
       }
     });
 
     // Add new layers
     visibleLayerIds.forEach((layerId) => {
-      if (!layerRefs.current.has(layerId)) {
+      if (!layerRefs.current!.has(layerId)) {
         const layerInfo = allLayers.find((l) => l.id === layerId);
         if (!layerInfo) {
           console.warn(`[MapViewer] Layer not found in allLayers: ${layerId}`);
@@ -207,17 +214,17 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
         });
 
         map.addLayer(wmsLayer);
-        layerRefs.current.set(layerId, wmsLayer);
+        layerRefs.current!.set(layerId, wmsLayer);
       }
     });
   }, [visibleLayerIds]);
 
   // Update opacity for existing layers when layerOpacities changes
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!mapInstance.current || !layerRefs.current) return;
 
     visibleLayerIds.forEach((layerId) => {
-      const layer = layerRefs.current.get(layerId);
+      const layer = layerRefs.current!.get(layerId);
       const layerInfo = allLayers.find((l) => l.id === layerId);
       if (!layer || !layerInfo) return;
 
@@ -233,10 +240,10 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
 
   // Update CQL filters for existing layers when allLayers change
   useEffect(() => {
-    if (!mapInstance.current) return;
+    if (!mapInstance.current || !layerRefs.current) return;
 
     visibleLayerIds.forEach((layerId) => {
-      const layer = layerRefs.current.get(layerId);
+      const layer = layerRefs.current!.get(layerId);
       const layerInfo = allLayers.find((l) => l.id === layerId);
       if (!layer || !layerInfo) return;
 
@@ -264,9 +271,11 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
   // Switch base map
   const switchBaseMap = useCallback((baseMapId: string) => {
     setActiveBaseMap(baseMapId);
-    baseLayerRefs.current.forEach((layer, id) => {
-      layer.setVisible(id === baseMapId);
-    });
+    if (baseLayerRefs.current) {
+      baseLayerRefs.current.forEach((layer, id) => {
+        layer.setVisible(id === baseMapId);
+      });
+    }
   }, []);
 
   // Track mouse position for coordinate display

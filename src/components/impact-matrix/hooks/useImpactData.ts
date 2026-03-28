@@ -127,7 +127,13 @@ export function useImpactDataMap(
   const { data, isLoading, error, refetch } = useImpactData(query, options);
 
   // Use useRef to store the map to avoid re-renders
-  const dataMapRef = useRef<Map<string, ScenarioImpactSummary>>(new Map());
+  // Lazy-initialize to avoid Map iteration issues in React concurrent mode
+  const dataMapRef = useRef<Map<string, ScenarioImpactSummary> | null>(null);
+
+  // Lazy-initialize the Map if needed
+  if (!dataMapRef.current) {
+    dataMapRef.current = new Map();
+  }
 
   // Update the map when data changes
   useEffect(() => {

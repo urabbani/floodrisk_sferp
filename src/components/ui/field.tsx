@@ -198,9 +198,10 @@ function FieldError({
       return null
     }
 
-    const uniqueErrors = [
-      ...new Map(errors.map((error) => [error?.message, error])).values(),
-    ]
+    const errorEntries = errors
+      .filter((error): error is { message?: string } => error !== undefined)
+      .map((error) => [error?.message, error]);
+    const uniqueErrors = [...new Map(errorEntries).values()];
 
     if (uniqueErrors?.length == 1) {
       return uniqueErrors[0]?.message

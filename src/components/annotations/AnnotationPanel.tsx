@@ -56,12 +56,18 @@ export function AnnotationPanel({
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Track visibility state for each annotation using useRef to persist across renders
-  const visibilityStateRef = useRef<Map<number, boolean>>(new Map());
+  // Lazy-initialize to avoid Map iteration issues in React concurrent mode
+  const visibilityStateRef = useRef<Map<number, boolean> | null>(null);
+
+  // Initialize the Map if needed (lazy initialization)
+  if (!visibilityStateRef.current) {
+    visibilityStateRef.current = new Map();
+  }
 
   // Initialize visibility state for new annotations
   annotations.forEach((a) => {
-    if (!visibilityStateRef.currentRef.current.has(a.id)) {
-      visibilityStateRef.currentRef.current.set(a.id, true);
+    if (!visibilityStateRef.current!.has(a.id)) {
+      visibilityStateRef.current!.set(a.id, true);
     }
   });
 

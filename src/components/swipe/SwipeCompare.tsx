@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Map, View } from 'ol';
+import { Map as OlMap, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import XYZ from 'ol/source/XYZ';
@@ -56,8 +56,8 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const leftMapRef = useRef<HTMLDivElement>(null);
   const rightMapRef = useRef<HTMLDivElement>(null);
-  const leftMapInstance = useRef<Map | null>(null);
-  const rightMapInstance = useRef<Map | null>(null);
+  const leftMapInstance = useRef<OlMap | null>(null);
+  const rightMapInstance = useRef<OlMap | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [swipePosition, setSwipePosition] = useState<SwipePosition>({ x: 50, percentage: 50 });
   const [leftLayerId, setLeftLayerId] = useState<string>('');
@@ -107,7 +107,7 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
     );
 
     // Create left map
-    const leftMap = new Map({
+    const leftMap = new OlMap({
       target: leftMapRef.current,
       layers: leftBaseLayers,
       view: new View({ projection }),
@@ -115,7 +115,7 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
     });
 
     // Create right map
-    const rightMap = new Map({
+    const rightMap = new OlMap({
       target: rightMapRef.current,
       layers: rightBaseLayers,
       view: new View({ projection }),
