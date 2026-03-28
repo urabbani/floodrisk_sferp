@@ -4,7 +4,7 @@
  * Sidebar panel displaying list of annotations with search and filter.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Search, Eye, EyeOff, Edit, Trash2, MapPin, Minus, Pentagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,9 +42,6 @@ interface AnnotationPanelProps {
   onToolChange?: (tool: DrawingTool) => void;
 }
 
-// Track visibility state for each annotation
-const visibilityState = new Map<number, boolean>();
-
 export function AnnotationPanel({
   annotations,
   isLoading = false,
@@ -58,10 +55,13 @@ export function AnnotationPanel({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  // Track visibility state for each annotation using useRef to persist across renders
+  const visibilityStateRef = useRef<Map<number, boolean>>(new Map());
+
   // Initialize visibility state for new annotations
   annotations.forEach((a) => {
-    if (!visibilityState.has(a.id)) {
-      visibilityState.set(a.id, true);
+    if (!visibilityStateRef.currentRef.current.has(a.id)) {
+      visibilityStateRef.currentRef.current.set(a.id, true);
     }
   });
 
@@ -164,7 +164,7 @@ export function AnnotationPanel({
         ) : (
           <div className="divide-y divide-slate-100">
             {filteredAnnotations.map((annotation) => {
-              const isVisible = visibilityState.get(annotation.id) ?? true;
+              const isVisible = visibilityStateRef.current.get(annotation.id) ?? true;
               const categoryInfo = CATEGORY_INFO[annotation.category];
 
               return (
@@ -180,7 +180,7 @@ export function AnnotationPanel({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      visibilityState.set(annotation.id, !isVisible);
+                      visibilityStateRef.current.set(annotation.id, !isVisible);
                       onAnnotationToggleVisibility?.(annotation.id, !isVisible);
                     }}
                     className="mt-0.5 text-slate-400 hover:text-slate-600"
