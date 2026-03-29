@@ -47,7 +47,7 @@ export function useAnnotationLayer({
   const vectorLayerRef = useRef<VectorLayer<VectorSource>>(
     new VectorLayer({
       source: vectorSourceRef.current,
-      style: annotationStyleFunction,
+      style: annotationStyleFunction as any,
       zIndex: 200, // Above all WMS layers
     })
   );
@@ -68,7 +68,7 @@ export function useAnnotationLayer({
    */
   const loadAnnotations = useCallback(async (): Promise<Annotation[]> => {
     try {
-      const result = await apiFetch<{ success: boolean; data?: Annotation[] }>(apiUrl, { noAuth: true });
+      const result = await apiFetch<{ success: boolean; data?: Annotation[]; error?: string }>(apiUrl, { noAuth: true });
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to load annotations');
@@ -107,7 +107,7 @@ export function useAnnotationLayer({
    */
   const createAnnotation = useCallback(async (newAnnotation: NewAnnotation): Promise<Annotation> => {
     try {
-      const result = await apiFetch<{ success: boolean; data: Annotation }>(apiUrl, {
+      const result = await apiFetch<{ success: boolean; data: Annotation; error?: string }>(apiUrl, {
         method: 'POST',
         body: JSON.stringify(newAnnotation),
       });
@@ -136,7 +136,7 @@ export function useAnnotationLayer({
    */
   const updateAnnotation = useCallback(async (id: number, updates: UpdateAnnotation): Promise<Annotation> => {
     try {
-      const result = await apiFetch<{ success: boolean; data: Annotation }>(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; data: Annotation; error?: string }>(`${apiUrl}/${id}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
@@ -180,7 +180,7 @@ export function useAnnotationLayer({
    */
   const deleteAnnotation = useCallback(async (id: number): Promise<void> => {
     try {
-      const result = await apiFetch<{ success: boolean }>(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; error?: string }>(`${apiUrl}/${id}`, {
         method: 'DELETE',
       });
 

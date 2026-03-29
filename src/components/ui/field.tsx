@@ -200,7 +200,7 @@ function FieldError({
 
     const errorEntries = errors
       .filter((error): error is { message?: string } => error !== undefined)
-      .map((error) => [error?.message, error]);
+      .map((error) => [error?.message || '', error] as const);
     const uniqueErrors = [...new Map(errorEntries).values()];
 
     if (uniqueErrors?.length == 1) {

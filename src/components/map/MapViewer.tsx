@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState, forwardRef, useImperativeHandle } from 'react';
-import { Map as OlMap, View } from 'ol';
+import { View, Map as OlMap } from 'ol';
+import type Map from 'ol/Map';
 import TileLayer from 'ol/layer/Tile';
 import TileWMS from 'ol/source/TileWMS';
 import XYZ from 'ol/source/XYZ';
@@ -115,12 +116,12 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
 
     mapInstance.current = map;
 
-    map.on('click', (event) => {
+    map.on('click', (event: { coordinate: number[]; pixel: number[]; stopPropagation: () => void }) => {
       event.stopPropagation();
       onMapClickRef.current?.(event.coordinate, event.pixel);
     });
 
-    map.getViewport().addEventListener('dblclick', (e) => {
+    map.getViewport().addEventListener('dblclick', (e: { preventDefault: () => void; stopPropagation: () => void }) => {
       e.preventDefault();
       e.stopPropagation();
     });

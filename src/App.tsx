@@ -15,7 +15,6 @@ import { useDrawingInteractions } from '@/components/annotations/hooks/useDrawin
 import { useAnnotationLayer } from '@/components/annotations/hooks/useAnnotationLayer';
 import { useAnnotations } from '@/components/annotations/hooks/useAnnotations';
 import { useAnnotationExport } from '@/components/annotations/hooks/useAnnotationExport';
-import { annotationToFeature } from '@/components/annotations/lib/conversion';
 import { useAuth } from '@/hooks/useAuth';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
@@ -82,7 +81,6 @@ function App() {
   // Derive username from auth (for backward compatibility with hooks)
   const username = user?.displayName || '';
   const mapViewerRef = useRef<MapViewerHandle>(null);
-  const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [editingAnnotation, setEditingAnnotation] = useState<{ id: number; feature: Feature } | null>(null);
   const [annotationDialogOpen, setAnnotationDialogOpen] = useState(false);
   const [annotationDialogMode, setAnnotationDialogMode] = useState<'create' | 'edit'>('create');
@@ -114,7 +112,7 @@ function App() {
     username,
     onDrawStart: () => {
       // Clear selection when starting to draw
-      setSelectedAnnotation(null);
+      // Selection is handled by useDrawingInteractions internally
     },
     onDrawEnd: (feature) => {
       // Open dialog to enter intervention details
@@ -334,12 +332,17 @@ function App() {
 
   const handleAnnotationDelete = useCallback(async (id: number) => {
     try {
+      // Remove feature from vector source immediately
+      const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
+      if (feature) {
+        vectorSource?.removeFeature(feature);
+      }
       await deleteAnnotation(id);
     } catch (error) {
       console.error('Failed to delete intervention:', error);
       alert('Failed to delete intervention');
     }
-  }, [deleteAnnotation]);
+  }, [deleteAnnotation, vectorSource]);
 
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
     // Find feature and zoom to it

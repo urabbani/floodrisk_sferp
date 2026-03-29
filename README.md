@@ -25,6 +25,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
   - **JWT-based authentication** required for drawing/editing
   - **Role-based access control**: Admin users can manage all interventions, regular users can only manage their own
   - **Fixed visibility state bug**: Multiple interventions can now be toggled independently without interfering with each other
+  - **Fixed deletion bug**: Deleted interventions now properly disappear from the map
 - **Mobile Responsive** - Adaptive UI with sidebar toggle
 - **Stream Network** - HydroSHEDS-derived stream network visualization
 

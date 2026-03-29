@@ -13,7 +13,8 @@ export type DrawingTool =
   | 'line'      // Draw line annotations
   | 'polygon'   // Draw polygon annotations
   | 'select'    // Select existing annotation
-  | 'modify';   // Modify existing annotation vertices
+  | 'modify'    // Modify existing annotation vertices
+  | 'delete';   // Delete selected annotation
 
 /**
  * Annotation categories for grouping and filtering
@@ -155,6 +156,13 @@ export interface ApiResponse<T> {
 /**
  * Annotations list response
  */
+export interface AnnotationsListResponse extends ApiResponse<Annotation[]> {
+  // error is inherited from ApiResponse
+}
+
+/**
+ * Annotations list response
+ */
 export interface AnnotationsListResponse {
   success: boolean;
   data: Annotation[];
@@ -171,6 +179,7 @@ export const TOOL_INFO: Record<DrawingTool, { icon: string; label: string; descr
   polygon: { icon: 'Pentagon', label: 'Polygon', description: 'Click to place vertices, double-click to close' },
   select: { icon: 'MousePointer2', label: 'Select', description: 'Click to select an annotation for editing' },
   modify: { icon: 'Pencil', label: 'Modify', description: 'Drag vertices to modify shape' },
+  delete: { icon: 'Trash2', label: 'Delete', description: 'Delete selected annotation' },
 } as const;
 
 /**

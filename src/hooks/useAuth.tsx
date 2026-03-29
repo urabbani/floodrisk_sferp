@@ -86,6 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const res = await apiFetch<{
       success: boolean;
       data: { token: string; user: AuthUser };
+      error?: string;
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -93,7 +94,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     });
 
     if (!res.success || !res.data) {
-      throw new Error(res.error || 'Login failed');
+      throw new Error((res as { error?: string }).error || 'Login failed');
     }
 
     setStoredToken(res.data.token);

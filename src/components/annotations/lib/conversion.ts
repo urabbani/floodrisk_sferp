@@ -2,8 +2,8 @@
  * Conversion utilities between Annotation and OpenLayers Feature
  */
 
-import type Feature from 'ol/Feature';
-import type { Annotation, NewAnnotation, UpdateAnnotation } from '@/types/annotations';
+import Feature from 'ol/Feature';
+import type { Annotation, NewAnnotation } from '@/types/annotations';
 import { DEFAULT_STYLE_CONFIG } from './styles';
 import GeoJSON from 'ol/format/GeoJSON';
 

@@ -508,6 +508,37 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 **Files Modified:**
 - `src/components/impact-matrix/views/components/ScenarioComparisonCharts.tsx`
 
+---
+
+### Intervention Deletion Not Removing from Map (FIXED - March 29, 2026)
+
+**Issue:** When deleting an intervention that was visible on the map, the feature remained visible after deletion.
+
+**Root Cause:** The `handleAnnotationDelete` function only called the API to delete the intervention but did not remove the corresponding feature from the OpenLayers vector source. The API call updated the local state (interventions list), but the map feature was never removed.
+
+**Solution:** Modified `src/App.tsx` to remove the feature from the vector source before calling the API delete:
+
+```typescript
+const handleAnnotationDelete = useCallback(async (id: number) => {
+  try {
+    // Remove feature from vector source immediately
+    const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
+    if (feature) {
+      vectorSource?.removeFeature(feature);
+    }
+    await deleteAnnotation(id);
+  } catch (error) {
+    console.error('Failed to delete intervention:', error);
+    alert('Failed to delete intervention');
+  }
+}, [deleteAnnotation, vectorSource]);
+```
+
+**Result:** Interventions now properly disappear from the map when deleted, regardless of their visibility state.
+
+**Files Modified:**
+- `src/App.tsx`
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior

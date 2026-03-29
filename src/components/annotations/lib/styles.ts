@@ -10,8 +10,7 @@ import Stroke from 'ol/style/Stroke';
 import Circle from 'ol/style/Circle';
 import Text from 'ol/style/Text';
 import type Feature from 'ol/Feature';
-import type Geometry from 'ol/geom/Geometry';
-import type { StyleConfig } from '@/types/annotations';
+import type { StyleConfig, AnnotationGeometryType } from '@/types/annotations';
 import { DEFAULT_STYLES } from '@/types/annotations';
 
 /**
@@ -24,8 +23,9 @@ export const DEFAULT_STYLE_CONFIG: StyleConfig = DEFAULT_STYLES.point;
  * Falls back to defaults based on geometry type
  */
 function getStyleConfig(feature: Feature): StyleConfig {
-  const geometryType = feature.get('geometry_type') || 'point';
-  return (feature.get('styleConfig') as StyleConfig) || DEFAULT_STYLES[geometryType];
+  const geometryType = feature.get('geometry_type') as AnnotationGeometryType || 'point';
+  const styleConfig = feature.get('styleConfig') as StyleConfig | undefined;
+  return styleConfig || DEFAULT_STYLES[geometryType];
 }
 
 /**
@@ -123,18 +123,15 @@ export function vertexStyle(): Style {
  * Default styles for each geometry type
  * Used when creating new features before saving
  */
-export const DEFAULT_FEATURE_STYLES = {
+export const DEFAULT_FEATURE_STYLES: Record<string, Record<string, unknown>> = {
   point: {
-    'styleConfig': DEFAULT_STYLES.point,
-    'geometry_type': 'point',
+    styleConfig: DEFAULT_STYLES.point,
   },
   line: {
-    'styleConfig': DEFAULT_STYLES.line,
-    'geometry_type': 'line',
+    styleConfig: DEFAULT_STYLES.line,
   },
   polygon: {
-    'styleConfig': DEFAULT_STYLES.polygon,
-    'geometry_type': 'polygon',
+    styleConfig: DEFAULT_STYLES.polygon,
   },
 } as const;
 

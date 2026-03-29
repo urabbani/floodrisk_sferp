@@ -12,10 +12,8 @@ import Modify from 'ol/interaction/Modify';
 import Snap from 'ol/interaction/Snap';
 import Select from 'ol/interaction/Select';
 import VectorSource from 'ol/source/Vector';
-import VectorLayer from 'ol/layer/Vector';
 import { GeoJSON } from 'ol/format';
 import type Feature from 'ol/Feature';
-import type Geometry from 'ol/geom/Geometry';
 import { Style, Circle, Fill, Stroke } from 'ol/style';
 import type { DrawingTool } from '@/types/annotations';
 import {
@@ -145,8 +143,6 @@ export function useDrawingInteractions({
         // Handle draw completion
         draw.on('drawend', (event: { feature: Feature }) => {
           const feature = event.feature;
-          // Re-apply proper style
-          feature.setStyle(annotationStyleFunction(feature));
           onDrawEnd?.(feature);
         });
 
@@ -178,22 +174,21 @@ export function useDrawingInteractions({
 
       case 'select': {
         const select = new Select({
-          source: vectorSource,
-          style: (feature) => annotationStyleFunction(feature, true),
+          style: annotationStyleFunction as unknown as Style | Style[],
         });
 
-        select.on('select', (event: { selected: Feature[] | null }) => {
+        select.on('select', (event: { selected: Feature[]; deselected: Feature[] }) => {
           const features = event.selected;
-          if (features && features.length > 0) {
+          const deselected = event.deselected;
+
+          if (features.length > 0) {
             const feature = features[0];
             setSelectedFeature(feature);
             onSelect?.(feature);
+          } else if (deselected.length > 0) {
+            setSelectedFeature(null);
+            onSelect?.(null);
           }
-        });
-
-        select.on('deselect', () => {
-          setSelectedFeature(null);
-          onSelect?.(null);
         });
 
         map.addInteraction(select);

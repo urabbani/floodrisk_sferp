@@ -45,7 +45,7 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const result: AnnotationsListResponse = await apiFetch(apiUrl, { noAuth: true });
+      const result: AnnotationsListResponse & { error?: string } = await apiFetch(apiUrl, { noAuth: true });
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch annotations');
@@ -69,7 +69,7 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const result = await apiFetch<{ success: boolean; data: Annotation }>(apiUrl, {
+      const result = await apiFetch<{ success: boolean; data: Annotation; error?: string }>(apiUrl, {
         method: 'POST',
         body: JSON.stringify(newAnnotation),
       });
@@ -102,7 +102,7 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const result = await apiFetch<{ success: boolean; data: Annotation }>(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; data: Annotation; error?: string }>(`${apiUrl}/${id}`, {
         method: 'PUT',
         body: JSON.stringify(updates),
       });
@@ -137,7 +137,7 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const result = await apiFetch<{ success: boolean }>(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; error?: string }>(`${apiUrl}/${id}`, {
         method: 'DELETE',
       });
 

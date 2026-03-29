@@ -21,7 +21,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -73,7 +72,7 @@ export function InterventionDialog({
   onSubmit,
   defaultValues = {},
   mode = 'create',
-}: AnnotationDialogProps) {
+}: InterventionDialogProps) {
   const [selectedColor, setSelectedColor] = useState(defaultValues.color || COLOR_PRESETS[0].value);
 
   const form = useForm<AnnotationFormValues>({
