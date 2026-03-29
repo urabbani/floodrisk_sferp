@@ -76,6 +76,9 @@ Hazard
 - **SwipeCompare** (`src/components/swipe/SwipeCompare.tsx`): Side-by-side comparison of two flood scenarios
 - **ImpactMatrix** (`src/components/impact-matrix/`): Real-time flood impact analysis with depth distribution charts
 - **Interventions** (`src/components/annotations/`): Collaborative drawing and annotation on the map (points, lines, polygons with categories and export)
+  - **LoginDialog** (`src/components/annotations/LoginDialog.tsx`): Login form for authentication
+  - **useAuth** (`src/hooks/useAuth.tsx`): Auth context providing user state, login/logout functions
+  - **apiFetch** (`src/lib/api.ts`): Centralized fetch wrapper with automatic JWT token injection
 
 ### Impact Matrix Module
 
@@ -145,6 +148,51 @@ sudo systemctl status floodrisk-impact-api
 # View logs
 sudo journalctl -u floodrisk-impact-api -f
 ```
+
+### Authentication Module
+
+The Interventions feature uses JWT-based authentication for user management and access control:
+
+**Backend (`api/auth.mjs`):**
+- **POST /api/auth/login** - Authenticate and receive JWT token (24h expiry)
+- **GET /api/auth/me** - Get current user info (requires auth)
+- **GET /api/auth/users** - List users (admin only)
+- **POST /api/auth/users** - Create user (admin only)
+- **PUT /api/auth/users/:id** - Update user (admin only)
+- **POST /api/auth/users/:id/reset-password** - Reset password (admin only)
+- **Middleware:** `authenticate` (JWT verification), `requireAdmin` (role check)
+- **Rate limiting:** 5 login attempts per 15 minutes per IP
+
+**Database Schema (`api/migrations/create_users.sql`):**
+- Table: `auth.users` with columns: `id`, `username` (login), `display_name` (shown on interventions), `password_hash` (bcrypt), `role` (admin/user), `active`, timestamps
+- `created_by` field in interventions is set server-side from authenticated user's `display_name`
+
+**Frontend:**
+- **`src/hooks/useAuth.tsx`** - AuthProvider context wrapping the app, validates token on mount via `/api/auth/me`
+- **`src/lib/api.ts`** - `apiFetch()` wrapper auto-injects `Authorization: Bearer <token>` header, handles 401 by clearing token and dispatching logout event
+- **`src/components/annotations/LoginDialog.tsx`** - Login form triggered when user tries to draw without authentication
+- **`src/types/auth.ts`** - AuthUser, LoginRequest, LoginResponse types
+
+**User Management CLI (`api/seed-user.mjs`):**
+```bash
+# Add user
+node api/seed-user.mjs add <username> "<display_name>" <password> [--admin]
+
+# List users
+node api/seed-user.mjs list
+
+# Reset password
+node api/seed-user.mjs reset-password <username> <new_password>
+
+# Toggle active status
+node api/seed-user.mjs toggle <username>
+```
+
+**Authorization:**
+- Public: GET interventions, all impact endpoints
+- Protected: POST/PUT/DELETE interventions (requires auth)
+- Ownership: Users can only edit/delete their own interventions
+- Admin override: Can manage any intervention and user accounts
 
 ### Map Projection
 
@@ -473,6 +521,8 @@ psql -h 10.0.0.205 -U postgres -d postgres \
 - **Feature Identification:** Click on any layer to view attributes via WMS GetFeatureInfo (works for raster and vector)
 - **Swipe Compare:** Compare two flood scenarios side-by-side with synchronized pan/zoom and draggable divider
 - **Interventions:** Draw points, lines, polygons on the map with details (title, description, category), search, filter, visibility toggle, and GeoJSON export
+  - **Authentication required:** Must sign in to draw, edit, or delete interventions
+  - **Role-based access:** Admins can manage all interventions; regular users can only manage their own
 - All groups default to collapsed state except root
 
 ## Production Deployment

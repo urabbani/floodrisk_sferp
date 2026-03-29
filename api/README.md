@@ -16,7 +16,7 @@ This directory contains API endpoints for fetching flood impact and exposure sum
 1. Install dependencies:
 ```bash
 cd api
-npm install express pg cors
+npm install express pg cors bcryptjs jsonwebtoken
 ```
 
 2. Configure database connection:
@@ -36,6 +36,12 @@ The server will start on port 3001 (configurable via PORT environment variable).
 **Endpoints:**
 - `GET /api/health` - Health check
 - `GET /api/impact/summary?climate=present` - Get impact summary
+- `POST /api/auth/login` - Authenticate and get JWT token
+- `GET /api/auth/me` - Get current user info (requires auth)
+- `GET /api/annotations` - List interventions
+- `POST /api/annotations` - Create intervention (requires auth)
+- `PUT /api/annotations/:id` - Update intervention (requires auth, ownership check)
+- `DELETE /api/annotations/:id` - Delete intervention (requires auth, ownership check)
 
 ### Option 2: PHP Endpoint (Recommended for Apache)
 
@@ -212,6 +218,74 @@ LIMIT 10;
 3. **Rate Limiting:** Implement rate limiting for production
 4. **SSL:** Use HTTPS in production
 5. **Input Validation:** All inputs are validated/sanitized
+
+## Authentication
+
+The API uses JWT-based authentication for intervention management.
+
+### Login Endpoint
+
+**POST /api/auth/login**
+
+Authenticate with username and password to receive a JWT token.
+
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"password123"}'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "user": {
+      "id": 1,
+      "username": "admin",
+      "displayName": "Administrator",
+      "role": "admin"
+    }
+  }
+}
+```
+
+### Using the Token
+
+Include the token in the `Authorization` header for protected endpoints:
+
+```bash
+curl -X POST http://localhost:3001/api/annotations \
+  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"My Point","geometry_type":"point","geometry":{"type":"Point","coordinates":[24.8,67.5]}}'
+```
+
+### User Management
+
+Use the CLI tool to manage users:
+
+```bash
+# Add a user
+node api/seed-user.mjs add <username> "<display_name>" <password> [--admin]
+
+# List users
+node api/seed-user.mjs list
+
+# Reset password
+node api/seed-user.mjs reset-password <username> <new_password>
+
+# Disable/enable account
+node api/seed-user.mjs toggle <username>
+```
+
+### Authorization Rules
+
+- **Public endpoints** (no auth required): GET `/api/annotations`, GET `/api/annotations/:id`, all `/api/impact/*` endpoints
+- **Protected endpoints** (auth required): POST/PUT/DELETE `/api/annotations/*`
+- **Ownership**: Users can only edit/delete their own interventions
+- **Admin override**: Admin users can manage any intervention
 
 ## Deployment
 

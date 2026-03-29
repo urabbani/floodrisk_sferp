@@ -22,7 +22,8 @@ A web-based interactive flood risk assessment tool for the Indus River region in
   - Add details (title, description, category)
   - Edit, delete, search, filter interventions
   - Toggle visibility, export as GeoJSON
-  - Multi-user support with username identification
+  - **JWT-based authentication** required for drawing/editing
+  - **Role-based access control**: Admin users can manage all interventions, regular users can only manage their own
 - **Mobile Responsive** - Adaptive UI with sidebar toggle
 - **Stream Network** - HydroSHEDS-derived stream network visualization
 
@@ -41,6 +42,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Map Library**: OpenLayers (UTM Zone 42N - EPSG:32642)
 - **UI Components**: shadcn/ui (Radix UI)
 - **Backend**: Node.js/Express with PostgreSQL/PostGIS
+- **Authentication**: JWT tokens with bcryptjs password hashing
 - **Caching**: In-memory cache with TTL
 
 ## Project Structure
@@ -60,7 +62,13 @@ floodrisk_sferp/
 │   ├── lib/                      # Utility functions
 │   └── types/                    # TypeScript type definitions
 ├── api/                          # Backend API
-│   └── impact-summary.mjs        # Impact API server with caching
+│   ├── impact-summary.mjs        # Impact API server with caching
+│   ├── auth.mjs                  # JWT authentication module
+│   ├── annotations.mjs           # Interventions CRUD API
+│   ├── db.mjs                    # Database connection pool
+│   ├── seed-user.mjs             # CLI user management tool
+│   └── migrations/               # Database migration scripts
+│       └── create_users.sql      # Auth users table schema
 ├── tools/
 │   └── geoserver/                # GeoServer management scripts
 ├── dist/                         # Production build output
@@ -105,7 +113,7 @@ npm run dev  # Includes GeoServer proxy at /geoserver
 # Available at http://localhost:5173
 ```
 
-### Backend API Server (Required for Impact Matrix)
+### Backend API Server (Required for Impact Matrix & Interventions)
 ```bash
 # Terminal 1: Start frontend
 npm run dev
@@ -114,6 +122,26 @@ npm run dev
 cd api
 node impact-summary.mjs
 # Available at http://localhost:3001
+```
+
+### User Management (Authentication)
+The Interventions feature requires authentication. Create users via CLI:
+
+```bash
+# Create a regular user
+node api/seed-user.mjs add john "John Doe" password123
+
+# Create an admin user
+node api/seed-user.mjs add admin "Administrator" password123 --admin
+
+# List all users
+node api/seed-user.mjs list
+
+# Reset password
+node api/seed-user.mjs reset-password john newpassword
+
+# Disable/enable account
+node api/seed-user.mjs toggle john
 ```
 
 ### Building for Production
