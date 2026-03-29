@@ -21,7 +21,7 @@ All notable changes to the Flood Risk Assessment application are documented in t
 - Project structure cleanup (removed planning documents)
 
 ### Fixed
-- N/A
+- Intervention visibility state bug in InterventionPanel component (multiple interventions could not be toggled independently)
 
 ### Performance
 - N/A

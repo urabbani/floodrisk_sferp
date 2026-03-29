@@ -4,7 +4,7 @@
  * Sidebar panel displaying list of interventions with search and filter.
  */
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Eye, EyeOff, Edit, Trash2, MapPin, Minus, Pentagon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,8 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import type { Annotation, AnnotationCategory, DrawingTool } from '@/types/annotations';
-import { CATEGORY_INFO, formatCategory, formatTimestamp, TOOL_INFO } from '@/types/annotations';
+import type { Annotation, DrawingTool } from '@/types/annotations';
+import { CATEGORY_INFO, formatCategory, formatTimestamp } from '@/types/annotations';
 import { cn } from '@/lib/utils';
 
 interface InterventionPanelProps {
@@ -55,21 +54,21 @@ export function InterventionPanel({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  // Track visibility state for each intervention using useRef to persist across renders
-  // Lazy-initialize to avoid Map iteration issues in React concurrent mode
-  const visibilityStateRef = useRef<Map<number, boolean> | null>(null);
+  // Track visibility state for each intervention using useState to trigger re-renders
+  const [visibilityState, setVisibilityState] = useState<Map<number, boolean>>(new Map());
 
-  // Initialize the Map if needed (lazy initialization)
-  if (!visibilityStateRef.current) {
-    visibilityStateRef.current = new Map();
-  }
-
-  // Initialize visibility state for new interventions
-  interventions.forEach((a) => {
-    if (!visibilityStateRef.current!.has(a.id)) {
-      visibilityStateRef.current!.set(a.id, true);
-    }
-  });
+  // Initialize visibility state for new interventions and preserve existing state
+  useEffect(() => {
+    const newState = new Map(visibilityState); // Start with current state
+    interventions.forEach((intervention) => {
+      // Only set default visibility if not already tracked (i.e., new intervention)
+      if (!visibilityState.has(intervention.id)) {
+        newState.set(intervention.id, true);
+      }
+      // If already tracked, preserve existing visibility state
+    });
+    setVisibilityState(newState);
+  }, [interventions]);
 
   // Filter interventions based on search and category
   const filteredInterventions = useMemo(() => {
@@ -170,7 +169,7 @@ export function InterventionPanel({
         ) : (
           <div className="divide-y divide-slate-100">
             {filteredInterventions.map((intervention) => {
-              const isVisible = visibilityStateRef.current.get(intervention.id) ?? true;
+              const isVisible = visibilityState.get(intervention.id) ?? true;
               const categoryInfo = CATEGORY_INFO[intervention.category];
 
               return (
@@ -186,8 +185,11 @@ export function InterventionPanel({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      visibilityStateRef.current.set(intervention.id, !isVisible);
-                      onInterventionToggleVisibility?.(intervention.id, !isVisible);
+                      const newVisibility = !isVisible;
+                      const newVisibilityState = new Map(visibilityState);
+                      newVisibilityState.set(intervention.id, newVisibility);
+                      setVisibilityState(newVisibilityState);
+                      onInterventionToggleVisibility?.(intervention.id, newVisibility);
                     }}
                     className="mt-0.5 text-slate-400 hover:text-slate-600"
                   >
