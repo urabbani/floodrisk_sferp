@@ -37,7 +37,7 @@ function validatePassword(password) {
 async function hashPassword(password) {
   // Using dynamic import for bcryptjs (ESM)
   const bcrypt = await import('bcryptjs');
-  return bcrypt.hash(password, 12);
+  return bcrypt.default.hash(password, 12);
 }
 
 /**
