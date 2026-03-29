@@ -7,6 +7,7 @@
 
 import express from 'express';
 import pool from './db.mjs';
+import { authenticate } from './auth.mjs';
 
 const router = express.Router();
 
@@ -152,7 +153,7 @@ router.get('/:id', async (req, res) => {
  *
  * Returns: Created annotation with generated ID
  */
-router.post('/', async (req, res) => {
+router.post('/', authenticate, async (req, res) => {
   try {
     const {
       title,
@@ -161,8 +162,10 @@ router.post('/', async (req, res) => {
       geometry_type,
       geometry,
       style_config = {},
-      created_by = 'Anonymous',
     } = req.body;
+
+    // Use authenticated user's display name as created_by (server-side trust)
+    const created_by = req.user.displayName;
 
     // Validate required fields
     if (!title) {
@@ -246,7 +249,7 @@ router.post('/', async (req, res) => {
  *
  * Returns: Updated annotation
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -256,6 +259,29 @@ router.put('/:id', async (req, res) => {
       geometry,
       style_config,
     } = req.body;
+
+    // Check ownership or admin role
+    const existingResult = await pool.query(
+      'SELECT created_by FROM annotations.features WHERE id = $1',
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Annotation not found',
+      });
+    }
+
+    const existing = existingResult.rows[0];
+    const canEdit = existing.created_by === req.user.displayName || req.user.role === 'admin';
+
+    if (!canEdit) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only edit your own interventions',
+      });
+    }
 
     // Build dynamic update query
     const updates = [];
@@ -351,9 +377,32 @@ router.put('/:id', async (req, res) => {
  *
  * Returns: Success confirmation
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticate, async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Check ownership or admin role
+    const existingResult = await pool.query(
+      'SELECT created_by FROM annotations.features WHERE id = $1',
+      [id]
+    );
+
+    if (existingResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Annotation not found',
+      });
+    }
+
+    const existing = existingResult.rows[0];
+    const canDelete = existing.created_by === req.user.displayName || req.user.role === 'admin';
+
+    if (!canDelete) {
+      return res.status(403).json({
+        success: false,
+        error: 'You can only delete your own interventions',
+      });
+    }
 
     const query = 'DELETE FROM annotations.features WHERE id = $1 RETURNING id';
     const result = await pool.query(query, [id]);

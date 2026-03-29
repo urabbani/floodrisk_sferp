@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback, useEffect } from 'react';
+import { apiFetch } from '@/lib/api';
 import type { Annotation, NewAnnotation, UpdateAnnotation, AnnotationsListResponse } from '@/types/annotations';
 
 const DEFAULT_API_URL = '/api/annotations';
@@ -44,8 +45,7 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const response = await fetch(apiUrl);
-      const result: AnnotationsListResponse = await response.json();
+      const result: AnnotationsListResponse = await apiFetch(apiUrl, { noAuth: true });
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to fetch annotations');
@@ -69,15 +69,12 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const response = await fetch(apiUrl, {
+      const result = await apiFetch<{ success: boolean; data: Annotation }>(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAnnotation),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create annotation');
       }
 
@@ -105,15 +102,12 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const response = await fetch(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; data: Annotation }>(`${apiUrl}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update annotation');
       }
 
@@ -143,11 +137,9 @@ export function useAnnotations({
     setError(null);
 
     try {
-      const response = await fetch(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean }>(`${apiUrl}/${id}`, {
         method: 'DELETE',
       });
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete annotation');

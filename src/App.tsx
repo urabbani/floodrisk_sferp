@@ -10,12 +10,13 @@ import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import { ImpactMatrix } from '@/components/impact-matrix';
 import { InterventionPanel } from '@/components/annotations/InterventionPanel';
 import { InterventionDialog } from '@/components/annotations/InterventionDialog';
-import { UsernamePrompt } from '@/components/annotations/UsernamePrompt';
+import { LoginDialog } from '@/components/annotations/LoginDialog';
 import { useDrawingInteractions } from '@/components/annotations/hooks/useDrawingInteractions';
 import { useAnnotationLayer } from '@/components/annotations/hooks/useAnnotationLayer';
 import { useAnnotations } from '@/components/annotations/hooks/useAnnotations';
 import { useAnnotationExport } from '@/components/annotations/hooks/useAnnotationExport';
 import { annotationToFeature } from '@/components/annotations/lib/conversion';
+import { useAuth } from '@/hooks/useAuth';
 import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
@@ -77,13 +78,16 @@ function App() {
 
   // Interventions state
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('none');
-  const [username, setUsername] = useState(() => localStorage.getItem('floodrisk_username') || '');
+  const { user, isAuthenticated } = useAuth();
+  // Derive username from auth (for backward compatibility with hooks)
+  const username = user?.displayName || '';
   const mapViewerRef = useRef<MapViewerHandle>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<Annotation | null>(null);
   const [editingAnnotation, setEditingAnnotation] = useState<{ id: number; feature: Feature } | null>(null);
   const [annotationDialogOpen, setAnnotationDialogOpen] = useState(false);
   const [annotationDialogMode, setAnnotationDialogMode] = useState<'create' | 'edit'>('create');
   const [pendingDrawFeature, setPendingDrawFeature] = useState<Feature | null>(null);
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
@@ -113,7 +117,7 @@ function App() {
       setSelectedAnnotation(null);
     },
     onDrawEnd: (feature) => {
-      // Open dialog to enter annotation details
+      // Open dialog to enter intervention details
       setPendingDrawFeature(feature);
       setAnnotationDialogMode('create');
       setAnnotationDialogOpen(true);
@@ -128,6 +132,16 @@ function App() {
   });
 
   const { exportToGeoJSON } = useAnnotationExport();
+
+  // Tool change handler - require authentication before drawing/editing
+  const handleToolChange = useCallback((tool: DrawingTool) => {
+    if (tool !== 'none' && !isAuthenticated) {
+      setLoginDialogOpen(true);
+      return;
+    }
+    setActiveTool(tool);
+    setDrawingTool(tool);
+  }, [isAuthenticated, setActiveTool]);
 
   // Sync drawingTool state with setActiveTool
   useEffect(() => {
@@ -252,8 +266,8 @@ function App() {
     category: string;
     styleConfig: Record<string, unknown>;
   }) => {
-    if (!username) {
-      alert('Please set your username first');
+    if (!isAuthenticated) {
+      alert('Please sign in first');
       return;
     }
 
@@ -313,7 +327,7 @@ function App() {
     setEditingAnnotation(null);
     setActiveTool('none');
     setDrawingTool('none');
-  }, [username, annotationDialogMode, pendingDrawFeature, editingAnnotation, createAnnotation, updateAnnotation, vectorSource, setActiveTool, setDrawingTool]);
+  }, [isAuthenticated, annotationDialogMode, pendingDrawFeature, editingAnnotation, createAnnotation, updateAnnotation, vectorSource, setActiveTool, setDrawingTool]);
 
   const handleAnnotationDelete = useCallback(async (id: number) => {
     try {
@@ -463,10 +477,7 @@ function App() {
         onToggleSidebar={toggleSidebar}
         sidebarOpen={sidebarOpen}
         activeTool={activeTool}
-        onToolChange={(tool) => {
-          setActiveTool(tool);
-          setDrawingTool(tool);
-        }}
+        onToolChange={handleToolChange}
         onExport={handleExportAnnotations}
         onToggleInterventionsPanel={handleToggleAnnotationsPanel}
         interventionsCount={interventions.length}
@@ -585,10 +596,7 @@ function App() {
                     feature.changed();
                   }
                 }}
-                onToolChange={(tool) => {
-                  setActiveTool(tool);
-                  setDrawingTool(tool);
-                }}
+                onToolChange={handleToolChange}
               />
             )}
           </div>
@@ -716,10 +724,16 @@ function App() {
         mode={annotationDialogMode}
       />
 
-      {/* Username Prompt */}
-      <UsernamePrompt
-        onUsernameSet={(name) => {
-          setUsername(name);
+      {/* Login Dialog - shown only when user clicks a draw/edit tool without authentication */}
+      <LoginDialog
+        isOpen={loginDialogOpen}
+        onClose={() => setLoginDialogOpen(false)}
+        onLoginSuccess={() => {
+          setLoginDialogOpen(false);
+          // After successful login, if a tool was selected, activate it
+          if (drawingTool !== 'none') {
+            setActiveTool(drawingTool);
+          }
         }}
       />
     </div>

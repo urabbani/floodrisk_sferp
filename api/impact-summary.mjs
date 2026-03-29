@@ -16,6 +16,7 @@ import express from 'express';
 import pool from './db.mjs';
 import cors from 'cors';
 import annotationsRouter from './annotations.mjs';
+import authRouter from './auth.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -688,6 +689,9 @@ app.post('/api/cache/invalidate', (req, res) => {
 
 // Mount annotations router
 app.use('/api/annotations', annotationsRouter);
+
+// Mount auth router
+app.use('/api/auth', authRouter);
 
 /**
  * Start server

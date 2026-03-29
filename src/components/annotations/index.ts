@@ -3,6 +3,7 @@
  */
 
 export { UsernamePrompt } from './UsernamePrompt';
+export { LoginDialog } from './LoginDialog';
 export { InterventionDialog } from './InterventionDialog';
 export { InterventionPanel } from './InterventionPanel';
 export { AnnotationToolbar } from './AnnotationToolbar';

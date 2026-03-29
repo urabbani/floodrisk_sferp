@@ -13,6 +13,7 @@ import { GeoJSON } from 'ol/format';
 import type Feature from 'ol/Feature';
 import type Geometry from 'ol/geom/Geometry';
 import type { Annotation, NewAnnotation, UpdateAnnotation } from '@/types/annotations';
+import { apiFetch } from '@/lib/api';
 import { annotationStyleFunction } from '../lib/styles';
 
 interface UseAnnotationLayerOptions {
@@ -67,8 +68,7 @@ export function useAnnotationLayer({
    */
   const loadAnnotations = useCallback(async (): Promise<Annotation[]> => {
     try {
-      const response = await fetch(apiUrl);
-      const result = await response.json();
+      const result = await apiFetch<{ success: boolean; data?: Annotation[] }>(apiUrl, { noAuth: true });
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to load annotations');
@@ -98,15 +98,12 @@ export function useAnnotationLayer({
    */
   const createAnnotation = useCallback(async (newAnnotation: NewAnnotation): Promise<Annotation> => {
     try {
-      const response = await fetch(apiUrl, {
+      const result = await apiFetch<{ success: boolean; data: Annotation }>(apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newAnnotation),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to create annotation');
       }
 
@@ -130,15 +127,12 @@ export function useAnnotationLayer({
    */
   const updateAnnotation = useCallback(async (id: number, updates: UpdateAnnotation): Promise<Annotation> => {
     try {
-      const response = await fetch(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean; data: Annotation }>(`${apiUrl}/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       });
 
-      const result = await response.json();
-
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || 'Failed to update annotation');
       }
 
@@ -177,11 +171,9 @@ export function useAnnotationLayer({
    */
   const deleteAnnotation = useCallback(async (id: number): Promise<void> => {
     try {
-      const response = await fetch(`${apiUrl}/${id}`, {
+      const result = await apiFetch<{ success: boolean }>(`${apiUrl}/${id}`, {
         method: 'DELETE',
       });
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to delete annotation');

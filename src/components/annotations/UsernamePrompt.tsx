@@ -1,8 +1,9 @@
 /**
  * Username Prompt Component
  *
- * Simple dialog that asks for a username on first visit.
+ * Simple dialog that asks for a username.
  * Stores the username in localStorage for future sessions.
+ * Controlled by parent - only shown when `isOpen` is true.
  */
 
 import { useState, useEffect } from 'react';
@@ -22,24 +23,25 @@ import { Label } from '@/components/ui/label';
 const STORAGE_KEY = 'floodrisk_username';
 
 interface UsernamePromptProps {
+  isOpen: boolean;
+  onClose: () => void;
   onUsernameSet: (username: string) => void;
 }
 
-export function UsernamePrompt({ onUsernameSet }: UsernamePromptProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export function UsernamePrompt({ isOpen, onClose, onUsernameSet }: UsernamePromptProps) {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
 
-  // Check if username is already stored
+  // Reset form when dialog opens
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      onUsernameSet(stored);
-    } else {
-      // No username stored, show prompt
-      setIsOpen(true);
+    if (isOpen) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setUsername(stored);
+      }
+      setError('');
     }
-  }, [onUsernameSet]);
+  }, [isOpen]);
 
   const handleSubmit = () => {
     const trimmed = username.trim();
@@ -56,17 +58,17 @@ export function UsernamePrompt({ onUsernameSet }: UsernamePromptProps) {
 
     localStorage.setItem(STORAGE_KEY, trimmed);
     onUsernameSet(trimmed);
-    setIsOpen(false);
+    onClose();
   };
 
   const handleSkip = () => {
     localStorage.setItem(STORAGE_KEY, 'Anonymous');
     onUsernameSet('Anonymous');
-    setIsOpen(false);
+    onClose();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="flex items-center gap-2">
