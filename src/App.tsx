@@ -290,16 +290,19 @@ function App() {
 
       try {
         const created = await createAnnotation(newAnnotation);
-        // Update feature with ID from server
+        // Update feature properties with data from server response
         pendingDrawFeature.set('id', created.id);
         pendingDrawFeature.set('title', data.title);
         pendingDrawFeature.set('description', data.description);
         pendingDrawFeature.set('category', data.category);
         pendingDrawFeature.set('styleConfig', data.styleConfig);
-        vectorSource?.addFeature(pendingDrawFeature);
+        // Feature is already in the source from drawing, just notify change
+        pendingDrawFeature.changed();
       } catch (error) {
         console.error('Failed to create intervention:', error);
         alert('Failed to save intervention');
+        // Remove the feature from source if creation failed
+        vectorSource?.removeFeature(pendingDrawFeature);
       }
     } else if (annotationDialogMode === 'edit' && editingAnnotation) {
       // Update existing intervention
@@ -558,7 +561,7 @@ function App() {
           {/* Content */}
           <div className="flex-1 overflow-y-auto">
             {sidebarView === 'layers' ? (
-              <LayerTree
+                <LayerTree
                 root={layerTree}
                 onLayerVisibilityChange={handleLayerVisibilityChange}
                 onLayerOpacityChange={handleLayerOpacityChange}
@@ -591,9 +594,10 @@ function App() {
                 onInterventionToggleVisibility={(id, visible) => {
                   const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
                   if (feature) {
-                    feature.setStyle(visible ? undefined : null);
-                    // Trigger re-render
-                    feature.changed();
+                    feature.set('visible', visible);
+                    // Trigger both source and layer to re-render
+                    vectorSource?.changed();
+                    vectorLayer?.changed();
                   }
                 }}
                 onToolChange={handleToolChange}

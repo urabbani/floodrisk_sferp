@@ -35,7 +35,13 @@ function getStyleConfig(feature: Feature): StyleConfig {
  * @param isSelected - Whether the feature is selected (adds highlight)
  * @returns OpenLayers Style object
  */
-export function annotationStyleFunction(feature: Feature, isSelected = false): Style {
+export function annotationStyleFunction(feature: Feature, isSelected = false): Style | null {
+  // Check if feature should be visible
+  const isVisible = feature.get('visible');
+  if (isVisible === false) {
+    return null; // Don't render the feature
+  }
+
   const styleConfig = getStyleConfig(feature);
   const geometry = feature.getGeometry();
   const title = feature.get('title') || '';
@@ -147,6 +153,7 @@ export function getDefaultFeatureProperties(
     category,
     geometry_type: geometryType,
     created_by: createdBy,
+    visible: true, // Default to visible
     ...DEFAULT_FEATURE_STYLES[geometryType],
   };
 }

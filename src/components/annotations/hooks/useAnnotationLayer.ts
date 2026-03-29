@@ -10,7 +10,7 @@ import type Map from 'ol/Map';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import { GeoJSON } from 'ol/format';
-import type Feature from 'ol/Feature';
+import Feature from 'ol/Feature';
 import type Geometry from 'ol/geom/Geometry';
 import type { Annotation, NewAnnotation, UpdateAnnotation } from '@/types/annotations';
 import { apiFetch } from '@/lib/api';
@@ -92,6 +92,15 @@ export function useAnnotationLayer({
       throw error;
     }
   }, [apiUrl]);
+
+  // Load annotations when map becomes available
+  useEffect(() => {
+    if (!map) return;
+
+    loadAnnotations().catch(err => {
+      console.error('Failed to load annotations:', err);
+    });
+  }, [map, loadAnnotations]);
 
   /**
    * Create a new annotation via the API
@@ -244,6 +253,7 @@ function annotationToFeature(annotation: Annotation): Feature | null {
       created_by: annotation.created_by,
       created_at: annotation.created_at,
       updated_at: annotation.updated_at,
+      visible: true, // Default to visible
     });
 
     return feature;

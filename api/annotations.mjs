@@ -189,15 +189,15 @@ router.post('/', authenticate, async (req, res) => {
       });
     }
 
-    // Convert GeoJSON to PostGIS geometry (ST_GeomFromGeoJSON expects SRID 4326, then we transform to 32642)
+    // Convert GeoJSON to PostGIS geometry (GeoJSON is 4326, transform to 32642)
     const query = `
       INSERT INTO annotations.features (
         title, description, category, geometry_type, geometry, style_config, created_by
       )
       VALUES (
-        $1, $2, $3,
-        ST_Transform(ST_GeomFromGeoJSON($4, 4326), 32642),
-        $5, $6, $7
+        $1, $2, $3, $4,
+        ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326), 32642),
+        $6, $7
       )
       RETURNING
         id, title, description, category, geometry_type,
@@ -209,6 +209,7 @@ router.post('/', authenticate, async (req, res) => {
       title,
       description || null,
       category,
+      geometry_type,
       JSON.stringify(geometry),
       JSON.stringify(style_config),
       created_by,
@@ -310,7 +311,7 @@ router.put('/:id', authenticate, async (req, res) => {
           error: 'Valid GeoJSON geometry is required',
         });
       }
-      updates.push(`geometry = ST_Transform(ST_GeomFromGeoJSON($${paramIndex++}, 4326), 32642)`);
+      updates.push(`geometry = ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($${paramIndex++}), 4326), 32642)`);
       values.push(JSON.stringify(geometry));
     }
 
