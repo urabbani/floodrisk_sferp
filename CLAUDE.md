@@ -79,6 +79,16 @@ Hazard
   - **LoginDialog** (`src/components/annotations/LoginDialog.tsx`): Login form for authentication
   - **useAuth** (`src/hooks/useAuth.tsx`): Auth context providing user state, login/logout functions
   - **apiFetch** (`src/lib/api.ts`): Centralized fetch wrapper with automatic JWT token injection
+  - **Enhanced Intervention Features** (Updated March 2026):
+    - Login requirement: Users must authenticate to create/edit/delete interventions
+    - Five-tool toolbar: Interventions Panel, Create Point/Line/Polygon, Modify, Delete, Export
+    - Enhanced intervention form with:
+      * Name field (user input)
+      * Intervention Type dropdown (ID-Name format from requirements doc, e.g., "M4-Afforestation")
+      * Dynamic info boxes showing short description, location/shape requirements, and hydrological parameters
+      * Feature Type selection (Point/Line/Polygon)
+      * Hydrological Parameters field with contextual placeholder text
+    - Based on 42 intervention types defined in `src/types/interventions.ts` from Exposure_Stats/InterventionWebSiteRequirements_v3.docx
 
 ### Impact Matrix Module
 
@@ -538,6 +548,41 @@ const handleAnnotationDelete = useCallback(async (id: number) => {
 
 **Files Modified:**
 - `src/App.tsx`
+
+---
+
+### isAuthenticated Reference Error (FIXED - March 30, 2026)
+
+**Issue:** When users logged in, the app crashed with: `Uncaught ReferenceError: isAuthenticated is not defined`
+
+**Root Cause:** The `AnnotationToolbar` component used the `isAuthenticated` variable to disable drawing tools for unauthenticated users, but the variable was never defined - it wasn't imported from `useAuth` hook and wasn't passed as a prop. The `Header` component received `isAuthenticated` as a prop but didn't pass it down to `AnnotationToolbar`.
+
+**Solution:**
+1. Added `isAuthenticated?: boolean` to `AnnotationToolbarProps` interface
+2. Added default value `isAuthenticated = false` in the component destructuring
+3. Updated `Header` component to pass `isAuthenticated` prop to `AnnotationToolbar`
+
+```typescript
+// AnnotationToolbar.tsx
+interface AnnotationToolbarProps {
+  // ... other props
+  isAuthenticated?: boolean;
+}
+
+// Header.tsx
+<AnnotationToolbar
+  // ... other props
+  isAuthenticated={isAuthenticated}
+/>
+```
+
+**Result:** Authentication state now correctly propagates to the toolbar, enabling/disabling drawing tools as expected.
+
+**Files Modified:**
+- `src/components/annotations/AnnotationToolbar.tsx`
+- `src/components/Header.tsx`
+
+---
 
 ## Mobile Responsiveness
 

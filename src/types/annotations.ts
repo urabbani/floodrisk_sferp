@@ -129,6 +129,15 @@ export interface NewAnnotation {
   geometry: GeoJSONGeometry;
   style_config?: Partial<StyleConfig>;
   created_by: string;
+  // New fields for intervention requirements
+  interventionType?: string;
+  featureType?: AnnotationGeometryType;
+  hydrologicalParams?: string;
+  interventionInfo?: {
+    shortDescription: string;
+    locationShapeInfo: string;
+    hydrologicalParameters: string;
+  };
 }
 
 /**
@@ -140,6 +149,15 @@ export interface UpdateAnnotation {
   category?: AnnotationCategory;
   geometry?: GeoJSONGeometry;
   style_config?: Partial<StyleConfig>;
+  // New fields for intervention requirements
+  interventionType?: string;
+  featureType?: AnnotationGeometryType;
+  hydrologicalParams?: string;
+  interventionInfo?: {
+    shortDescription: string;
+    locationShapeInfo: string;
+    hydrologicalParameters: string;
+  };
 }
 
 /**

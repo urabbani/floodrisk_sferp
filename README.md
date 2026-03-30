@@ -17,8 +17,14 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Feature Identification** - Click on any layer to view attributes via WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position in UTM (Zone 42N) and Lat/Lon
 - **Swipe Compare Tool** - Side-by-side comparison of two flood scenarios
-- **Interventions** - Collaborative drawing and annotation on the map:
+- **Interventions** - Collaborative drawing and annotation on the map (Enhanced March 2026):
   - Draw points, lines, and polygons
+  - **Enhanced intervention form with:**
+    * Name field (user input textbox)
+    * Intervention Type dropdown showing ID-Name format (e.g., "M4-Afforestation") based on 42 intervention types from requirements document
+    * Dynamic info boxes showing short description, location/shape requirements, and hydrological parameters
+    * Feature Type selection (Point/Line/Polygon)
+    * Hydrological Parameters field with contextual placeholder text
   - Add details (title, description, category)
   - Edit, delete, search, filter interventions
   - Toggle visibility, export as GeoJSON
@@ -164,4 +170,4 @@ See docs/DEPLOYMENT.md for detailed deployment instructions including:
 
 ## Credits
 Developed and maintained by Dr. Umair Rabbani
-Built with Claude Code using Anthropic's Claude Sonnet 4.6
+Built with Claude Code using Z.AI's GLM 4.7 series of models

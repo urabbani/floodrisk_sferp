@@ -8,7 +8,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -38,12 +38,13 @@ import {
 import { Label } from '@/components/ui/label';
 import type { AnnotationCategory, StyleConfig } from '@/types/annotations';
 import { CATEGORY_INFO, COLOR_PRESETS } from '@/types/annotations';
+import { INTERVENTION_TYPES } from '@/types/interventions';
 
 const annotationSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional(),
-  category: z.enum(['general', 'observation', 'infrastructure', 'hazard', 'field_note', 'other']),
-  color: z.string().optional(),
+  name: z.string().min(1, 'Name is required'),
+  interventionType: z.string().min(1, 'Please select an intervention type'),
+  featureType: z.enum(['point', 'line', 'polygon']),
+  hydrologicalParams: z.string().optional(),
 });
 
 type AnnotationFormValues = z.infer<typeof annotationSchema>;
@@ -52,16 +53,21 @@ interface InterventionDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (data: {
-    title: string;
-    description: string;
-    category: AnnotationCategory;
-    styleConfig: Partial<StyleConfig>;
+    name: string;
+    interventionType: string;
+    featureType: 'point' | 'line' | 'polygon';
+    hydrologicalParams: string;
+    interventionInfo?: {
+      shortDescription: string;
+      locationShapeInfo: string;
+      hydrologicalParameters: string;
+    };
   }) => void;
   defaultValues?: {
-    title?: string;
-    description?: string;
-    category?: AnnotationCategory;
-    color?: string;
+    name?: string;
+    interventionType?: string;
+    featureType?: 'point' | 'line' | 'polygon';
+    hydrologicalParams?: string;
   };
   mode: 'create' | 'edit';
 }
@@ -73,29 +79,59 @@ export function InterventionDialog({
   defaultValues = {},
   mode = 'create',
 }: InterventionDialogProps) {
-  const [selectedColor, setSelectedColor] = useState(defaultValues.color || COLOR_PRESETS[0].value);
-
   const form = useForm<AnnotationFormValues>({
     resolver: zodResolver(annotationSchema),
     defaultValues: {
-      title: defaultValues.title || '',
-      description: defaultValues.description || '',
-      category: defaultValues.category || 'general',
+      name: defaultValues.name || '',
+      interventionType: defaultValues.interventionType || '',
+      featureType: defaultValues.featureType || 'point',
+      hydrologicalParams: defaultValues.hydrologicalParams || '',
     },
   });
 
+  // Update info boxes when intervention type changes
+  useEffect(() => {
+    if (form.watch('interventionType')) {
+      const selectedIntervention = INTERVENTION_TYPES.find(
+        (it) => it.id === form.watch('interventionType')
+      );
+
+      if (selectedIntervention) {
+        // Update the info boxes
+        const shortDescEl = document.getElementById('short-description-info');
+        const locationShapeEl = document.getElementById('location-shape-info');
+        const hydroParamsEl = document.getElementById('hydro-params-info');
+
+        if (shortDescEl) shortDescEl.textContent = selectedIntervention.shortDescription;
+        if (locationShapeEl) locationShapeEl.textContent = selectedIntervention.locationShapeInfo;
+        if (hydroParamsEl) hydroParamsEl.textContent = selectedIntervention.hydrologicalParameters;
+
+        // Also update the hydrological params input placeholder
+        const hydroInput = document.querySelector('input[name="hydrologicalParams"]') as HTMLInputElement | null;
+        if (hydroInput) {
+          hydroInput.placeholder = selectedIntervention.hydrologicalParameters || 'Hydrological parameters will appear here based on selection';
+        }
+      }
+    }
+  }, [form.watch]);
+
   const handleSubmit = (data: AnnotationFormValues) => {
-    const styleConfig: Partial<StyleConfig> = {
-      color: selectedColor,
-      fillColor: COLOR_PRESETS.find((c) => c.value === selectedColor)?.fill || 'rgba(255, 0, 0, 0.2)',
-      opacity: 0.2,
-    };
+    // Find the selected intervention type to get details for info box
+    const selectedIntervention = INTERVENTION_TYPES.find(
+      (it) => it.id === data.interventionType
+    );
 
     onSubmit({
-      title: data.title,
-      description: data.description || '',
-      category: data.category,
-      styleConfig,
+      name: data.name,
+      interventionType: data.interventionType,
+      featureType: data.featureType,
+      hydrologicalParams: data.hydrologicalParams,
+      // Additional info for display in the intervention card
+      interventionInfo: {
+        shortDescription: selectedIntervention?.shortDescription || '',
+        locationShapeInfo: selectedIntervention?.locationShapeInfo || '',
+        hydrologicalParameters: selectedIntervention?.hydrologicalParameters || '',
+      }
     });
   };
 
@@ -114,63 +150,105 @@ export function InterventionDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Name Field */}
             <FormField
               control={form.control}
-              name="title"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title *</FormLabel>
+                  <FormLabel>Name *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter intervention title" {...field} />
+                    <Input placeholder="Enter intervention name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Intervention Type Dropdown */}
             <FormField
               control={form.control}
-              name="category"
+              name="interventionType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
+                  <FormLabel>Intervention Type *</FormLabel>
+                  <FormControl>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a category" />
+                        <SelectValue placeholder="Select intervention type" />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.entries(CATEGORY_INFO).map(([key, { label, color }]) => (
-                        <SelectItem key={key} value={key}>
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: color }}
-                            />
-                            {label}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                      <SelectContent>
+                        {INTERVENTION_TYPES.map((intervention) => (
+                          <SelectItem key={intervention.id} value={intervention.id}>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono">{intervention.id}</span>
+                              <span>- {intervention.name}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            {/* Info Box - Shows details about selected intervention type */}
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <div className="space-y-3">
+                <div className="font-semibold text-slate-800">Short Description/Info:</div>
+                <p className="text-slate-600 text-sm" id="short-description-info">
+                  Select an intervention type to see details
+                </p>
+
+                <div className="font-semibold text-slate-800">Location and Shape Information Required:</div>
+                <p className="text-slate-600 text-sm" id="location-shape-info">
+                  Select an intervention type to see details
+                </p>
+
+                <div className="font-semibold text-slate-800">Hydrological Parameters Required:</div>
+                <p className="text-slate-600 text-sm" id="hydro-params-info">
+                  Select an intervention type to see details
+                </p>
+              </div>
+            </div>
+
+            {/* Feature Type Dropdown */}
             <FormField
               control={form.control}
-              name="description"
+              name="featureType"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>Feature Type *</FormLabel>
                   <FormControl>
-                    <Textarea
-                      placeholder="Add notes or details..."
-                      className="resize-none"
-                      rows={3}
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select feature type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="point">Point</SelectItem>
+                        <SelectItem value="line">Line</SelectItem>
+                        <SelectItem value="polygon">Polygon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Hydrological Parameter Required Field */}
+            <FormField
+              control={form.control}
+              name="hydrologicalParams"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hydrological Parameter Required</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Hydrological parameters will appear here based on selection"
                       {...field}
                     />
                   </FormControl>
@@ -178,27 +256,6 @@ export function InterventionDialog({
                 </FormItem>
               )}
             />
-
-            <div className="space-y-2">
-              <Label>Color</Label>
-              <div className="flex flex-wrap gap-2">
-                {COLOR_PRESETS.map((preset) => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => setSelectedColor(preset.value)}
-                    className={`
-                      w-8 h-8 rounded-full border-2 transition-all
-                      ${selectedColor === preset.value
-                        ? 'border-slate-800 scale-110'
-                        : 'border-slate-200 hover:border-slate-400'}
-                    `}
-                    style={{ backgroundColor: preset.fill }}
-                    title={preset.name}
-                  />
-                ))}
-              </div>
-            </div>
 
             <DialogFooter className="sm:justify-end">
               <Button

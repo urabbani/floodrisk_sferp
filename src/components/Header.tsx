@@ -1,4 +1,4 @@
-import { Menu, Info } from 'lucide-react';
+import { Menu, Info, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,6 +20,7 @@ interface HeaderProps {
   onExport?: () => void;
   onToggleInterventionsPanel?: () => void;
   interventionsCount?: number;
+  isAuthenticated?: boolean;
 }
 
 export function Header({
@@ -30,6 +31,7 @@ export function Header({
   onExport,
   onToggleInterventionsPanel,
   interventionsCount = 0,
+  isAuthenticated = false,
 }: HeaderProps) {
   return (
     <header className="h-14 sm:h-16 bg-white border-b border-slate-200 flex items-center justify-between px-3 sm:px-4 shadow-sm z-20">
@@ -65,8 +67,8 @@ export function Header({
 
       {/* Right side */}
       <div className="flex items-center gap-1">
-        {/* Intervention Toolbar */}
-        {onToolChange && (
+        {/* Intervention Controls */}
+        {isAuthenticated ? (
           <AnnotationToolbar
             activeTool={activeTool}
             onToolChange={onToolChange}
@@ -74,7 +76,21 @@ export function Header({
             onToggleInterventionsPanel={onToggleInterventionsPanel}
             interventionsCount={interventionsCount}
             variant="header"
+            isAuthenticated={isAuthenticated}
           />
+        ) : (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              // Trigger login dialog - we'll handle this by dispatching a custom event
+              // or we can pass a login callback from App
+              window.dispatchEvent(new CustomEvent('show-login-dialog'));
+            }}
+          >
+            <LogIn className="w-4 h-4" />
+            Login to create Interventions
+          </Button>
         )}
 
         <Dialog>

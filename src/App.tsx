@@ -90,6 +90,18 @@ function App() {
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
 
+  // Handle login dialog events from header
+  useEffect(() => {
+    const handleShowLogin = () => {
+      setLoginDialogOpen(true);
+    };
+
+    window.addEventListener('show-login-dialog', handleShowLogin);
+    return () => {
+      window.removeEventListener('show-login-dialog', handleShowLogin);
+    };
+  }, []);
+
   // Interventions hooks (using the annotations hook for interventions)
   const {
     annotations: interventions,
@@ -259,10 +271,15 @@ function App() {
 
   // Annotation handlers
   const handleAnnotationSubmit = useCallback(async (data: {
-    title: string;
-    description: string;
-    category: string;
-    styleConfig: Record<string, unknown>;
+    name: string;
+    interventionType: string;
+    featureType: 'point' | 'line' | 'polygon';
+    hydrologicalParams: string;
+    interventionInfo?: {
+      shortDescription: string;
+      locationShapeInfo: string;
+      hydrologicalParameters: string;
+    };
   }) => {
     if (!isAuthenticated) {
       alert('Please sign in first');
@@ -272,17 +289,22 @@ function App() {
     if (annotationDialogMode === 'create' && pendingDrawFeature) {
       // Create new intervention
       const newAnnotation: NewAnnotation = {
-        title: data.title,
-        description: data.description,
-        category: data.category as any,
-        geometry_type: pendingDrawFeature.get('geometry_type') || 'point',
+        title: data.name,
+        description: data.hydrologicalParams, // Using hydrologicalParams as description for now
+        category: 'general', // Default category, could be made configurable
+        geometry_type: data.featureType,
         geometry: JSON.parse(JSON.stringify(
           JSON.parse(new GeoJSON().writeGeometry(pendingDrawFeature.getGeometry()!, {
             featureProjection: 'EPSG:32642',
             dataProjection: 'EPSG:4326',
           }))
         )),
-        style_config: data.styleConfig as any,
+        style_config: {
+          color: '#ff0000', // Default color, could be made configurable
+          strokeWidth: 2,
+          fillColor: '#ff0000',
+          opacity: 0.2,
+        },
         created_by: username,
       };
 
@@ -290,10 +312,19 @@ function App() {
         const created = await createAnnotation(newAnnotation);
         // Update feature properties with data from server response
         pendingDrawFeature.set('id', created.id);
-        pendingDrawFeature.set('title', data.title);
-        pendingDrawFeature.set('description', data.description);
-        pendingDrawFeature.set('category', data.category);
-        pendingDrawFeature.set('styleConfig', data.styleConfig);
+        pendingDrawFeature.set('title', data.name);
+        pendingDrawFeature.set('description', data.hydrologicalParams);
+        pendingDrawFeature.set('category', 'general');
+        pendingDrawFeature.set('geometry_type', data.featureType);
+        pendingDrawFeature.set('styleConfig', {
+          color: '#ff0000',
+          strokeWidth: 2,
+          fillColor: '#ff0000',
+          opacity: 0.2,
+        });
+        // Add intervention-specific fields
+        pendingDrawFeature.set('interventionType', data.interventionType);
+        pendingDrawFeature.set('interventionInfo', data.interventionInfo);
         // Feature is already in the source from drawing, just notify change
         pendingDrawFeature.changed();
       } catch (error) {
@@ -306,16 +337,31 @@ function App() {
       // Update existing intervention
       try {
         const updated = await updateAnnotation(editingAnnotation.id, {
-          title: data.title,
-          description: data.description,
-          category: data.category as any,
-          style_config: data.styleConfig as any,
+          title: data.name,
+          description: data.hydrologicalParams,
+          category: 'general',
+          geometry_type: data.featureType,
+          style_config: {
+            color: '#ff0000',
+            strokeWidth: 2,
+            fillColor: '#ff0000',
+            opacity: 0.2,
+          },
         });
         // Update feature
-        editingAnnotation.feature.set('title', data.title);
-        editingAnnotation.feature.set('description', data.description);
-        editingAnnotation.feature.set('category', data.category);
-        editingAnnotation.feature.set('styleConfig', data.styleConfig);
+        editingAnnotation.feature.set('title', data.name);
+        editingAnnotation.feature.set('description', data.hydrologicalParams);
+        editingAnnotation.feature.set('category', 'general');
+        editingAnnotation.feature.set('geometry_type', data.featureType);
+        editingAnnotation.feature.set('styleConfig', {
+          color: '#ff0000',
+          strokeWidth: 2,
+          fillColor: '#ff0000',
+          opacity: 0.2,
+        });
+        // Update intervention-specific fields
+        editingAnnotation.feature.set('interventionType', data.interventionType);
+        editingAnnotation.feature.set('interventionInfo', data.interventionInfo);
         editingAnnotation.feature.set('updated_at', updated.updated_at);
       } catch (error) {
         console.error('Failed to update intervention:', error);
@@ -487,6 +533,7 @@ function App() {
         onExport={handleExportAnnotations}
         onToggleInterventionsPanel={handleToggleAnnotationsPanel}
         interventionsCount={interventions.length}
+        isAuthenticated={isAuthenticated}
       />
 
       {/* Main content */}

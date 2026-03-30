@@ -37,6 +37,7 @@ interface AnnotationToolbarProps {
   onToggleInterventionsPanel?: () => void;
   interventionsCount?: number;
   variant?: 'header' | 'floating';
+  isAuthenticated?: boolean;
 }
 
 export function AnnotationToolbar({
@@ -46,6 +47,7 @@ export function AnnotationToolbar({
   onToggleInterventionsPanel,
   interventionsCount = 0,
   variant = 'header',
+  isAuthenticated = false,
 }: AnnotationToolbarProps) {
   const drawTools: DrawingTool[] = ['point', 'line', 'polygon'];
   const editTools: DrawingTool[] = ['select', 'modify'];
@@ -114,7 +116,7 @@ export function AnnotationToolbar({
   // Header toolbar variant
   return (
     <div className="flex items-center gap-1">
-      {/* Interventions panel toggle */}
+      {/* Interventions Panel */}
       {onToggleInterventionsPanel && (
         <TooltipProvider>
           <Tooltip>
@@ -138,81 +140,101 @@ export function AnnotationToolbar({
         </TooltipProvider>
       )}
 
-      {/* Drawing tools */}
+      {/* Create Intervention (Point tool) */}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <ToggleGroup
-              type="single"
-              value={activeTool}
-              onValueChange={(value) => onToolChange(value as DrawingTool)}
+            <Button
+              variant={activeTool === 'point' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onToolChange('point')}
+              title="Create Point Intervention"
+              disabled={!isAuthenticated}
             >
-              {drawTools.map((tool) => (
-                <TooltipProvider key={tool}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ToggleGroupItem
-                        value={tool}
-                        aria-label={TOOL_INFO[tool].label}
-                        title={TOOL_INFO[tool].description}
-                        className="h-9 px-3"
-                      >
-                        {tool === 'point' && <MapPin className="w-4 h-4" />}
-                        {tool === 'line' && <Minus className="w-4 h-4" />}
-                        {tool === 'polygon' && <Pentagon className="w-4 h-4" />}
-                      </ToggleGroupItem>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {TOOL_INFO[tool].label}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-            </ToggleGroup>
+              <MapPin className="w-4 h-4" />
+            </Button>
           </TooltipTrigger>
-          <TooltipContent>Drawing Tools</TooltipContent>
+          <TooltipContent>Create Point Intervention</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
-      {/* Edit tools */}
+      {/* Create Intervention (Line tool) */}
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <ToggleGroup
-              type="single"
-              value={activeTool}
-              onValueChange={(value) => onToolChange(value as DrawingTool)}
+            <Button
+              variant={activeTool === 'line' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onToolChange('line')}
+              title="Create Line Intervention"
+              disabled={!isAuthenticated}
             >
-              {editTools.map((tool) => (
-                <TooltipProvider key={tool}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <ToggleGroupItem
-                        value={tool}
-                        aria-label={TOOL_INFO[tool].label}
-                        title={TOOL_INFO[tool].description}
-                        className="h-9 px-3"
-                      >
-                        {tool === 'select' && <MousePointer2 className="w-4 h-4" />}
-                        {tool === 'modify' && <Pencil className="w-4 h-4" />}
-                      </ToggleGroupItem>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      {TOOL_INFO[tool].label}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ))}
-            </ToggleGroup>
+              <Minus className="w-4 h-4" />
+            </Button>
           </TooltipTrigger>
-          <TooltipContent>Edit Tools</TooltipContent>
+          <TooltipContent>Create Line Intervention</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
-      {/* Separator */}
-      <Separator orientation="vertical" className="h-6 mx-1" />
+      {/* Create Intervention (Polygon tool) */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'polygon' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onToolChange('polygon')}
+              title="Create Polygon Intervention"
+              disabled={!isAuthenticated}
+            >
+              <Pentagon className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Create Polygon Intervention</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
-      {/* Export button */}
+      {/* Modify Intervention */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={activeTool === 'modify' ? 'default' : 'ghost'}
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onToolChange('modify')}
+              title="Modify Intervention"
+              disabled={!isAuthenticated}
+            >
+              <Pencil className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Modify Intervention</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Delete Intervention */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 hover:text-red-600"
+              onClick={() => onToolChange('delete')}
+              title="Delete Selected Intervention"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete Selected Intervention</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
+      {/* Export Interventions */}
       {onExport && (
         <TooltipProvider>
           <Tooltip>
@@ -222,7 +244,7 @@ export function AnnotationToolbar({
                 size="icon"
                 className="h-9 w-9"
                 onClick={handleExport}
-                title="Export GeoJSON"
+                title="Export Interventions (GeoJSON)"
               >
                 <Download className="w-4 h-4" />
               </Button>
@@ -231,24 +253,6 @@ export function AnnotationToolbar({
           </Tooltip>
         </TooltipProvider>
       )}
-
-      {/* Delete button */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => onToolChange('delete')}
-              title="Delete Selected"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Delete Selected Intervention</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
     </div>
   );
 }

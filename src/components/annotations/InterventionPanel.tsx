@@ -208,7 +208,7 @@ export function InterventionPanel({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-medium text-slate-800 truncate">
-                        {intervention.title}
+                        {intervention.name || intervention.title || 'Unnamed Intervention'}
                       </h4>
                       <Badge
                         variant="outline"
@@ -221,18 +221,27 @@ export function InterventionPanel({
                       </Badge>
                     </div>
 
-                    {intervention.description && (
+                    {/* Intervention Type Info */}
+                    {intervention.interventionType && (
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <MapPin className="w-3 h-3" /> {/* Using MapPin as generic icon */}
+                        <span className="font-mono">{intervention.interventionType}</span>
+                      </div>
+                    )}
+
+                    {/* Short Description */}
+                    {intervention.interventionInfo?.shortDescription && (
                       <p className="text-xs text-slate-500 line-clamp-2 mb-1">
-                        {intervention.description}
+                        {intervention.interventionInfo.shortDescription}
                       </p>
                     )}
 
                     <div className="flex items-center gap-3 text-xs text-slate-400">
                       <span className="flex items-center gap-1">
-                        {intervention.geometry_type === 'point' && <MapPin className="w-3 h-3" />}
-                        {intervention.geometry_type === 'line' && <Minus className="w-3 h-3" />}
-                        {intervention.geometry_type === 'polygon' && <Pentagon className="w-3 h-3" />}
-                        {intervention.geometry_type}
+                        {intervention.featureType === 'point' && <MapPin className="w-3 h-3" />}
+                        {intervention.featureType === 'line' && <Minus className="w-3 h-3" />}
+                        {intervention.featureType === 'polygon' && <Pentagon className="w-3 h-3" />}
+                        {intervention.featureType}
                       </span>
                       <span>by {intervention.created_by}</span>
                       <span>{formatTimestamp(intervention.updated_at)}</span>
