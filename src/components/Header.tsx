@@ -87,9 +87,10 @@ export function Header({
               // or we can pass a login callback from App
               window.dispatchEvent(new CustomEvent('show-login-dialog'));
             }}
+            title="Login to create Interventions"
           >
             <LogIn className="w-4 h-4" />
-            Login to create Interventions
+            Login
           </Button>
         )}
 
