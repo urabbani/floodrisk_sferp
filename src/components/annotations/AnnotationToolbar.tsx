@@ -18,12 +18,6 @@ import {
 } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   MapPin,
   Minus,
   Pentagon,
@@ -147,41 +141,23 @@ export function AnnotationToolbar({
         </TooltipProvider>
       )}
 
-      {/* Create Intervention Dropdown */}
-      <DropdownMenu>
-        <TooltipProvider>
-          <Tooltip>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant={(activeTool === 'point' || activeTool === 'line' || activeTool === 'polygon') ? 'default' : 'ghost'}
-                size="icon"
-                className="h-9 w-9"
-                disabled={!isAuthenticated}
-                asChild
-              >
-                <div>
-                  <Plus className="w-4 h-4" />
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <TooltipContent>Create Intervention</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onToolChange('point')}>
-            <MapPin className="w-4 h-4 mr-2" />
-            Point Intervention
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onToolChange('line')}>
-            <Minus className="w-4 h-4 mr-2" />
-            Line Intervention
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onToolChange('polygon')}>
-            <Pentagon className="w-4 h-4 mr-2" />
-            Polygon Intervention
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* Create Intervention */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant={(activeTool === 'point' || activeTool === 'line' || activeTool === 'polygon') ? 'default' : 'ghost'}
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onToolChange('point')}
+              disabled={!isAuthenticated}
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Create Intervention</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Modify Intervention */}
       <TooltipProvider>

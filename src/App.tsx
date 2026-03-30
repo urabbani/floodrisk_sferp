@@ -85,6 +85,22 @@ function App() {
   const [annotationDialogOpen, setAnnotationDialogOpen] = useState(false);
   const [annotationDialogMode, setAnnotationDialogMode] = useState<'create' | 'edit'>('create');
   const [pendingDrawFeature, setPendingDrawFeature] = useState<Feature | null>(null);
+  const [pendingInterventionData, setPendingInterventionData] = useState<{
+    name: string;
+    interventionType: string;
+    featureType: 'point' | 'line' | 'polygon';
+    hydrologicalParams: string;
+    interventionInfo?: {
+      shortDescription: string;
+      locationShapeInfo: string;
+      hydrologicalParameters: string;
+    };
+  } | null>(null);
+  // Ref to track latest pendingInterventionData for callbacks
+  const pendingInterventionDataRef = useRef(pendingInterventionData);
+  useEffect(() => {
+    pendingInterventionDataRef.current = pendingInterventionData;
+  }, [pendingInterventionData]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   // Get map instance for hooks
@@ -126,11 +142,62 @@ function App() {
       // Clear selection when starting to draw
       // Selection is handled by useDrawingInteractions internally
     },
-    onDrawEnd: (feature) => {
-      // Open dialog to enter intervention details
-      setPendingDrawFeature(feature);
-      setAnnotationDialogMode('create');
-      setAnnotationDialogOpen(true);
+    onDrawEnd: async (feature) => {
+      // Check if we have pending intervention data (new flow)
+      const data = pendingInterventionDataRef.current;
+      if (data) {
+        // Save intervention immediately using the pending data
+        const newAnnotation: NewAnnotation = {
+          title: data.name,
+          description: data.hydrologicalParams,
+          category: 'general',
+          geometry_type: data.featureType,
+          geometry: JSON.parse(JSON.stringify(
+            JSON.parse(new GeoJSON().writeGeometry(feature.getGeometry()!, {
+              featureProjection: 'EPSG:32642',
+              dataProjection: 'EPSG:4326',
+            }))
+          )),
+          style_config: {
+            color: '#ff0000',
+            strokeWidth: 2,
+            fillColor: '#ff0000',
+            opacity: 0.2,
+          },
+          created_by: username,
+        };
+
+        try {
+          const created = await createAnnotation(newAnnotation);
+          feature.set('id', created.id);
+          feature.set('title', data.name);
+          feature.set('description', data.hydrologicalParams);
+          feature.set('category', 'general');
+          feature.set('geometry_type', data.featureType);
+          feature.set('styleConfig', {
+            color: '#ff0000',
+            strokeWidth: 2,
+            fillColor: '#ff0000',
+            opacity: 0.2,
+          });
+          feature.set('interventionType', data.interventionType);
+          feature.set('interventionInfo', data.interventionInfo);
+          feature.changed();
+          // Clear pending data and reset tool
+          setPendingInterventionData(null);
+          setActiveTool('none');
+          setDrawingTool('none');
+        } catch (error) {
+          console.error('Failed to create intervention:', error);
+          alert('Failed to save intervention');
+          vectorSource?.removeFeature(feature);
+        }
+      } else {
+        // Old flow: Open dialog to enter intervention details
+        setPendingDrawFeature(feature);
+        setAnnotationDialogMode('create');
+        setAnnotationDialogOpen(true);
+      }
     },
     onSelect: (feature) => {
       if (feature) {
@@ -149,9 +216,19 @@ function App() {
       setLoginDialogOpen(true);
       return;
     }
-    setActiveTool(tool);
-    setDrawingTool(tool);
-  }, [isAuthenticated, setActiveTool]);
+    // For drawing tools (point, line, polygon), open the dialog first
+    if (tool === 'point' || tool === 'line' || tool === 'polygon') {
+      setAnnotationDialogMode('create');
+      setAnnotationDialogOpen(true);
+      // Clear any pending data
+      setPendingInterventionData(null);
+      setPendingDrawFeature(null);
+    } else {
+      // For other tools (modify, delete, none), activate directly
+      setActiveTool(tool);
+      setDrawingTool(tool);
+    }
+  }, [isAuthenticated]);
 
   // Sync drawingTool state with setActiveTool
   useEffect(() => {
@@ -286,52 +363,58 @@ function App() {
       return;
     }
 
-    if (annotationDialogMode === 'create' && pendingDrawFeature) {
-      // Create new intervention
-      const newAnnotation: NewAnnotation = {
-        title: data.name,
-        description: data.hydrologicalParams, // Using hydrologicalParams as description for now
-        category: 'general', // Default category, could be made configurable
-        geometry_type: data.featureType,
-        geometry: JSON.parse(JSON.stringify(
-          JSON.parse(new GeoJSON().writeGeometry(pendingDrawFeature.getGeometry()!, {
-            featureProjection: 'EPSG:32642',
-            dataProjection: 'EPSG:4326',
-          }))
-        )),
-        style_config: {
-          color: '#ff0000', // Default color, could be made configurable
-          strokeWidth: 2,
-          fillColor: '#ff0000',
-          opacity: 0.2,
-        },
-        created_by: username,
-      };
+    if (annotationDialogMode === 'create') {
+      if (pendingDrawFeature) {
+        // OLD FLOW: Drawing already happened, save immediately
+        const newAnnotation: NewAnnotation = {
+          title: data.name,
+          description: data.hydrologicalParams,
+          category: 'general',
+          geometry_type: data.featureType,
+          geometry: JSON.parse(JSON.stringify(
+            JSON.parse(new GeoJSON().writeGeometry(pendingDrawFeature.getGeometry()!, {
+              featureProjection: 'EPSG:32642',
+              dataProjection: 'EPSG:4326',
+            }))
+          )),
+          style_config: {
+            color: '#ff0000',
+            strokeWidth: 2,
+            fillColor: '#ff0000',
+            opacity: 0.2,
+          },
+          created_by: username,
+        };
 
-      try {
-        const created = await createAnnotation(newAnnotation);
-        // Update feature properties with data from server response
-        pendingDrawFeature.set('id', created.id);
-        pendingDrawFeature.set('title', data.name);
-        pendingDrawFeature.set('description', data.hydrologicalParams);
-        pendingDrawFeature.set('category', 'general');
-        pendingDrawFeature.set('geometry_type', data.featureType);
-        pendingDrawFeature.set('styleConfig', {
-          color: '#ff0000',
-          strokeWidth: 2,
-          fillColor: '#ff0000',
-          opacity: 0.2,
-        });
-        // Add intervention-specific fields
-        pendingDrawFeature.set('interventionType', data.interventionType);
-        pendingDrawFeature.set('interventionInfo', data.interventionInfo);
-        // Feature is already in the source from drawing, just notify change
-        pendingDrawFeature.changed();
-      } catch (error) {
-        console.error('Failed to create intervention:', error);
-        alert('Failed to save intervention');
-        // Remove the feature from source if creation failed
-        vectorSource?.removeFeature(pendingDrawFeature);
+        try {
+          const created = await createAnnotation(newAnnotation);
+          pendingDrawFeature.set('id', created.id);
+          pendingDrawFeature.set('title', data.name);
+          pendingDrawFeature.set('description', data.hydrologicalParams);
+          pendingDrawFeature.set('category', 'general');
+          pendingDrawFeature.set('geometry_type', data.featureType);
+          pendingDrawFeature.set('styleConfig', {
+            color: '#ff0000',
+            strokeWidth: 2,
+            fillColor: '#ff0000',
+            opacity: 0.2,
+          });
+          pendingDrawFeature.set('interventionType', data.interventionType);
+          pendingDrawFeature.set('interventionInfo', data.interventionInfo);
+          pendingDrawFeature.changed();
+          setPendingDrawFeature(null);
+        } catch (error) {
+          console.error('Failed to create intervention:', error);
+          alert('Failed to save intervention');
+          vectorSource?.removeFeature(pendingDrawFeature);
+        }
+      } else {
+        // NEW FLOW: Store form data and start drawing
+        setPendingInterventionData(data);
+        setAnnotationDialogOpen(false);
+        // Activate the appropriate drawing tool based on selected feature type
+        setActiveTool(data.featureType);
+        setDrawingTool(data.featureType);
       }
     } else if (annotationDialogMode === 'edit' && editingAnnotation) {
       // Update existing intervention
@@ -348,33 +431,40 @@ function App() {
             opacity: 0.2,
           },
         });
-        // Update feature
-        editingAnnotation.feature.set('title', data.name);
-        editingAnnotation.feature.set('description', data.hydrologicalParams);
-        editingAnnotation.feature.set('category', 'general');
-        editingAnnotation.feature.set('geometry_type', data.featureType);
-        editingAnnotation.feature.set('styleConfig', {
-          color: '#ff0000',
-          strokeWidth: 2,
-          fillColor: '#ff0000',
-          opacity: 0.2,
-        });
-        // Update intervention-specific fields
-        editingAnnotation.feature.set('interventionType', data.interventionType);
-        editingAnnotation.feature.set('interventionInfo', data.interventionInfo);
-        editingAnnotation.feature.set('updated_at', updated.updated_at);
+
+        // Update feature properties
+        editingAnnotation.feature.set('title', updated.title);
+        editingAnnotation.feature.set('description', updated.description);
+        editingAnnotation.feature.set('category', updated.category);
+        editingAnnotation.feature.set('geometry_type', updated.geometry_type);
+        editingAnnotation.feature.changed();
+
+        // Refresh interventions list
+        await loadInterventions();
       } catch (error) {
         console.error('Failed to update intervention:', error);
         alert('Failed to update intervention');
       }
     }
 
+    // Close dialog and reset state
     setAnnotationDialogOpen(false);
-    setPendingDrawFeature(null);
+    setAnnotationDialogMode('create');
+    setPendingInterventionData(null);
     setEditingAnnotation(null);
-    setActiveTool('none');
-    setDrawingTool('none');
-  }, [isAuthenticated, annotationDialogMode, pendingDrawFeature, editingAnnotation, createAnnotation, updateAnnotation, vectorSource, setActiveTool, setDrawingTool]);
+  }, [
+    isAuthenticated,
+    annotationDialogMode,
+    pendingDrawFeature,
+    editingAnnotation,
+    username,
+    createAnnotation,
+    updateAnnotation,
+    loadInterventions,
+    vectorSource,
+    setActiveTool,
+    setDrawingTool,
+  ]);
 
   const handleAnnotationDelete = useCallback(async (id: number) => {
     try {
