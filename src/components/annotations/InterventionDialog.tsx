@@ -88,33 +88,26 @@ export function InterventionDialog({
     },
   });
 
-  // Update info boxes and placeholder when intervention type changes
+  // Track selected intervention for displaying info
+  const [selectedIntervention, setSelectedIntervention] = useState<typeof INTERVENTION_TYPES[0] | null>(null);
+
+  // Watch interventionType and update selected intervention
+  const interventionType = form.watch('interventionType');
+
   useEffect(() => {
-    if (form.watch('interventionType')) {
-      const selectedIntervention = INTERVENTION_TYPES.find(
-        (it) => it.id === form.watch('interventionType')
-      );
-
-      if (selectedIntervention) {
+    if (interventionType) {
+      const found = INTERVENTION_TYPES.find((it) => it.id === interventionType);
+      if (found) {
+        setSelectedIntervention(found);
         // Auto-set the feature type based on intervention type
-        if (selectedIntervention.featureType !== 'none') {
-          form.setValue('featureType', selectedIntervention.featureType);
-        }
-
-        // Update the info box with short description
-        const shortDescEl = document.getElementById('short-description-info');
-        if (shortDescEl) {
-          shortDescEl.textContent = selectedIntervention.shortDescription;
-        }
-
-        // Update the hydrological params textarea placeholder with shape+hydro info
-        const hydroInput = document.querySelector('textarea[name="hydrologicalParams"]') as HTMLTextAreaElement | null;
-        if (hydroInput) {
-          hydroInput.placeholder = selectedIntervention.shapeAndHydroParams || 'Select an intervention type to see required parameters';
+        if (found.featureType !== 'none') {
+          form.setValue('featureType', found.featureType);
         }
       }
+    } else {
+      setSelectedIntervention(null);
     }
-  }, [form.watch, form]);
+  }, [interventionType, form]);
 
   const handleSubmit = (data: AnnotationFormValues) => {
     // Find the selected intervention type to get details
@@ -173,7 +166,10 @@ export function InterventionDialog({
                 <FormItem>
                   <FormLabel>Intervention Type *</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      value={field.value || ''}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select intervention type" />
                       </SelectTrigger>
@@ -198,8 +194,8 @@ export function InterventionDialog({
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
               <div className="space-y-2">
                 <div className="font-semibold text-slate-800">Description:</div>
-                <p className="text-slate-600 text-sm" id="short-description-info">
-                  Select an intervention type to see description
+                <p className="text-slate-600 text-sm whitespace-pre-line">
+                  {selectedIntervention?.shortDescription || 'Select an intervention type to see description'}
                 </p>
               </div>
             </div>
@@ -212,7 +208,10 @@ export function InterventionDialog({
                 <FormItem>
                   <FormLabel>Feature Type *</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      value={field.value}
+                      onValueChange={field.onChange}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select feature type" />
                       </SelectTrigger>
@@ -237,7 +236,7 @@ export function InterventionDialog({
                   <FormLabel>Hydrological Parameter Required</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Select an intervention type to see required parameters"
+                      placeholder={selectedIntervention?.shapeAndHydroParams || 'Select an intervention type to see required parameters'}
                       className="min-h-[120px] resize-y"
                       {...field}
                     />
