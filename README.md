@@ -17,21 +17,18 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Feature Identification** - Click on any layer to view attributes via WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position in UTM (Zone 42N) and Lat/Lon
 - **Swipe Compare Tool** - Side-by-side comparison of two flood scenarios
-- **Interventions** - Collaborative drawing and annotation on the map (Enhanced March 2026):
-  - Draw points, lines, and polygons
-  - **Enhanced intervention form with:**
-    * Name field (user input textbox)
-    * Intervention Type dropdown showing ID-Name format (e.g., "M4-Afforestation") based on 42 intervention types from requirements document
-    * Dynamic info boxes showing short description, location/shape requirements, and hydrological parameters
-    * Feature Type selection (Point/Line/Polygon)
-    * Hydrological Parameters field with contextual placeholder text
-  - Add details (title, description, category)
+- **Interventions** - Collaborative drawing and annotation on the map (Enhanced March 30, 2026):
+  - **Simplified Create Flow**: Dialog opens FIRST, then drawing happens
+    1. Click "Create Intervention" → opens dialog
+    2. Fill in Name, select Intervention Type from 42 predefined types
+    3. Description and required parameters appear dynamically
+    4. Feature Type auto-selected (Point/Line/Polygon)
+    5. Click "Create" → draw geometry → saved automatically
+  - **42 Intervention Types** from requirements document (e.g., M4-Afforestation)
   - Edit, delete, search, filter interventions
   - Toggle visibility, export as GeoJSON
   - **JWT-based authentication** required for drawing/editing
   - **Role-based access control**: Admin users can manage all interventions, regular users can only manage their own
-  - **Fixed visibility state bug**: Multiple interventions can now be toggled independently without interfering with each other
-  - **Fixed deletion bug**: Deleted interventions now properly disappear from the map
 - **Mobile Responsive** - Adaptive UI with sidebar toggle
 - **Stream Network** - HydroSHEDS-derived stream network visualization
 

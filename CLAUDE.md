@@ -79,16 +79,20 @@ Hazard
   - **LoginDialog** (`src/components/annotations/LoginDialog.tsx`): Login form for authentication
   - **useAuth** (`src/hooks/useAuth.tsx`): Auth context providing user state, login/logout functions
   - **apiFetch** (`src/lib/api.ts`): Centralized fetch wrapper with automatic JWT token injection
-  - **Enhanced Intervention Features** (Updated March 2026):
+  - **Enhanced Intervention Features** (Updated March 30, 2026):
     - Login requirement: Users must authenticate to create/edit/delete interventions
-    - Five-tool toolbar: Interventions Panel, Create Point/Line/Polygon, Modify, Delete, Export
-    - Enhanced intervention form with:
-      * Name field (user input)
-      * Intervention Type dropdown (ID-Name format from requirements doc, e.g., "M4-Afforestation")
-      * Dynamic info boxes showing short description, location/shape requirements, and hydrological parameters
-      * Feature Type selection (Point/Line/Polygon)
-      * Hydrological Parameters field with contextual placeholder text
-    - Based on 42 intervention types defined in `src/types/interventions.ts` from Exposure_Stats/InterventionWebSiteRequirements_v3.docx
+    - Simplified toolbar: Interventions Panel, Create Intervention (single button), Modify, Delete, Export
+    - **New User Flow**: Dialog opens FIRST, then drawing happens
+      1. Click "Create Intervention" button → opens dialog
+      2. Fill in Name, select Intervention Type (42 types from requirements doc)
+      3. Description appears dynamically when type is selected
+      4. Hydrological Parameters textarea shows required parameters as placeholder
+      5. Feature Type is auto-selected based on intervention (Point/Line/Polygon)
+      6. Click "Create" → dialog closes
+      7. Draw geometry on map
+      8. Intervention saved automatically with pre-filled data
+    - **Hardcoded Data**: All 42 intervention types with exact text from `Exposure_Stats/InterventionWebSiteRequirements_v3.docx`
+    - **Non-drawable interventions filtered**: M8, P9, H4, H5, ML7, ML8 (featureType: 'none')
 
 ### Impact Matrix Module
 
@@ -551,36 +555,43 @@ const handleAnnotationDelete = useCallback(async (id: number) => {
 
 ---
 
-### isAuthenticated Reference Error (FIXED - March 30, 2026)
+### Intervention Flow Refactor & Bug Fixes (FIXED - March 30, 2026)
 
-**Issue:** When users logged in, the app crashed with: `Uncaught ReferenceError: isAuthenticated is not defined`
+**Issues Fixed:**
+1. `isAuthenticated is not defined` - toolbar using undefined variable
+2. `loadInterventions is not defined` - hook return value not properly aliased
+3. Dynamic info display not working - DOM manipulation approach not updating React components
 
-**Root Cause:** The `AnnotationToolbar` component used the `isAuthenticated` variable to disable drawing tools for unauthenticated users, but the variable was never defined - it wasn't imported from `useAuth` hook and wasn't passed as a prop. The `Header` component received `isAuthenticated` as a prop but didn't pass it down to `AnnotationToolbar`.
+**Solutions:**
+1. **isAuthenticated fix:** Added `isAuthenticated?: boolean` prop to `AnnotationToolbar` and passed it through `Header` component
+2. **loadInterventions fix:** Added `refetch: loadInterventions` alias in useAnnotations destructuring
+3. **Dynamic info fix:** Replaced DOM manipulation with React state rendering:
+   - Added `selectedIntervention` state to track current selection
+   - Watch `interventionType` value with `form.watch()`
+   - Render Description and placeholder from state instead of DOM queries
+4. Made Select components fully controlled (using `value` instead of `defaultValue`)
 
-**Solution:**
-1. Added `isAuthenticated?: boolean` to `AnnotationToolbarProps` interface
-2. Added default value `isAuthenticated = false` in the component destructuring
-3. Updated `Header` component to pass `isAuthenticated` prop to `AnnotationToolbar`
+**Additional Improvements:**
+- **Merged drawing tools:** Single "Create Intervention" button instead of separate Point/Line/Polygon buttons
+- **New user flow:** Dialog opens FIRST, then drawing happens
+- **Hardcoded data:** All 42 intervention types from `Exposure_Stats/InterventionWebSiteRequirements_v3.docx`
+- **Filtered interventions:** Non-drawable types (M8, P9, H4, H5, ML7, ML8) excluded from dropdown
+- **Auto-set Feature Type:** Automatically selects Point/Line/Polygon based on intervention type
 
-```typescript
-// AnnotationToolbar.tsx
-interface AnnotationToolbarProps {
-  // ... other props
-  isAuthenticated?: boolean;
-}
-
-// Header.tsx
-<AnnotationToolbar
-  // ... other props
-  isAuthenticated={isAuthenticated}
-/>
-```
-
-**Result:** Authentication state now correctly propagates to the toolbar, enabling/disabling drawing tools as expected.
+**New User Flow:**
+1. Click "Create Intervention" → opens dialog
+2. Fill Name, select Intervention Type → Description appears
+3. Hydrological Parameters placeholder shows exact text from docx
+4. Feature Type auto-selected based on intervention
+5. Click "Create" → dialog closes, appropriate drawing tool activates
+6. Draw geometry → intervention saved automatically with pre-filled data
 
 **Files Modified:**
-- `src/components/annotations/AnnotationToolbar.tsx`
+- `src/App.tsx`
 - `src/components/Header.tsx`
+- `src/components/annotations/AnnotationToolbar.tsx`
+- `src/components/annotations/InterventionDialog.tsx`
+- `src/types/interventions.ts`
 
 ---
 
