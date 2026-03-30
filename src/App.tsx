@@ -92,8 +92,7 @@ function App() {
     hydrologicalParams: string;
     interventionInfo?: {
       shortDescription: string;
-      locationShapeInfo: string;
-      hydrologicalParameters: string;
+      shapeAndHydroParams: string;
     };
   } | null>(null);
   // Ref to track latest pendingInterventionData for callbacks

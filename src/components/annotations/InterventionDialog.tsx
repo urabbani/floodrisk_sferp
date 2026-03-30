@@ -59,8 +59,7 @@ interface InterventionDialogProps {
     hydrologicalParams: string;
     interventionInfo?: {
       shortDescription: string;
-      locationShapeInfo: string;
-      hydrologicalParameters: string;
+      shapeAndHydroParams: string;
     };
   }) => void;
   defaultValues?: {
@@ -102,27 +101,23 @@ export function InterventionDialog({
           form.setValue('featureType', selectedIntervention.featureType);
         }
 
-        // Update the info boxes
+        // Update the info box with short description
         const shortDescEl = document.getElementById('short-description-info');
-        const locationShapeEl = document.getElementById('location-shape-info');
-        const hydroParamsEl = document.getElementById('hydro-params-info');
+        if (shortDescEl) {
+          shortDescEl.textContent = selectedIntervention.shortDescription;
+        }
 
-        if (shortDescEl) shortDescEl.textContent = selectedIntervention.shortDescription;
-        if (locationShapeEl) locationShapeEl.textContent = selectedIntervention.locationShapeInfo;
-        if (hydroParamsEl) hydroParamsEl.textContent = selectedIntervention.hydrologicalParameters;
-
-        // Update the hydrological params textarea placeholder with combined info
+        // Update the hydrological params textarea placeholder with shape+hydro info
         const hydroInput = document.querySelector('textarea[name="hydrologicalParams"]') as HTMLTextAreaElement | null;
         if (hydroInput) {
-          const combinedPlaceholder = `Location & Shape Information Required:\n${selectedIntervention.locationShapeInfo}\n\nHydrological Parameters Required:\n${selectedIntervention.hydrologicalParameters}`;
-          hydroInput.placeholder = combinedPlaceholder;
+          hydroInput.placeholder = selectedIntervention.shapeAndHydroParams || 'Select an intervention type to see required parameters';
         }
       }
     }
   }, [form.watch, form]);
 
   const handleSubmit = (data: AnnotationFormValues) => {
-    // Find the selected intervention type to get details for info box
+    // Find the selected intervention type to get details
     const selectedIntervention = INTERVENTION_TYPES.find(
       (it) => it.id === data.interventionType
     );
@@ -132,11 +127,9 @@ export function InterventionDialog({
       interventionType: data.interventionType,
       featureType: data.featureType,
       hydrologicalParams: data.hydrologicalParams,
-      // Additional info for display in the intervention card
       interventionInfo: {
         shortDescription: selectedIntervention?.shortDescription || '',
-        locationShapeInfo: selectedIntervention?.locationShapeInfo || '',
-        hydrologicalParameters: selectedIntervention?.hydrologicalParameters || '',
+        shapeAndHydroParams: selectedIntervention?.shapeAndHydroParams || '',
       }
     });
   };
@@ -201,22 +194,12 @@ export function InterventionDialog({
               )}
             />
 
-            {/* Info Box - Shows details about selected intervention type */}
+            {/* Info Box - Shows short description of selected intervention type */}
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-              <div className="space-y-3">
-                <div className="font-semibold text-slate-800">Short Description/Info:</div>
+              <div className="space-y-2">
+                <div className="font-semibold text-slate-800">Description:</div>
                 <p className="text-slate-600 text-sm" id="short-description-info">
-                  Select an intervention type to see details
-                </p>
-
-                <div className="font-semibold text-slate-800">Location and Shape Information Required:</div>
-                <p className="text-slate-600 text-sm" id="location-shape-info">
-                  Select an intervention type to see details
-                </p>
-
-                <div className="font-semibold text-slate-800">Hydrological Parameters Required:</div>
-                <p className="text-slate-600 text-sm" id="hydro-params-info">
-                  Select an intervention type to see details
+                  Select an intervention type to see description
                 </p>
               </div>
             </div>
