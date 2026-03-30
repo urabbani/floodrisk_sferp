@@ -18,6 +18,12 @@ import {
 } from '@/components/ui/toggle-group';
 import { Separator } from '@/components/ui/separator';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   MapPin,
   Minus,
   Pentagon,
@@ -26,6 +32,7 @@ import {
   Trash2,
   Download,
   MessageSquarePlus,
+  Plus,
 } from 'lucide-react';
 import type { DrawingTool } from '@/types/annotations';
 import { TOOL_INFO } from '@/types/annotations';
@@ -140,62 +147,41 @@ export function AnnotationToolbar({
         </TooltipProvider>
       )}
 
-      {/* Create Intervention (Point tool) */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'point' ? 'default' : 'ghost'}
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => onToolChange('point')}
-              title="Create Point Intervention"
-              disabled={!isAuthenticated}
-            >
-              <MapPin className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Create Point Intervention</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {/* Create Intervention (Line tool) */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'line' ? 'default' : 'ghost'}
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => onToolChange('line')}
-              title="Create Line Intervention"
-              disabled={!isAuthenticated}
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Create Line Intervention</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {/* Create Intervention (Polygon tool) */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant={activeTool === 'polygon' ? 'default' : 'ghost'}
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => onToolChange('polygon')}
-              title="Create Polygon Intervention"
-              disabled={!isAuthenticated}
-            >
-              <Pentagon className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Create Polygon Intervention</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      {/* Create Intervention Dropdown */}
+      <DropdownMenu>
+        <TooltipProvider>
+          <Tooltip>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={(activeTool === 'point' || activeTool === 'line' || activeTool === 'polygon') ? 'default' : 'ghost'}
+                size="icon"
+                className="h-9 w-9"
+                disabled={!isAuthenticated}
+                asChild
+              >
+                <div>
+                  <Plus className="w-4 h-4" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <TooltipContent>Create Intervention</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onToolChange('point')}>
+            <MapPin className="w-4 h-4 mr-2" />
+            Point Intervention
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onToolChange('line')}>
+            <Minus className="w-4 h-4 mr-2" />
+            Line Intervention
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onToolChange('polygon')}>
+            <Pentagon className="w-4 h-4 mr-2" />
+            Polygon Intervention
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Modify Intervention */}
       <TooltipProvider>
