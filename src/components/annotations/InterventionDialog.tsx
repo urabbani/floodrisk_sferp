@@ -89,7 +89,7 @@ export function InterventionDialog({
     },
   });
 
-  // Update info boxes when intervention type changes
+  // Update info boxes and placeholder when intervention type changes
   useEffect(() => {
     if (form.watch('interventionType')) {
       const selectedIntervention = INTERVENTION_TYPES.find(
@@ -97,6 +97,11 @@ export function InterventionDialog({
       );
 
       if (selectedIntervention) {
+        // Auto-set the feature type based on intervention type
+        if (selectedIntervention.featureType !== 'none') {
+          form.setValue('featureType', selectedIntervention.featureType);
+        }
+
         // Update the info boxes
         const shortDescEl = document.getElementById('short-description-info');
         const locationShapeEl = document.getElementById('location-shape-info');
@@ -106,14 +111,15 @@ export function InterventionDialog({
         if (locationShapeEl) locationShapeEl.textContent = selectedIntervention.locationShapeInfo;
         if (hydroParamsEl) hydroParamsEl.textContent = selectedIntervention.hydrologicalParameters;
 
-        // Also update the hydrological params input placeholder
-        const hydroInput = document.querySelector('input[name="hydrologicalParams"]') as HTMLInputElement | null;
+        // Update the hydrological params textarea placeholder with combined info
+        const hydroInput = document.querySelector('textarea[name="hydrologicalParams"]') as HTMLTextAreaElement | null;
         if (hydroInput) {
-          hydroInput.placeholder = selectedIntervention.hydrologicalParameters || 'Hydrological parameters will appear here based on selection';
+          const combinedPlaceholder = `Location & Shape Information Required:\n${selectedIntervention.locationShapeInfo}\n\nHydrological Parameters Required:\n${selectedIntervention.hydrologicalParameters}`;
+          hydroInput.placeholder = combinedPlaceholder;
         }
       }
     }
-  }, [form.watch]);
+  }, [form.watch, form]);
 
   const handleSubmit = (data: AnnotationFormValues) => {
     // Find the selected intervention type to get details for info box
@@ -179,7 +185,7 @@ export function InterventionDialog({
                         <SelectValue placeholder="Select intervention type" />
                       </SelectTrigger>
                       <SelectContent>
-                        {INTERVENTION_TYPES.map((intervention) => (
+                        {INTERVENTION_TYPES.filter(it => it.featureType !== 'none').map((intervention) => (
                           <SelectItem key={intervention.id} value={intervention.id}>
                             <div className="flex items-center gap-2">
                               <span className="font-mono">{intervention.id}</span>
@@ -247,8 +253,9 @@ export function InterventionDialog({
                 <FormItem>
                   <FormLabel>Hydrological Parameter Required</FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Hydrological parameters will appear here based on selection"
+                    <Textarea
+                      placeholder="Select an intervention type to see required parameters"
+                      className="min-h-[120px] resize-y"
                       {...field}
                     />
                   </FormControl>
