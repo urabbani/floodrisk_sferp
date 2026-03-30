@@ -125,6 +125,7 @@ function App() {
     createAnnotation,
     updateAnnotation,
     deleteAnnotation,
+    refetch: loadInterventions,
   } = useAnnotations({ enabled: !!map });
 
   const {
