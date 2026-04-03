@@ -81,12 +81,24 @@ export function InterventionDialog({
   const form = useForm<AnnotationFormValues>({
     resolver: zodResolver(annotationSchema),
     defaultValues: {
-      name: defaultValues.name || '',
-      interventionType: defaultValues.interventionType || '',
-      featureType: defaultValues.featureType || 'point',
-      hydrologicalParams: defaultValues.hydrologicalParams || '',
+      name: '',
+      interventionType: '',
+      featureType: 'point',
+      hydrologicalParams: '',
     },
   });
+
+  // Reset form when dialog opens or defaultValues change (e.g. switching create ↔ edit)
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        name: defaultValues.name || '',
+        interventionType: defaultValues.interventionType || '',
+        featureType: defaultValues.featureType || 'point',
+        hydrologicalParams: defaultValues.hydrologicalParams || '',
+      });
+    }
+  }, [isOpen, mode, defaultValues.name, defaultValues.interventionType, defaultValues.featureType, defaultValues.hydrologicalParams, form]);
 
   // Track selected intervention for displaying info
   const [selectedIntervention, setSelectedIntervention] = useState<typeof INTERVENTION_TYPES[0] | null>(null);

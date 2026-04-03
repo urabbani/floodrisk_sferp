@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
+import KML from 'ol/format/KML';
 import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
@@ -101,6 +102,9 @@ function App() {
     pendingInterventionDataRef.current = pendingInterventionData;
   }, [pendingInterventionData]);
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  // Ref for features pending upload (set during upload, consumed on dialog submit)
+  const pendingUploadFeaturesRef = useRef<Feature[] | null>(null);
 
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
@@ -229,6 +233,90 @@ function App() {
       setDrawingTool(tool);
     }
   }, [isAuthenticated]);
+
+  // Detect feature type from an OpenLayers geometry
+  const detectFeatureType = useCallback((geometry: any): 'point' | 'line' | 'polygon' => {
+    const type = geometry.getType();
+    if (type === 'Point' || type === 'MultiPoint') return 'point';
+    if (type === 'LineString' || type === 'MultiLineString') return 'line';
+    if (type === 'Polygon' || type === 'MultiPolygon') return 'polygon';
+    return 'polygon'; // fallback
+  }, []);
+
+  // Upload intervention handler
+  const handleUploadIntervention = useCallback(() => {
+    if (!isAuthenticated) {
+      setLoginDialogOpen(true);
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.geojson,.json,.kml,.zip';
+    input.style.display = 'none';
+    document.body.appendChild(input);
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        document.body.removeChild(input);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        let features: Feature[];
+
+        if (ext === 'kml') {
+          const format = new KML();
+          features = format.readFeatures(text, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:32642',
+          });
+        } else if (ext === 'zip') {
+          alert('Shapefile (.zip) support requires conversion to GeoJSON first. Please convert your shapefile to GeoJSON format.');
+          document.body.removeChild(input);
+          return;
+        } else {
+          // GeoJSON or JSON
+          const format = new GeoJSON();
+          features = format.readFeatures(text, {
+            dataProjection: 'EPSG:4326',
+            featureProjection: 'EPSG:32642',
+          });
+        }
+
+        if (features.length === 0) {
+          alert('No features found in the uploaded file.');
+          document.body.removeChild(input);
+          return;
+        }
+
+        // Detect feature type from first feature
+        const firstGeom = features[0].getGeometry();
+        if (!firstGeom) {
+          alert('No geometry found in the uploaded features.');
+          document.body.removeChild(input);
+          return;
+        }
+
+        const featureType = detectFeatureType(firstGeom);
+        pendingUploadFeaturesRef.current = features;
+
+        // Open the intervention dialog in create mode with auto-detected feature type
+        setAnnotationDialogMode('create');
+        setAnnotationDialogOpen(true);
+      } catch (error) {
+        console.error('Failed to parse uploaded file:', error);
+        alert('Failed to parse the uploaded file. Please ensure it is a valid GeoJSON or KML file.');
+      } finally {
+        document.body.removeChild(input);
+      }
+    };
+
+    input.click();
+  }, [isAuthenticated, detectFeatureType]);
 
   // Sync drawingTool state with setActiveTool
   useEffect(() => {
@@ -364,7 +452,70 @@ function App() {
     }
 
     if (annotationDialogMode === 'create') {
-      if (pendingDrawFeature) {
+      if (pendingUploadFeaturesRef.current) {
+        // UPLOAD FLOW: Features already parsed from file, save each one
+        const features = pendingUploadFeaturesRef.current;
+        pendingUploadFeaturesRef.current = null;
+
+        let savedCount = 0;
+        for (const feature of features) {
+          const geom = feature.getGeometry();
+          if (!geom) continue;
+
+          const geometryJson = JSON.parse(
+            new GeoJSON().writeGeometry(geom, {
+              featureProjection: 'EPSG:32642',
+              dataProjection: 'EPSG:4326',
+            })
+          );
+
+          const newAnnotation: NewAnnotation = {
+            title: data.name,
+            description: data.hydrologicalParams,
+            category: 'general',
+            geometry_type: data.featureType,
+            geometry: geometryJson,
+            style_config: {
+              color: '#ff0000',
+              strokeWidth: 2,
+              fillColor: '#ff0000',
+              opacity: 0.2,
+            },
+            created_by: username,
+          };
+
+          try {
+            const created = await createAnnotation(newAnnotation);
+            feature.set('id', created.id);
+            feature.set('title', data.name);
+            feature.set('description', data.hydrologicalParams);
+            feature.set('category', 'general');
+            feature.set('geometry_type', data.featureType);
+            feature.set('styleConfig', {
+              color: '#ff0000',
+              strokeWidth: 2,
+              fillColor: '#ff0000',
+              opacity: 0.2,
+            });
+            feature.set('interventionType', data.interventionType);
+            feature.set('interventionInfo', data.interventionInfo);
+            feature.changed();
+            savedCount++;
+          } catch (error) {
+            console.error('Failed to create intervention from upload:', error);
+          }
+        }
+
+        if (savedCount === 0) {
+          alert('Failed to save any interventions from the uploaded file.');
+        }
+
+        // Close dialog and reset
+        setAnnotationDialogOpen(false);
+        setActiveTool('none');
+        setDrawingTool('none');
+        return;
+      } else if (pendingDrawFeature) {
         // OLD FLOW: Drawing already happened, save immediately
         const newAnnotation: NewAnnotation = {
           title: data.name,
@@ -408,13 +559,20 @@ function App() {
           alert('Failed to save intervention');
           vectorSource?.removeFeature(pendingDrawFeature);
         }
+        // Old flow: close dialog and reset tool immediately
+        setAnnotationDialogOpen(false);
+        setPendingDrawFeature(null);
+        setActiveTool('none');
+        setDrawingTool('none');
       } else {
         // NEW FLOW: Store form data and start drawing
+        // Do NOT close dialog or reset pendingInterventionData here —
+        // those will be cleaned up after drawing completes in onDrawEnd
         setPendingInterventionData(data);
         setAnnotationDialogOpen(false);
-        // Activate the appropriate drawing tool based on selected feature type
         setActiveTool(data.featureType);
         setDrawingTool(data.featureType);
+        return; // Don't fall through to the reset block below
       }
     } else if (annotationDialogMode === 'edit' && editingAnnotation) {
       // Update existing intervention
@@ -445,9 +603,12 @@ function App() {
         console.error('Failed to update intervention:', error);
         alert('Failed to update intervention');
       }
+      // Deactivate modify tool after editing
+      setActiveTool('none');
+      setDrawingTool('none');
     }
 
-    // Close dialog and reset state
+    // Close dialog and reset state (only reached for old flow and edit flow)
     setAnnotationDialogOpen(false);
     setAnnotationDialogMode('create');
     setPendingInterventionData(null);
@@ -621,6 +782,7 @@ function App() {
         activeTool={activeTool}
         onToolChange={handleToolChange}
         onExport={handleExportAnnotations}
+        onUpload={handleUploadIntervention}
         onToggleInterventionsPanel={handleToggleAnnotationsPanel}
         interventionsCount={interventions.length}
         isAuthenticated={isAuthenticated}
@@ -850,6 +1012,7 @@ function App() {
           setAnnotationDialogOpen(false);
           setPendingDrawFeature(null);
           setEditingAnnotation(null);
+          pendingUploadFeaturesRef.current = null;
           // Clear the drawn feature if cancelling from create mode
           if (annotationDialogMode === 'create' && pendingDrawFeature) {
             vectorSource?.removeFeature(pendingDrawFeature);
@@ -859,9 +1022,10 @@ function App() {
         defaultValues={
           editingAnnotation
             ? {
-                title: editingAnnotation.feature.get('title'),
-                description: editingAnnotation.feature.get('description'),
-                category: editingAnnotation.feature.get('category'),
+                name: editingAnnotation.feature.get('title') || '',
+                interventionType: editingAnnotation.feature.get('interventionType') || '',
+                featureType: editingAnnotation.feature.get('geometry_type') || 'point',
+                hydrologicalParams: editingAnnotation.feature.get('description') || '',
               }
             : undefined
         }

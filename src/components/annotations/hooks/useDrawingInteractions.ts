@@ -58,6 +58,14 @@ export function useDrawingInteractions({
   const snapInteractionRef = useRef<Snap | null>(null);
   const selectInteractionRef = useRef<Select | null>(null);
 
+  // Use refs for callbacks to avoid effect re-runs when they change identity
+  const onDrawStartRef = useRef(onDrawStart);
+  onDrawStartRef.current = onDrawStart;
+  const onDrawEndRef = useRef(onDrawEnd);
+  onDrawEndRef.current = onDrawEnd;
+  const onSelectRef = useRef(onSelect);
+  onSelectRef.current = onSelect;
+
   // Use external vector source or create internal one
   const vectorSourceRef = useRef<VectorSource>(
     externalVectorSource ||
@@ -107,7 +115,7 @@ export function useDrawingInteractions({
     // Clear selection when changing tools
     if (activeTool !== 'select') {
       setSelectedFeature(null);
-      onSelect?.(null);
+      onSelectRef.current?.(null);
     }
 
     switch (activeTool) {
@@ -137,13 +145,13 @@ export function useDrawingInteractions({
           const geometryType = feature.getGeometry()?.getType();
           const geomType = geometryType === 'Point' ? 'point' : geometryType === 'LineString' ? 'line' : 'polygon';
           feature.setProperties(getDefaultFeatureProperties(geomType, 'New Annotation', username));
-          onDrawStart?.();
+          onDrawStartRef.current?.();
         });
 
         // Handle draw completion
         draw.on('drawend', (event: { feature: Feature }) => {
           const feature = event.feature;
-          onDrawEnd?.(feature);
+          onDrawEndRef.current?.(feature);
         });
 
         map.addInteraction(draw);
@@ -184,10 +192,10 @@ export function useDrawingInteractions({
           if (features.length > 0) {
             const feature = features[0];
             setSelectedFeature(feature);
-            onSelect?.(feature);
+            onSelectRef.current?.(feature);
           } else if (deselected.length > 0) {
             setSelectedFeature(null);
-            onSelect?.(null);
+            onSelectRef.current?.(null);
           }
         });
 
@@ -206,7 +214,7 @@ export function useDrawingInteractions({
     return () => {
       removeAllInteractions();
     };
-  }, [map, activeTool, username, onDrawStart, onDrawEnd, onSelect, removeAllInteractions, vectorSource]);
+  }, [map, activeTool, username, removeAllInteractions, vectorSource]);
 
   /**
    * Delete the currently selected feature
@@ -216,8 +224,8 @@ export function useDrawingInteractions({
 
     vectorSource.removeFeature(selectedFeature);
     setSelectedFeature(null);
-    onSelect?.(null);
-  }, [selectedFeature, onSelect, vectorSource]);
+    onSelectRef.current?.(null);
+  }, [selectedFeature, vectorSource]);
 
   /**
    * Clear all features from the vector source
@@ -226,8 +234,8 @@ export function useDrawingInteractions({
     if (!vectorSource) return;
     vectorSource.clear();
     setSelectedFeature(null);
-    onSelect?.(null);
-  }, [onSelect, vectorSource]);
+    onSelectRef.current?.(null);
+  }, [vectorSource]);
 
   return {
     activeTool,

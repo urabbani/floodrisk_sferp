@@ -18,6 +18,7 @@ interface HeaderProps {
   activeTool?: DrawingTool;
   onToolChange?: (tool: DrawingTool) => void;
   onExport?: () => void;
+  onUpload?: () => void;
   onToggleInterventionsPanel?: () => void;
   interventionsCount?: number;
   isAuthenticated?: boolean;
@@ -29,6 +30,7 @@ export function Header({
   activeTool = 'none',
   onToolChange,
   onExport,
+  onUpload,
   onToggleInterventionsPanel,
   interventionsCount = 0,
   isAuthenticated = false,
@@ -73,6 +75,7 @@ export function Header({
             activeTool={activeTool}
             onToolChange={onToolChange}
             onExport={onExport}
+            onUpload={onUpload}
             onToggleInterventionsPanel={onToggleInterventionsPanel}
             interventionsCount={interventionsCount}
             variant="header"

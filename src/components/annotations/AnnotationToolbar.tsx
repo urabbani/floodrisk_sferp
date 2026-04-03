@@ -27,6 +27,7 @@ import {
   Download,
   MessageSquarePlus,
   Plus,
+  Upload,
 } from 'lucide-react';
 import type { DrawingTool } from '@/types/annotations';
 import { TOOL_INFO } from '@/types/annotations';
@@ -35,6 +36,7 @@ interface AnnotationToolbarProps {
   activeTool: DrawingTool;
   onToolChange: (tool: DrawingTool) => void;
   onExport?: () => void;
+  onUpload?: () => void;
   onToggleInterventionsPanel?: () => void;
   interventionsCount?: number;
   variant?: 'header' | 'floating';
@@ -45,6 +47,7 @@ export function AnnotationToolbar({
   activeTool,
   onToolChange,
   onExport,
+  onUpload,
   onToggleInterventionsPanel,
   interventionsCount = 0,
   variant = 'header',
@@ -159,6 +162,24 @@ export function AnnotationToolbar({
         </Tooltip>
       </TooltipProvider>
 
+      {/* Upload Intervention */}
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9"
+              onClick={() => onUpload?.()}
+              disabled={!isAuthenticated}
+            >
+              <Upload className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Upload Intervention</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       {/* Modify Intervention */}
       <TooltipProvider>
         <Tooltip>
@@ -175,24 +196,6 @@ export function AnnotationToolbar({
             </Button>
           </TooltipTrigger>
           <TooltipContent>Modify Intervention</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      {/* Delete Intervention */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 hover:text-red-600"
-              onClick={() => onToolChange('delete')}
-              title="Delete Selected Intervention"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Delete Selected Intervention</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
