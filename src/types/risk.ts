@@ -12,17 +12,17 @@ export type RiskMode = 'Exp' | 'Vul' | 'Dmg';
 export type RiskAssetType = 'crop' | 'buildLow56' | 'buildLow44' | 'buildHigh';
 
 export const RISK_ASSET_LABELS: Record<RiskAssetType, string> = {
-  crop: 'Cropped Area (ha)',
-  buildLow56: 'Buildings <3m, 56% (sqm)',
-  buildLow44: 'Buildings <3m, 44% (sqm)',
-  buildHigh: 'Buildings >=3m (sqm)',
+  crop: 'Agriculture Damage (ha)',
+  buildLow56: 'Kacha (sqm)',
+  buildLow44: 'Pakka (sqm)',
+  buildHigh: 'High-Rise (sqm)',
 };
 
 export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetType, string> = {
-  crop: 'Crop',
-  buildLow56: 'Build <3m (56%)',
-  buildLow44: 'Build <3m (44%)',
-  buildHigh: 'Build >=3m',
+  crop: 'Agriculture',
+  buildLow56: 'Kacha',
+  buildLow44: 'Pakka',
+  buildHigh: 'High-Rise',
 };
 
 export const RISK_ASSET_COLORS: Record<RiskAssetType, string> = {

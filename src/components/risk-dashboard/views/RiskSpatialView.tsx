@@ -138,12 +138,18 @@ export function RiskSpatialView({
             return (
               <div
                 key={district}
-                className="flex items-center gap-2 group cursor-default"
+                className={cn(
+                  "flex items-center gap-2 group cursor-default rounded px-1 py-0.5 transition-colors",
+                  hoveredDistrict === district ? "bg-green-50" : "hover:bg-slate-50",
+                )}
                 onMouseEnter={() => onHoverDistrict(district)}
                 onMouseLeave={() => onHoverDistrict(null)}
               >
                 <span className="text-[10px] text-slate-400 w-4 text-right">{i + 1}</span>
-                <span className="text-[10px] text-slate-700 w-24 truncate">{district}</span>
+                <span className={cn(
+                  "text-[10px] w-24 truncate transition-all",
+                  hoveredDistrict === district ? "font-bold text-green-700" : "text-slate-700",
+                )}>{district}</span>
                 <div className="flex-1 h-4 bg-slate-100 rounded overflow-hidden">
                   <div
                     className="h-full rounded transition-all"

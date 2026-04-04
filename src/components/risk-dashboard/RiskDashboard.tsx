@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Shield, Layers, Map, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,17 @@ export function RiskDashboard({
   const [spatialReturnPeriod, setSpatialReturnPeriod] = useState<number>(25);
   const [spatialMaintenance, setSpatialMaintenance] = useState<'breaches' | 'redcapacity' | 'perfect'>('breaches');
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleHoverDistrict = useCallback((district: string | null) => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (district) {
+      setHoveredDistrict(district);
+    } else {
+      // Small delay before clearing to avoid flicker on polygon edges
+      hoverTimeoutRef.current = setTimeout(() => setHoveredDistrict(null), 150);
+    }
+  }, []);
 
   // Data
   const { data, isLoading, error } = useRiskData();
@@ -213,7 +224,7 @@ export function RiskDashboard({
             choroplethData={choroplethData}
             hoveredDistrict={hoveredDistrict}
             onScenarioChange={handleSpatialScenarioChange}
-            onHoverDistrict={setHoveredDistrict}
+            onHoverDistrict={handleHoverDistrict}
           />
         )}
       </div>
