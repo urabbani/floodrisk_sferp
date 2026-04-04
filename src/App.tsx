@@ -895,7 +895,7 @@ function App() {
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-slate-800">
-                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'risk' ? 'Risk Dashboard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Interventions'}
+                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'impact' ? 'Impact Analysis' : sidebarView === 'risk' ? 'Risk Dashboard' : 'Interventions'}
               </h2>
               <Button
                 variant="ghost"
@@ -921,15 +921,6 @@ function App() {
                 Hazard
               </Button>
               <Button
-                variant={sidebarView === 'risk' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setSidebarView('risk')}
-                className="flex-1 gap-1.5 h-8 text-xs"
-              >
-                <Shield className="w-3.5 h-3.5" />
-                Risk
-              </Button>
-              <Button
                 variant={sidebarView === 'impact' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSidebarView('impact')}
@@ -937,6 +928,15 @@ function App() {
               >
                 <BarChart3 className="w-3.5 h-3.5" />
                 Impact
+              </Button>
+              <Button
+                variant={sidebarView === 'risk' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSidebarView('risk')}
+                className="flex-1 gap-1.5 h-8 text-xs"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Risk
               </Button>
               <Button
                 variant={sidebarView === 'interventions' ? 'default' : 'ghost'}
@@ -961,18 +961,18 @@ function App() {
                 selectedLayerId={selectedLayer?.id}
                 visibleLayerIds={visibleLayerIds}
               />
-            ) : sidebarView === 'risk' ? (
-              <RiskDashboard
-                onViewChange={setCurrentRiskView}
-                onChoroplethData={setChoroplethData}
-                className="h-full"
-              />
             ) : sidebarView === 'impact' ? (
               <ImpactMatrix
                 onLayerToggle={handleLayerVisibilityChange}
                 visibleLayers={visibleLayerIds}
                 onImpactLayersChange={handleImpactLayersChange}
                 onViewChange={setCurrentImpactView}
+                className="h-full"
+              />
+            ) : sidebarView === 'risk' ? (
+              <RiskDashboard
+                onViewChange={setCurrentRiskView}
+                onChoroplethData={setChoroplethData}
                 className="h-full"
               />
             ) : (
