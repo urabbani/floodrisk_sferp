@@ -9,6 +9,9 @@ import { LegendPanel } from '@/components/map/LegendPanel';
 import { FeaturePopup } from '@/components/popups/FeaturePopup';
 import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import { ImpactMatrix } from '@/components/impact-matrix';
+import { RiskDashboard } from '@/components/risk-dashboard';
+import type { RiskView, DistrictName } from '@/types/risk';
+import { useChoroplethLayer } from '@/components/risk-dashboard/hooks/useChoroplethLayer';
 import { InterventionPanel } from '@/components/annotations/InterventionPanel';
 import { InterventionDialog } from '@/components/annotations/InterventionDialog';
 import { LoginDialog } from '@/components/annotations/LoginDialog';
@@ -21,7 +24,7 @@ import type { LayerInfo, LayerGroup } from '@/types/layers';
 import { isLayerGroup } from '@/types/layers';
 import { layerTree } from '@/config/layers';
 import { cn } from '@/lib/utils';
-import { PanelLeft, X, GripVertical, ArrowLeftRight, Layers, BarChart3, MessageSquarePlus } from 'lucide-react';
+import { PanelLeft, X, GripVertical, ArrowLeftRight, Layers, BarChart3, MessageSquarePlus, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { DrawingTool, NewAnnotation } from '@/types/annotations';
@@ -66,8 +69,10 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
-  const [sidebarView, setSidebarView] = useState<'layers' | 'impact' | 'interventions'>('layers');
+  const [sidebarView, setSidebarView] = useState<'layers' | 'risk' | 'impact' | 'interventions'>('layers');
   const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
+  const [currentRiskView, setCurrentRiskView] = useState<RiskView>('summary');
+  const [choroplethData, setChoroplethData] = useState<Record<DistrictName, number> | null>(null);
   const [visibleLayerIds, setVisibleLayerIds] = useState<string[]>(() => collectVisibleLayerIds(layerTree));
   const [layerOpacities, setLayerOpacities] = useState<Record<string, number>>({});
   const [selectedLayer, setSelectedLayer] = useState<LayerInfo | null>(null);
@@ -112,6 +117,18 @@ function App() {
 
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
+
+  // Choropleth layer for Risk spatial view
+  const choroplethValues = choroplethData ? Object.values(choroplethData).filter((v) => v > 0) : [];
+  const choroplethMin = choroplethValues.length > 0 ? Math.min(...choroplethValues) : 0;
+  const choroplethMax = choroplethValues.length > 0 ? Math.max(...choroplethValues) : 0;
+  useChoroplethLayer({
+    map,
+    data: choroplethData,
+    min: choroplethMin,
+    max: choroplethMax,
+    visible: sidebarView === 'risk' && currentRiskView === 'spatial',
+  });
 
   // Handle login dialog events from header
   useEffect(() => {
@@ -396,7 +413,7 @@ function App() {
   // Minimum and maximum sidebar width
   const MIN_WIDTH = 200;
   // Dynamic max width: 75% for Compare view, 600px otherwise
-  const MAX_WIDTH = currentImpactView === 'compare'
+  const MAX_WIDTH = currentImpactView === 'compare' || currentRiskView === 'spatial'
     ? Math.floor(window.innerWidth * 0.75)
     : 600;
 
@@ -878,7 +895,7 @@ function App() {
           {isMobile && sidebarOpen && (
             <div className="flex items-center justify-between p-3 border-b border-slate-200">
               <h2 className="text-sm font-semibold text-slate-800">
-                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Interventions'}
+                {sidebarView === 'layers' ? 'Hazard' : sidebarView === 'risk' ? 'Risk Dashboard' : sidebarView === 'impact' ? 'Impact Analysis' : 'Interventions'}
               </h2>
               <Button
                 variant="ghost"
@@ -902,6 +919,15 @@ function App() {
               >
                 <Layers className="w-3.5 h-3.5" />
                 Hazard
+              </Button>
+              <Button
+                variant={sidebarView === 'risk' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSidebarView('risk')}
+                className="flex-1 gap-1.5 h-8 text-xs"
+              >
+                <Shield className="w-3.5 h-3.5" />
+                Risk
               </Button>
               <Button
                 variant={sidebarView === 'impact' ? 'default' : 'ghost'}
@@ -934,6 +960,12 @@ function App() {
                 onLayerSelect={handleLayerSelect}
                 selectedLayerId={selectedLayer?.id}
                 visibleLayerIds={visibleLayerIds}
+              />
+            ) : sidebarView === 'risk' ? (
+              <RiskDashboard
+                onViewChange={setCurrentRiskView}
+                onChoroplethData={setChoroplethData}
+                className="h-full"
               />
             ) : sidebarView === 'impact' ? (
               <ImpactMatrix
