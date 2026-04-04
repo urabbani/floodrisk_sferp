@@ -75,7 +75,7 @@ export function DistrictBarChart({ data, mode, layout = 'horizontal' }: District
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis
           dataKey="district"
-          tick={{ fontSize: 11, angle: -45, textAnchor: 'end' }}
+          tick={{ fontSize: 11, angle: -30, textAnchor: 'end' }}
           interval={0}
           height={70}
         />
