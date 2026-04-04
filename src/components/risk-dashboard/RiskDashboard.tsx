@@ -2,12 +2,14 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Shield, Layers, Map, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { RiskView, RiskMode, ScenarioKey, DistrictName } from '@/types/risk';
+import type { RiskView, ScenarioKey, DistrictName } from '@/types/risk';
 import { totalRiskValue } from '@/types/risk';
 import { useRiskData } from './hooks/useRiskData';
 import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
+
+const MODE = 'Dmg' as const;
 
 export interface RiskDashboardProps {
   onViewChange?: (view: RiskView) => void;
@@ -23,7 +25,6 @@ export function RiskDashboard({
   // View state
   const [currentView, setCurrentView] = useState<RiskView>('summary');
   const [selectedClimate, setSelectedClimate] = useState<'present' | 'future'>('present');
-  const [selectedMode, setSelectedMode] = useState<RiskMode>('Dmg');
   const [selectedScenarioKey, setSelectedScenarioKey] = useState<ScenarioKey | null>(null);
 
   // Spatial view state
@@ -49,11 +50,11 @@ export function RiskDashboard({
 
     const result: Record<DistrictName, number> = {} as any;
     for (const district of data.districts) {
-      const regionData = scenarioData[district]?.[selectedMode];
+      const regionData = scenarioData[district]?.[MODE];
       result[district as DistrictName] = regionData ? totalRiskValue(regionData) : 0;
     }
     return result;
-  }, [data, currentView, spatialReturnPeriod, selectedClimate, spatialMaintenance, selectedMode]);
+  }, [data, currentView, spatialReturnPeriod, selectedClimate, spatialMaintenance]);
 
   // Push choropleth data to parent
   useEffect(() => {
@@ -132,10 +133,9 @@ export function RiskDashboard({
         </div>
       </div>
 
-      {/* Controls Bar */}
+      {/* Controls Bar — Climate only */}
       <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
-        <div className="flex items-center justify-between gap-3">
-          {/* Climate Toggle */}
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-[10px] font-medium text-slate-600">Climate:</label>
             <div className="flex gap-1">
@@ -151,27 +151,6 @@ export function RiskDashboard({
                   )}
                 >
                   {climate}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Mode Toggle */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] font-medium text-slate-600">Mode:</label>
-            <div className="flex gap-1">
-              {(['Vul', 'Dmg'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setSelectedMode(mode)}
-                  className={cn(
-                    'px-2.5 py-1 text-[10px] rounded-md transition-all',
-                    selectedMode === mode
-                      ? 'bg-green-600 text-white font-medium'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-green-300',
-                  )}
-                >
-                  {mode === 'Vul' ? 'Vulnerability' : 'Damage'}
                 </button>
               ))}
             </div>
@@ -207,7 +186,7 @@ export function RiskDashboard({
           <RiskSummaryHeatmap
             data={data}
             climate={selectedClimate}
-            mode={selectedMode}
+            mode={MODE}
             selectedKey={selectedScenarioKey}
             onScenarioClick={handleScenarioClick}
           />
@@ -218,7 +197,7 @@ export function RiskDashboard({
           <RiskDistrictBreakdown
             data={data}
             scenarioKey={selectedScenarioKey}
-            mode={selectedMode}
+            mode={MODE}
             onBack={handleBackToSummary}
           />
         )}
@@ -230,7 +209,7 @@ export function RiskDashboard({
             climate={selectedClimate}
             maintenance={spatialMaintenance}
             returnPeriod={spatialReturnPeriod}
-            mode={selectedMode}
+            mode={MODE}
             choroplethData={choroplethData}
             hoveredDistrict={hoveredDistrict}
             onScenarioChange={handleSpatialScenarioChange}

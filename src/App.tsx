@@ -67,7 +67,7 @@ function App() {
   const isMobile = useIsMobile();
   // Sidebar starts closed on mobile, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(!isMobile);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(352);
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarView, setSidebarView] = useState<'layers' | 'risk' | 'impact' | 'interventions'>('layers');
   const [currentImpactView, setCurrentImpactView] = useState<'summary' | 'detail' | 'compare'>('summary');
