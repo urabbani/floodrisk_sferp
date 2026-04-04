@@ -51,10 +51,10 @@ export function DistrictBarChart({ data, mode, layout = 'horizontal' }: District
       <ResponsiveContainer width="100%" height={Math.max(300, data.length * 40)}>
         <BarChart data={data} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis type="number" tickFormatter={(v: number) => formatRiskValue(v, mode)} tick={{ fontSize: 10 }} />
-          <YAxis type="category" dataKey="district" width={100} tick={{ fontSize: 10 }} />
+          <XAxis type="number" tickFormatter={(v: number) => formatRiskValue(v, mode)} tick={{ fontSize: 11 }} />
+          <YAxis type="category" dataKey="district" width={110} tick={{ fontSize: 11 }} />
           <Tooltip content={<CustomTooltip mode={mode} />} />
-          <Legend wrapperStyle={{ fontSize: 10 }} />
+          <Legend wrapperStyle={{ fontSize: 11 }} />
           {assetKeys.map((key) => (
             <Bar
               key={key}
@@ -71,17 +71,17 @@ export function DistrictBarChart({ data, mode, layout = 'horizontal' }: District
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
+      <BarChart data={data} margin={{ left: 10, right: 20, top: 5, bottom: 40 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
         <XAxis
           dataKey="district"
-          tick={{ fontSize: 9 }}
+          tick={{ fontSize: 11, angle: -45, textAnchor: 'end' }}
           interval={0}
-          height={60}
+          height={70}
         />
-        <YAxis type="number" tickFormatter={(v: number) => formatRiskValue(v, mode)} tick={{ fontSize: 10 }} />
+        <YAxis type="number" tickFormatter={(v: number) => formatRiskValue(v, mode)} tick={{ fontSize: 11 }} />
         <Tooltip content={<CustomTooltip mode={mode} />} />
-        <Legend wrapperStyle={{ fontSize: 10 }} />
+        <Legend wrapperStyle={{ fontSize: 11 }} />
         {assetKeys.map((key) => (
           <Bar
             key={key}
