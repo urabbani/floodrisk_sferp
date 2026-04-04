@@ -544,9 +544,25 @@ function App() {
 
           try {
             const created = await createAnnotation(newAnnotation);
-            // createAnnotation adds its own feature to the vector source,
-            // so remove the original uploaded feature to avoid duplicates
-            vectorSource?.removeFeature(feature);
+            // Update the uploaded feature in-place with API-returned ID and metadata
+            // (don't remove it — useAnnotations.createAnnotation doesn't add to vector source)
+            feature.set('id', created.id);
+            feature.set('title', data.name);
+            feature.set('description', data.hydrologicalParams);
+            feature.set('category', 'general');
+            feature.set('geometry_type', data.featureType);
+            feature.set('styleConfig', {
+              color: '#ff0000',
+              strokeWidth: 2,
+              fillColor: '#ff0000',
+              opacity: 0.2,
+            });
+            feature.set('interventionType', data.interventionType);
+            feature.set('interventionInfo', data.interventionInfo);
+            feature.set('created_by', username);
+            feature.set('created_at', created.created_at);
+            feature.set('updated_at', created.updated_at);
+            feature.changed();
             savedCount++;
           } catch (error) {
             console.error('Failed to create intervention from upload:', error);

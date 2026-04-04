@@ -235,11 +235,9 @@ function annotationToFeature(annotation: Annotation): Feature | null {
     const format = new GeoJSON();
 
     // Convert GeoJSON geometry to OpenLayers geometry
-    // API returns geometry in EPSG:4326 (GeoJSON standard), map uses EPSG:32642
-    const geometry = format.readGeometry(annotation.geometry, {
-      dataProjection: 'EPSG:4326',
-      featureProjection: 'EPSG:32642',
-    });
+    // API stores in EPSG:32642 and ST_AsGeoJSON returns in that SRID (not 4326)
+    // Map also uses EPSG:32642, so no projection transform needed
+    const geometry = format.readGeometry(annotation.geometry);
 
     // Create feature with properties
     const feature = new Feature({
