@@ -2,8 +2,8 @@ import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Shield, Layers, Map, BarChart3, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { RiskView, ScenarioKey, DistrictName } from '@/types/risk';
-import { totalRiskValue } from '@/types/risk';
+import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
+import { totalRiskValue, buildScenarioKey } from '@/types/risk';
 import { useRiskData } from './hooks/useRiskData';
 import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
@@ -80,9 +80,18 @@ export function RiskDashboard({
   }, [currentView, onChoroplethData]);
 
   const handleClimateChange = useCallback((climate: 'present' | 'future') => {
-    setSelectedClimate(climate);
-    setSelectedScenarioKey(null);
-  }, []);
+    setSelectedClimate((prev) => {
+      if (selectedScenarioKey && currentView === 'district') {
+        // Rebuild scenario key with new climate, keeping return period and maintenance
+        const parts = selectedScenarioKey.split('_');
+        const newKey = `${parts[0]}_${climate}_${parts.slice(2).join('_')}`;
+        setSelectedScenarioKey(newKey);
+      } else {
+        setSelectedScenarioKey(null);
+      }
+      return climate;
+    });
+  }, [selectedScenarioKey, currentView]);
 
   const handleScenarioClick = useCallback((key: ScenarioKey) => {
     setSelectedScenarioKey(key);
