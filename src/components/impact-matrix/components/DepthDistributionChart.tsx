@@ -65,7 +65,7 @@ export const DepthDistributionChart = memo<DepthDistributionChartProps>(function
   if (total === 0 && !isZonalLayer) {
     return (
       <div
-        className={cn('flex items-center justify-center text-xs text-slate-500', className)}
+        className={cn('flex items-center justify-center text-sm text-slate-500', className)}
         style={{ minHeight: orientation === 'horizontal' ? height : 'auto' }}
       >
         No affected features
@@ -83,7 +83,7 @@ export const DepthDistributionChart = memo<DepthDistributionChartProps>(function
           return (
             <div key={bin.range} className="flex items-center gap-2">
               {/* Range label */}
-              <div className="w-20 text-[10px] text-slate-600 text-right flex-shrink-0">
+              <div className="w-20 text-sm text-slate-600 text-right flex-shrink-0">
                 {formatDepthBinLabel(bin.range)}
               </div>
 
@@ -107,7 +107,7 @@ export const DepthDistributionChart = memo<DepthDistributionChartProps>(function
               </div>
 
               {/* Percentage */}
-              <div className="w-12 text-[10px] text-slate-600 flex-shrink-0">
+              <div className="w-12 text-sm text-slate-600 flex-shrink-0">
                 {bin.percentage > 0 ? `${bin.percentage.toFixed(1)}%` : '-'}
               </div>
             </div>

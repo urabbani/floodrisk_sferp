@@ -80,7 +80,7 @@ export function DeltaHeatmapCell({
       `}
     >
       {/* Present → Future values */}
-      <span className="tabular-nums text-xs font-medium text-slate-800">
+      <span className="tabular-nums text-sm font-medium text-slate-800">
         {presentValue} → {futureValue}
       </span>
 
@@ -88,7 +88,7 @@ export function DeltaHeatmapCell({
       <div className="flex items-center gap-1">
         <span
           className={cn(
-            'tabular-nums text-xs font-semibold',
+            'tabular-nums text-sm font-semibold',
             delta > 5 && 'text-red-700',
             delta < -5 && 'text-blue-700',
             delta >= -5 && delta <= 5 && 'text-gray-600'

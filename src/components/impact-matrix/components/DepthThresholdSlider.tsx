@@ -91,7 +91,7 @@ export function DepthThresholdSlider({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-shrink-0">
           <Filter className="w-3.5 h-3.5 text-blue-600" />
-          <label className="text-xs font-medium text-slate-700">
+          <label className="text-sm font-medium text-slate-700">
             Depth Filter:
           </label>
         </div>
@@ -99,17 +99,17 @@ export function DepthThresholdSlider({
         {/* Current Value Display */}
         <div className="flex items-center gap-2">
           {value === 0 ? (
-            <span className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+            <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
               Show All
             </span>
           ) : (
-            <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+            <span className="text-sm font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
               ≥ {value.toFixed(1)}m
             </span>
           )}
           <button
             onClick={() => onChange(0)}
-            className="text-[10px] text-slate-500 hover:text-blue-600 underline"
+            className="text-sm text-slate-500 hover:text-blue-600 underline"
           >
             Reset
           </button>
@@ -154,7 +154,7 @@ export function DepthThresholdSlider({
 
       {/* Description */}
       {value > 0 && (
-        <p className="text-[10px] text-slate-600 bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
+        <p className="text-sm text-slate-600 bg-slate-50 px-2 py-1.5 rounded border border-slate-200">
           Showing only impacts with flood depth <strong>≥ {value.toFixed(1)}m</strong>
         </p>
       )}

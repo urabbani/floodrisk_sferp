@@ -69,7 +69,7 @@ function SummaryCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Icon className="w-4 h-4 text-slate-600" aria-hidden={true} />
-          <h3 className="text-xs font-medium text-slate-700">{title}</h3>
+          <h3 className="text-sm font-medium text-slate-700">{title}</h3>
         </div>
         <DeltaIcon direction={direction} />
       </div>
@@ -79,7 +79,7 @@ function SummaryCard({
         <span className="text-lg font-semibold tabular-nums text-slate-900">{value}</span>
         <span
           className={cn(
-            'text-xs font-medium tabular-nums',
+            'text-sm font-medium tabular-nums',
             direction === 'increase' && 'text-red-600',
             direction === 'decrease' && 'text-blue-600',
             direction === 'neutral' && 'text-gray-400'
@@ -90,7 +90,7 @@ function SummaryCard({
       </div>
 
       {/* Optional description */}
-      {description && <p className="text-[10px] text-slate-500 line-clamp-2">{description}</p>}
+      {description && <p className="text-sm text-slate-500 line-clamp-2">{description}</p>}
     </div>
   );
 }

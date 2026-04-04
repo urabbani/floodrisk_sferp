@@ -154,13 +154,22 @@ export function formatRiskValue(value: number, mode: RiskMode): string {
 }
 
 /**
- * Format value with full precision for tooltips
+ * Format value with full precision for tooltips and tables
  */
 export function formatRiskValueFull(value: number, mode: RiskMode): string {
+  if (value === 0) return mode === 'Dmg' ? '$0' : '0';
+
   if (mode === 'Dmg') {
-    return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
+    if (value >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (value >= 1e6) return `$${(value / 1e6).toFixed(1)}M`;
+    if (value >= 1e3) return `$${(value / 1e3).toFixed(0)}K`;
+    return `$${value.toFixed(0)}`;
   }
-  return value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+
+  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
+  if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
+  if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
+  return value.toFixed(0);
 }
 
 /**

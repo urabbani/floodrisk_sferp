@@ -208,7 +208,7 @@ export function DetailedBreakdownView({
           <h3 className="text-sm font-semibold text-slate-800 mb-1">
             {scenario.returnPeriod}yrs • {formatClimateLabel(scenario.climate)} • Maintenance Level: {formatMaintenanceLabel(scenario.maintenance)}
           </h3>
-          <p className="text-xs text-slate-600">
+          <p className="text-sm text-slate-600">
             {summaryStats.affectedLayersCount} exposure types affected
           </p>
         </div>
@@ -240,7 +240,7 @@ export function DetailedBreakdownView({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 px-4">
         {/* 1. Population Affected */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Population Affected</div>
+          <div className="text-sm text-slate-500 mb-1">Population Affected</div>
           {summaryStats.populationImpact ? (
             <>
               <div className="text-lg font-bold text-red-600">
@@ -260,7 +260,7 @@ export function DetailedBreakdownView({
 
         {/* 2. Infrastructure Impact */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Infrastructure</div>
+          <div className="text-sm text-slate-500 mb-1">Infrastructure</div>
           <div className="text-lg font-bold text-orange-600">
             {summaryStats.infrastructurePercentage.toFixed(1)}%
           </div>
@@ -271,7 +271,7 @@ export function DetailedBreakdownView({
 
         {/* 3. Agriculture & Buildings */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Ag. & Buildings</div>
+          <div className="text-sm text-slate-500 mb-1">Ag. & Buildings</div>
           <div className="text-lg font-bold text-amber-600">
             {summaryStats.agBuildingPercentage.toFixed(1)}%
           </div>
@@ -282,7 +282,7 @@ export function DetailedBreakdownView({
 
         {/* 4. Overall Severity */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-[10px] text-slate-500 mb-1">Overall Risk</div>
+          <div className="text-sm text-slate-500 mb-1">Overall Risk</div>
           <div className={cn(
             'text-lg font-bold',
             summaryStats.severity === 'extreme' ? 'text-red-700' :
@@ -312,7 +312,7 @@ export function DetailedBreakdownView({
       {/* Actions Bar */}
       <div className="px-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-600">Sort by:</span>
+          <span className="text-sm text-slate-600">Sort by:</span>
           <div className="flex gap-1">
             {[
               { value: 'name', label: 'Name' },
@@ -323,7 +323,7 @@ export function DetailedBreakdownView({
                 key={sort.value}
                 onClick={() => setSortBy(sort.value as 'name' | 'affected' | 'depth')}
                 className={cn(
-                  'px-2 py-1 text-[10px] rounded transition-all',
+                  'px-2 py-1 text-sm rounded transition-all',
                   sortBy === sort.value
                     ? 'bg-blue-600 text-white font-medium'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -340,7 +340,7 @@ export function DetailedBreakdownView({
             variant="outline"
             size="sm"
             onClick={() => handleToggleAll(true)}
-            className="text-xs h-7"
+            className="text-sm h-7"
           >
             <Layers className="w-3.5 h-3.5 mr-1" />
             Show All
@@ -349,7 +349,7 @@ export function DetailedBreakdownView({
             variant="outline"
             size="sm"
             onClick={() => handleToggleAll(false)}
-            className="text-xs h-7"
+            className="text-sm h-7"
           >
             <EyeOff className="w-3.5 h-3.5 mr-1" />
             Hide All
@@ -368,7 +368,7 @@ export function DetailedBreakdownView({
             >
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-slate-800">Population Impact</span>
-                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                <span className="text-sm bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
                   {filteredScenario.populationImpact.affectedPopulation.toLocaleString(undefined, {maximumFractionDigits: 0})} people affected
                 </span>
               </div>
@@ -406,10 +406,10 @@ export function DetailedBreakdownView({
       {/* Footer with legend */}
       <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 rounded-b-lg">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="text-[10px] text-slate-600">
+          <div className="text-sm text-slate-600">
             <strong>Legend:</strong> Click layer name to see depth distribution
           </div>
-          <div className="flex items-center gap-1 text-[10px] text-slate-600">
+          <div className="flex items-center gap-1 text-sm text-slate-600">
             <span>Depth:</span>
             {['15-100cm', '1-2m', '2-3m', '3-4m', '4-5m', 'above5m'].map((range) => (
               <div

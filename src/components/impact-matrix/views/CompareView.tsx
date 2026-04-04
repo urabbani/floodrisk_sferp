@@ -66,7 +66,7 @@ export function CompareView({ className }: CompareViewProps) {
             <div className="flex items-center gap-6">
               {/* Return Period Selector */}
               <div className="flex-1">
-                <label className="text-xs font-medium text-slate-600 mb-2 block">
+                <label className="text-sm font-medium text-slate-600 mb-2 block">
                   Return Period
                 </label>
                 <div className="flex flex-wrap gap-1.5">
@@ -75,7 +75,7 @@ export function CompareView({ className }: CompareViewProps) {
                       key={rp.value}
                       onClick={() => handleScenarioChange(rp.value, selectedMaintenance)}
                       className={cn(
-                        'px-3 py-1.5 text-xs rounded-md transition-all',
+                        'px-3 py-1.5 text-sm rounded-md transition-all',
                         selectedReturnPeriod === rp.value
                           ? 'bg-blue-600 text-white font-medium'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -89,7 +89,7 @@ export function CompareView({ className }: CompareViewProps) {
 
               {/* Maintenance Level Selector */}
               <div className="flex-1">
-                <label className="text-xs font-medium text-slate-600 mb-2 block">
+                <label className="text-sm font-medium text-slate-600 mb-2 block">
                   Maintenance Level
                 </label>
                 <div className="flex gap-1.5">
@@ -98,7 +98,7 @@ export function CompareView({ className }: CompareViewProps) {
                       key={ml.value}
                       onClick={() => handleScenarioChange(selectedReturnPeriod, ml.value)}
                       className={cn(
-                        'px-3 py-1.5 text-xs rounded-md transition-all flex-1',
+                        'px-3 py-1.5 text-sm rounded-md transition-all flex-1',
                         selectedMaintenance === ml.value
                           ? 'bg-blue-600 text-white font-medium'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'

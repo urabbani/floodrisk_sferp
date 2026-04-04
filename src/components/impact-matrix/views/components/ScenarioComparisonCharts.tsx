@@ -95,14 +95,14 @@ function SummaryCard({
 
       <div className="space-y-1">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs text-slate-500">Present</span>
+          <span className="text-sm text-slate-500">Present</span>
           <span className="text-sm font-semibold tabular-nums text-slate-800">
             {unit ? formatCount(presentValue) : formatCount(Math.round(presentValue))}
             {unit}
           </span>
         </div>
         <div className="flex items-baseline justify-between">
-          <span className="text-xs text-slate-500">Future</span>
+          <span className="text-sm text-slate-500">Future</span>
           <span className="text-sm font-semibold tabular-nums text-slate-800">
             {unit ? formatCount(futureValue) : formatCount(Math.round(futureValue))}
             {unit}
@@ -110,7 +110,7 @@ function SummaryCard({
         </div>
         <div className="pt-2 border-t border-slate-100">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-500">Change</span>
+            <span className="text-sm text-slate-500">Change</span>
             <span
               className={cn(
                 'text-sm font-bold tabular-nums',
@@ -439,7 +439,7 @@ export function ScenarioComparisonCharts({
         <h3 className="text-sm font-semibold text-slate-800 mb-4 text-balance">
           Exposure Impact Comparison (Present vs Future)
         </h3>
-        <p className="text-xs text-slate-500 mb-3">Percentage of features affected by flooding</p>
+        <p className="text-sm text-slate-500 mb-3">Percentage of features affected by flooding</p>
 
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={exposureChartData} layout="vertical">

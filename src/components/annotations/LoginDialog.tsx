@@ -139,7 +139,7 @@ export function LoginDialog({ isOpen, onClose, onLoginSuccess }: LoginDialogProp
             <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>
           )}
 
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             Contact your administrator to create an account.
           </p>
         </div>

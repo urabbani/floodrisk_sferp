@@ -106,7 +106,7 @@ export function UsernamePrompt({ isOpen, onClose, onUsernameSet }: UsernamePromp
             {error && (
               <p className="text-sm text-red-600">{error}</p>
             )}
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-500">
               This helps identify who created each intervention. You can always change it later.
             </p>
           </div>

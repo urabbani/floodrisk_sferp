@@ -177,7 +177,7 @@ function HeatmapGrid({
         {maintenanceLevels.map((ml) => (
           <div
             key={ml.value}
-            className="col-span-1 text-center text-xs font-medium text-slate-600"
+            className="col-span-1 text-center text-sm font-medium text-slate-600"
           >
             {ml.value === 'breaches' ? 'Flood 2022' : formatMaintenanceLabel(ml.value)}
           </div>
@@ -189,7 +189,7 @@ function HeatmapGrid({
         <div key={rp.value} className="grid grid-cols-4 gap-2">
           {/* Return period label */}
           <div className="flex items-center">
-            <span className="text-xs font-medium text-slate-600 tabular-nums pr-2">
+            <span className="text-sm font-medium text-slate-600 tabular-nums pr-2">
               {rp.label.replace(' Years', '')}
             </span>
           </div>
@@ -208,7 +208,7 @@ function HeatmapGrid({
                   className="h-14 flex items-center justify-center bg-slate-50 rounded-md border border-slate-200"
                   aria-hidden="true"
                 >
-                  <span className="text-xs text-slate-400">—</span>
+                  <span className="text-sm text-slate-400">—</span>
                 </div>
               );
             }

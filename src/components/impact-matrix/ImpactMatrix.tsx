@@ -247,7 +247,7 @@ export function ImpactMatrix({
               variant={currentView === 'summary' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('summary')}
-              className="text-xs h-7"
+              className="text-sm h-7"
             >
               <Layers className="w-3.5 h-3.5 mr-1" />
               Summary
@@ -256,7 +256,7 @@ export function ImpactMatrix({
               variant={currentView === 'compare' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('compare')}
-              className="text-xs h-7"
+              className="text-sm h-7"
             >
               <BarChart3 className="w-3.5 h-3.5 mr-1" />
               Compare
@@ -271,14 +271,14 @@ export function ImpactMatrix({
           <div className="flex items-center justify-between gap-4">
             {/* Climate Selector */}
             <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-slate-600">Climate:</label>
+              <label className="text-sm font-medium text-slate-600">Climate:</label>
               <div className="flex gap-1">
                 {['present', 'future'].map((climate) => (
                   <button
                     key={climate}
                     onClick={() => handleClimateChange(climate as 'present' | 'future')}
                     className={cn(
-                      'px-3 py-1.5 text-xs rounded-md transition-all capitalize',
+                      'px-3 py-1.5 text-sm rounded-md transition-all capitalize',
                       selectedClimate === climate
                         ? 'bg-blue-600 text-white font-medium'
                         : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300'
@@ -364,7 +364,7 @@ export function ImpactMatrix({
       {/* Footer */}
       {impactData && !error && !isLoading && (
         <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex-shrink-0">
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             Last updated: {new Date(impactData.metadata.lastUpdated).toLocaleString()}
             {' • '}
             {impactData.metadata.totalScenarios} scenarios loaded

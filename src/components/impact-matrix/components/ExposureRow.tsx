@@ -101,7 +101,7 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
           <span className="text-sm text-slate-600">{EXPOSURE_LAYER_LABELS[layerType]}</span>
         </div>
 
-        <div className="text-xs text-slate-400">No data</div>
+        <div className="text-sm text-slate-400">No data</div>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
         <div className="p-3 bg-slate-50 border-t border-slate-200 space-y-3">
           {/* Depth Distribution Chart */}
           <div>
-            <div className="text-[10px] font-medium text-slate-600 mb-2">Depth Distribution</div>
+            <div className="text-sm font-medium text-slate-600 mb-2">Depth Distribution</div>
             <DepthDistributionChart
               depthBins={impact.depthBins}
               showLabels={true}
@@ -187,7 +187,7 @@ export const ExposureRow = memo<ExposureRowProps>(function ExposureRow({
           </div>
 
           {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2 text-[10px]">
+          <div className="grid grid-cols-3 gap-2 text-xs">
             <div className="bg-white p-2 rounded border border-slate-200">
               <div className="text-slate-500">Impact %</div>
               <div className="font-semibold text-slate-800">

@@ -130,12 +130,12 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
         }}
       >
         {/* Return Period Badge */}
-        <div className="text-xs font-bold mb-1">
+        <div className="text-sm font-bold mb-1">
           {returnPeriod === '2.3' ? '2.3' : returnPeriod} yrs
         </div>
 
         {/* Maintenance Label */}
-        <div className="text-[10px] opacity-90 mb-2">
+        <div className="text-sm opacity-90 mb-2">
           {maintenanceLabel}
         </div>
 
@@ -201,7 +201,7 @@ export const ImpactCell = memo<ImpactCellProps>(function ImpactCell({
 
       {/* Hover Tooltip (CSS-based) */}
       {isHovered && (
-        <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-[10px] rounded whitespace-nowrap pointer-events-none">
+        <div className="absolute z-50 bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-sm rounded whitespace-nowrap pointer-events-none">
           {returnPeriod}yrs • {maintenanceLabel} • {severity}
           <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
         </div>

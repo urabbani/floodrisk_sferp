@@ -145,7 +145,7 @@ export function InterventionPanel({
         </Select>
 
         {/* Summary */}
-        <div className="flex items-center justify-between text-xs text-slate-500">
+        <div className="flex items-center justify-between text-sm text-slate-500">
           <span>{filteredInterventions.length} interventions</span>
           <span>by {new Set(interventions.map((a) => a.created_by)).size} contributors</span>
         </div>
@@ -213,7 +213,7 @@ export function InterventionPanel({
                       <Badge
                         variant="outline"
                         className={cn(
-                          "text-xs",
+                          "text-sm",
                           categoryInfo?.color && `border-[${categoryInfo.color}] text-[${categoryInfo.color}]`
                         )}
                       >
@@ -223,7 +223,7 @@ export function InterventionPanel({
 
                     {/* Intervention Type Info */}
                     {intervention.interventionType && (
-                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
                         <MapPin className="w-3 h-3" /> {/* Using MapPin as generic icon */}
                         <span className="font-mono">{intervention.interventionType}</span>
                       </div>
@@ -231,12 +231,12 @@ export function InterventionPanel({
 
                     {/* Short Description */}
                     {intervention.interventionInfo?.shortDescription && (
-                      <p className="text-xs text-slate-500 line-clamp-2 mb-1">
+                      <p className="text-sm text-slate-500 line-clamp-2 mb-1">
                         {intervention.interventionInfo.shortDescription}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-3 text-xs text-slate-400">
+                    <div className="flex items-center gap-3 text-sm text-slate-400">
                       <span className="flex items-center gap-1">
                         {intervention.featureType === 'point' && <MapPin className="w-3 h-3" />}
                         {intervention.featureType === 'line' && <Minus className="w-3 h-3" />}

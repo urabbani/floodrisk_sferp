@@ -133,7 +133,7 @@ export function AnnotationToolbar({
               >
                 <MessageSquarePlus className="w-4 h-4" />
                 {interventionsCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 h-4 w-4 bg-blue-600 text-white text-sm font-bold rounded-full flex items-center justify-center">
                     {interventionsCount > 99 ? '99+' : interventionsCount}
                   </span>
                 )}

@@ -137,7 +137,7 @@ export function SummaryHeatmapView({
       <div className={cn('flex items-center justify-center py-16', className)}>
         <div className="text-center">
           <p className="text-slate-600 mb-2">No impact data available</p>
-          <p className="text-xs text-slate-500">Try selecting a different climate scenario</p>
+          <p className="text-sm text-slate-500">Try selecting a different climate scenario</p>
         </div>
       </div>
     );
@@ -174,7 +174,7 @@ export function SummaryHeatmapView({
       {/* Legend */}
       <div className="px-4 py-2 bg-white rounded border border-slate-200">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <span className="text-xs text-slate-600">Return Period:</span>
+          <span className="text-sm text-slate-600">Return Period:</span>
           <div className="flex items-center gap-1">
             {returnPeriods.map((rp) => (
               <div
@@ -187,7 +187,7 @@ export function SummaryHeatmapView({
                     backgroundColor: `hsl(${RETURN_PERIOD_COLORS[rp.value as keyof typeof RETURN_PERIOD_COLORS]?.h || 0}, ${RETURN_PERIOD_COLORS[rp.value as keyof typeof RETURN_PERIOD_COLORS]?.s || 80}%, ${RETURN_PERIOD_COLORS[rp.value as keyof typeof RETURN_PERIOD_COLORS]?.l || 70}%)`
                   }}
                 />
-                <span className="text-[10px] text-slate-600 hidden sm:inline">{rp.label}</span>
+                <span className="text-sm text-slate-600 hidden sm:inline">{rp.label}</span>
               </div>
             ))}
           </div>
@@ -203,7 +203,7 @@ export function SummaryHeatmapView({
             {maintenanceLevels.map((ml) => (
               <div
                 key={ml.value}
-                className="text-center text-[10px] font-medium text-slate-600"
+                className="text-center text-sm font-medium text-slate-600"
               >
                 {ml.value === 'breaches' ? '2022' :
                  ml.value === 'redcapacity' ? formatMaintenanceLabel(ml.value) :
@@ -220,7 +220,7 @@ export function SummaryHeatmapView({
                 className="grid grid-cols-[80px_repeat(3,60px)] gap-2 items-center"
               >
                 {/* Row Header */}
-                <div className="text-[10px] font-medium text-slate-600 text-right pr-2">
+                <div className="text-sm font-medium text-slate-600 text-right pr-2">
                   {rp.label}
                 </div>
 
@@ -235,7 +235,7 @@ export function SummaryHeatmapView({
                         key={ml.value}
                         className="h-12 w-12 rounded border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"
                       >
-                        <span className="text-[10px] text-slate-400">—</span>
+                        <span className="text-sm text-slate-400">—</span>
                       </div>
                     );
                   }
@@ -262,7 +262,7 @@ export function SummaryHeatmapView({
       <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-blue-900">
+          <div className="text-sm text-blue-900">
             <p className="font-medium mb-1">How to read this matrix:</p>
             <ul className="space-y-0.5 text-blue-800">
               <li>• Colors indicate return period intensity: Light red (2.3yrs) → Dark red (500yrs)</li>
