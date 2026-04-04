@@ -105,6 +105,10 @@ function App() {
 
   // Ref for features pending upload (set during upload, consumed on dialog submit)
   const pendingUploadFeaturesRef = useRef<Feature[] | null>(null);
+  // State for upload dialog defaultValues (feature type auto-detected from file)
+  const [uploadDefaultValues, setUploadDefaultValues] = useState<{
+    featureType: 'point' | 'line' | 'polygon';
+  } | null>(null);
 
   // Get map instance for hooks
   const map = mapViewerRef.current?.getMap() || null;
@@ -243,6 +247,49 @@ function App() {
     return 'polygon'; // fallback
   }, []);
 
+  // Detect source projection from GeoJSON text
+  const detectDataProjection = useCallback((text: string, ext: string): string => {
+    // KML is always EPSG:4326
+    if (ext === 'kml') return 'EPSG:4326';
+
+    try {
+      const json = JSON.parse(text);
+      // Check for CRS property in GeoJSON
+      if (json.crs?.properties?.name) {
+        const crsName = json.crs.properties.name;
+        if (crsName.includes('32642')) return 'EPSG:32642';
+        if (crsName.includes('4326') || crsName.includes('WGS 84')) return 'EPSG:4326';
+      }
+
+      // Heuristic: check first coordinate to determine projection
+      let firstCoord: number[] | null = null;
+      if (json.type === 'FeatureCollection' && json.features?.[0]) {
+        const geom = json.features[0].geometry;
+        if (geom?.type === 'Point') firstCoord = geom.coordinates;
+        else if (geom?.coordinates?.flat) firstCoord = geom.coordinates.flat(Infinity).slice(0, 2);
+      } else if (json.type === 'Feature' && json.geometry) {
+        const geom = json.geometry;
+        if (geom?.type === 'Point') firstCoord = geom.coordinates;
+        else if (geom?.coordinates?.flat) firstCoord = geom.coordinates.flat(Infinity).slice(0, 2);
+      } else if (json.coordinates) {
+        if (json.type === 'Point') firstCoord = json.coordinates;
+        else firstCoord = json.coordinates.flat(Infinity).slice(0, 2);
+      }
+
+      if (firstCoord && firstCoord.length >= 2) {
+        const [x, y] = firstCoord;
+        // UTM Zone 42N: easting ~100000-900000, northing ~0-10000000
+        if (Math.abs(x) > 180 || Math.abs(y) > 90) {
+          return 'EPSG:32642'; // Already projected
+        }
+      }
+    } catch {
+      // Fall through to default
+    }
+
+    return 'EPSG:4326'; // Default GeoJSON standard
+  }, []);
+
   // Upload intervention handler
   const handleUploadIntervention = useCallback(() => {
     if (!isAuthenticated) {
@@ -268,6 +315,9 @@ function App() {
         const ext = file.name.split('.').pop()?.toLowerCase();
         let features: Feature[];
 
+        // Detect source projection from file content
+        const dataProjection = detectDataProjection(text, ext || 'json');
+
         if (ext === 'kml') {
           const format = new KML();
           features = format.readFeatures(text, {
@@ -279,10 +329,10 @@ function App() {
           document.body.removeChild(input);
           return;
         } else {
-          // GeoJSON or JSON
+          // GeoJSON or JSON — use detected projection
           const format = new GeoJSON();
           features = format.readFeatures(text, {
-            dataProjection: 'EPSG:4326',
+            dataProjection,
             featureProjection: 'EPSG:32642',
           });
         }
@@ -304,7 +354,15 @@ function App() {
         const featureType = detectFeatureType(firstGeom);
         pendingUploadFeaturesRef.current = features;
 
-        // Open the intervention dialog in create mode with auto-detected feature type
+        // Add features to vector source so they're visible on the map
+        for (const f of features) {
+          if (!vectorSource?.getFeatures().includes(f)) {
+            vectorSource?.addFeature(f);
+          }
+        }
+
+        // Open the intervention dialog with detected feature type
+        setUploadDefaultValues({ featureType });
         setAnnotationDialogMode('create');
         setAnnotationDialogOpen(true);
       } catch (error) {
@@ -316,7 +374,7 @@ function App() {
     };
 
     input.click();
-  }, [isAuthenticated, detectFeatureType]);
+  }, [isAuthenticated, detectFeatureType, detectDataProjection]);
 
   // Sync drawingTool state with setActiveTool
   useEffect(() => {
@@ -486,20 +544,9 @@ function App() {
 
           try {
             const created = await createAnnotation(newAnnotation);
-            feature.set('id', created.id);
-            feature.set('title', data.name);
-            feature.set('description', data.hydrologicalParams);
-            feature.set('category', 'general');
-            feature.set('geometry_type', data.featureType);
-            feature.set('styleConfig', {
-              color: '#ff0000',
-              strokeWidth: 2,
-              fillColor: '#ff0000',
-              opacity: 0.2,
-            });
-            feature.set('interventionType', data.interventionType);
-            feature.set('interventionInfo', data.interventionInfo);
-            feature.changed();
+            // createAnnotation adds its own feature to the vector source,
+            // so remove the original uploaded feature to avoid duplicates
+            vectorSource?.removeFeature(feature);
             savedCount++;
           } catch (error) {
             console.error('Failed to create intervention from upload:', error);
@@ -514,6 +561,7 @@ function App() {
         setAnnotationDialogOpen(false);
         setActiveTool('none');
         setDrawingTool('none');
+        setUploadDefaultValues(null);
         return;
       } else if (pendingDrawFeature) {
         // OLD FLOW: Drawing already happened, save immediately
@@ -1012,6 +1060,13 @@ function App() {
           setAnnotationDialogOpen(false);
           setPendingDrawFeature(null);
           setEditingAnnotation(null);
+          setUploadDefaultValues(null);
+          // Remove uploaded features from map on cancel
+          if (pendingUploadFeaturesRef.current && vectorSource) {
+            for (const f of pendingUploadFeaturesRef.current) {
+              vectorSource.removeFeature(f);
+            }
+          }
           pendingUploadFeaturesRef.current = null;
           // Clear the drawn feature if cancelling from create mode
           if (annotationDialogMode === 'create' && pendingDrawFeature) {
@@ -1027,7 +1082,9 @@ function App() {
                 featureType: editingAnnotation.feature.get('geometry_type') || 'point',
                 hydrologicalParams: editingAnnotation.feature.get('description') || '',
               }
-            : undefined
+            : uploadDefaultValues
+              ? { featureType: uploadDefaultValues.featureType }
+              : undefined
         }
         mode={annotationDialogMode}
       />
