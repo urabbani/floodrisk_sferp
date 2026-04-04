@@ -76,19 +76,15 @@ export function RiskSummaryHeatmap({
       {/* Summary Stats */}
       <div className="px-4 py-3 bg-slate-50 rounded-lg border border-slate-200">
         <div className="flex items-center gap-2 mb-2">
-          <Info className="w-4 h-4 text-blue-600" />
-          <span className="text-sm font-semibold text-slate-700">Risk Summary</span>
+          <Info className="w-5 h-5 text-blue-600" />
+          <span className="text-base font-semibold text-slate-700">Risk Summary</span>
         </div>
-        <div className="grid grid-cols-2 gap-3 text-xs">
+        <div className="text-sm">
           <div>
-            <div className="text-slate-500">Total Across Scenarios</div>
-            <div className="font-semibold text-slate-800">{formatRiskValue(stats.totalDamage, mode)}</div>
-          </div>
-          <div>
-            <div className="text-slate-500">Worst Scenario</div>
-            <div className="font-semibold text-red-600">
+            <span className="text-slate-500">Worst Scenario: </span>
+            <span className="font-semibold text-red-600">
               {stats.worstKey ? formatRiskValue(stats.worstVal, mode) : 'N/A'}
-            </div>
+            </span>
           </div>
         </div>
       </div>
@@ -105,7 +101,7 @@ export function RiskSummaryHeatmap({
           <div className="grid grid-cols-[60px_repeat(3,1fr)] gap-1.5 mb-1 px-4">
             <div />
             {MAINTENANCE_LEVELS.map((m) => (
-              <div key={m} className="text-center text-[10px] font-medium text-slate-600">
+              <div key={m} className="text-center text-sm font-medium text-slate-600">
                 {MAINTENANCE_LABELS[m]}
               </div>
             ))}
@@ -115,7 +111,7 @@ export function RiskSummaryHeatmap({
           <div className="space-y-1 px-4">
             {RETURN_PERIODS.map((rp) => (
               <div key={rp} className="grid grid-cols-[60px_repeat(3,1fr)] gap-1.5 items-center">
-                <div className="text-[10px] font-medium text-slate-600 text-right pr-1">
+                <div className="text-sm font-medium text-slate-600 text-right pr-1">
                   {rp}yr
                 </div>
                 {MAINTENANCE_LEVELS.map((m) => {
@@ -129,7 +125,7 @@ export function RiskSummaryHeatmap({
                         key={m}
                         className="h-14 rounded border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center"
                       >
-                        <span className="text-[10px] text-slate-400">—</span>
+                        <span className="text-sm text-slate-400">—</span>
                       </div>
                     );
                   }
@@ -157,13 +153,12 @@ export function RiskSummaryHeatmap({
       <div className="px-4 py-3 bg-blue-50 rounded-lg border border-blue-200">
         <div className="flex items-start gap-2">
           <Info className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-xs text-blue-900">
+          <div className="text-sm text-blue-900">
             <p className="font-medium mb-1">How to read this matrix:</p>
             <ul className="space-y-0.5 text-blue-800">
-              <li>• Colors indicate risk magnitude: Yellow (low) → Red (high)</li>
-              <li>• Each cell shows total risk for a scenario across all districts</li>
+              <li>• Colors indicate damage magnitude: Yellow (low) → Red (high)</li>
+              <li>• Each cell shows total damage for a scenario across all districts</li>
               <li>• Click any cell to see district-level breakdown</li>
-              <li>• Toggle between Vulnerability and Damage using controls above</li>
             </ul>
           </div>
         </div>

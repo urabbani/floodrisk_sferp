@@ -116,7 +116,7 @@ export function RiskDashboard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-green-600" />
-            <h3 className="text-sm font-semibold text-slate-800">Risk Analysis</h3>
+            <h3 className="text-base font-semibold text-slate-800">Risk Analysis</h3>
           </div>
 
           {/* View Toggle */}
@@ -125,7 +125,7 @@ export function RiskDashboard({
               variant={currentView === 'summary' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('summary')}
-              className="text-xs h-7"
+              className="text-sm h-8"
             >
               <Layers className="w-3.5 h-3.5 mr-1" />
               Summary
@@ -134,7 +134,7 @@ export function RiskDashboard({
               variant={currentView === 'district' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('district')}
-              className="text-xs h-7"
+              className="text-sm h-8"
               disabled={!selectedScenarioKey}
             >
               <BarChart3 className="w-3.5 h-3.5 mr-1" />
@@ -144,7 +144,7 @@ export function RiskDashboard({
               variant={currentView === 'spatial' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('spatial')}
-              className="text-xs h-7"
+              className="text-sm h-8"
             >
               <Map className="w-3.5 h-3.5 mr-1" />
               Spatial
@@ -157,14 +157,14 @@ export function RiskDashboard({
       <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
-            <label className="text-[10px] font-medium text-slate-600">Climate:</label>
+            <label className="text-sm font-medium text-slate-700">Climate:</label>
             <div className="flex gap-1">
               {(['present', 'future'] as const).map((climate) => (
                 <button
                   key={climate}
                   onClick={() => handleClimateChange(climate)}
                   className={cn(
-                    'px-2.5 py-1 text-[10px] rounded-md transition-all capitalize',
+                    'px-3 py-1.5 text-sm rounded-md transition-all capitalize',
                     selectedClimate === climate
                       ? 'bg-green-600 text-white font-medium'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-green-300',
@@ -241,7 +241,7 @@ export function RiskDashboard({
       {/* Footer */}
       {data && !error && !isLoading && (
         <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 flex-shrink-0">
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-slate-500">
             {Object.keys(data.scenarios).length} scenarios • {data.districts.length} districts
           </p>
         </div>

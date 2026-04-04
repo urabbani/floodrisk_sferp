@@ -37,7 +37,7 @@ export function RiskHeatmapCell({
       )}
       style={total > 0 ? { backgroundColor: bgColor } : undefined}
     >
-      <span className={cn('text-[10px] font-bold leading-tight', total === 0 ? 'text-slate-400' : 'text-slate-900')}>
+      <span className={cn('text-xs font-bold leading-tight', total === 0 ? 'text-slate-400' : 'text-slate-900')}>
         {total === 0 ? '—' : displayValue}
       </span>
     </button>

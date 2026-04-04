@@ -90,7 +90,7 @@ export function RiskDistrictBreakdown({
             {meta.returnPeriod}yr {meta.climate === 'present' ? 'Present' : 'Future'} — {MAINTENANCE_LABELS[meta.maintenance]}
           </span>
         </div>
-        <p className="text-xs text-slate-500 ml-14">
+        <p className="text-sm text-slate-500 ml-14">
           {RISK_MODE_LABELS[mode]} by District
         </p>
       </div>
@@ -98,7 +98,7 @@ export function RiskDistrictBreakdown({
       {/* Grand Total Card */}
       {totalData && (
         <div className="mx-4 p-3 bg-slate-50 rounded-lg border border-slate-200">
-          <div className="text-xs text-slate-500 mb-1">Grand Total (All Districts)</div>
+          <div className="text-sm text-slate-500 mb-1">Grand Total (All Districts)</div>
           <div className="text-lg font-bold text-slate-900">
             {formatRiskValueFull(grandTotal, mode)}
           </div>
@@ -107,15 +107,15 @@ export function RiskDistrictBreakdown({
 
       {/* Bar Chart */}
       <div className="px-4">
-        <h4 className="text-xs font-semibold text-slate-700 mb-2">District Comparison</h4>
+        <h4 className="text-sm font-semibold text-slate-700 mb-2">District Comparison</h4>
         <DistrictBarChart data={chartData} mode={mode} />
       </div>
 
       {/* Ranked Table */}
       <div className="px-4">
-        <h4 className="text-xs font-semibold text-slate-700 mb-2">Ranked by Total</h4>
+        <h4 className="text-sm font-semibold text-slate-700 mb-2">Ranked by Total</h4>
         <div className="overflow-x-auto">
-          <table className="w-full text-[10px]">
+          <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-slate-200">
                 <th className="text-left py-1.5 px-1 font-medium text-slate-600">#</th>

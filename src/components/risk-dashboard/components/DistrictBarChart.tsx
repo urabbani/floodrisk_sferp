@@ -26,7 +26,7 @@ function CustomTooltip({ active, payload, label, mode }: any) {
   if (!active || !payload?.length) return null;
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-xs max-w-xs">
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm max-w-xs">
       <p className="font-semibold text-slate-800 mb-1.5">{label}</p>
       {payload.map((entry: any) => {
         const val = entry.value as number;
