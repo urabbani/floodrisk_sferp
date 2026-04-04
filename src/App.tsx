@@ -412,8 +412,8 @@ function App() {
 
   // Minimum and maximum sidebar width
   const MIN_WIDTH = 200;
-  // Dynamic max width: 75% for Compare view, 600px otherwise
-  const MAX_WIDTH = currentImpactView === 'compare' || currentRiskView === 'spatial'
+  // Dynamic max width: 75% for wider views (Compare, Risk panel, Spatial), 600px otherwise
+  const MAX_WIDTH = currentImpactView === 'compare' || sidebarView === 'risk' || currentRiskView === 'spatial'
     ? Math.floor(window.innerWidth * 0.75)
     : 600;
 
