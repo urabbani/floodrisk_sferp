@@ -111,8 +111,9 @@ export function InterventionDialog({
       const found = INTERVENTION_TYPES.find((it) => it.id === interventionType);
       if (found) {
         setSelectedIntervention(found);
-        // Auto-set the feature type based on intervention type
-        if (found.featureType !== 'none') {
+        // Auto-set the feature type based on intervention type,
+        // but only when not overridden by file upload (detected geometry)
+        if (found.featureType !== 'none' && !defaultValues.featureType) {
           form.setValue('featureType', found.featureType);
         }
       }
