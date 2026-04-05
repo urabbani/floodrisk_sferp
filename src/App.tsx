@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import GeoJSON from 'ol/format/GeoJSON';
-import KML from 'ol/format/KML';
 import { Header } from '@/components/Header';
 import { LayerTree } from '@/components/layer-tree/LayerTree';
 import { MapViewer } from '@/components/map/MapViewer';
@@ -266,9 +265,6 @@ function App() {
 
   // Detect source projection from GeoJSON text
   const detectDataProjection = useCallback((text: string, ext: string): string => {
-    // KML is always EPSG:4326
-    if (ext === 'kml') return 'EPSG:4326';
-
     try {
       const json = JSON.parse(text);
       // Check for CRS property in GeoJSON
@@ -316,7 +312,7 @@ function App() {
 
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.geojson,.json,.kml';
+    input.accept = '.geojson,.json';
     input.style.display = 'none';
     document.body.appendChild(input);
 
@@ -343,20 +339,12 @@ function App() {
         // Detect source projection from file content
         const dataProjection = detectDataProjection(text, ext || 'json');
 
-        if (ext === 'kml') {
-          const format = new KML();
-          features = format.readFeatures(text, {
-            dataProjection: 'EPSG:4326',
-            featureProjection: 'EPSG:32642',
-          });
-        } else {
-          // GeoJSON or JSON — use detected projection
-          const format = new GeoJSON();
-          features = format.readFeatures(text, {
-            dataProjection,
-            featureProjection: 'EPSG:32642',
-          });
-        }
+        // GeoJSON or JSON — use detected projection
+        const format = new GeoJSON();
+        features = format.readFeatures(text, {
+          dataProjection,
+          featureProjection: 'EPSG:32642',
+        });
 
         if (features.length === 0) {
           alert('No features found in the uploaded file.');
@@ -432,7 +420,7 @@ function App() {
         setAnnotationDialogOpen(true);
       } catch (error) {
         console.error('Failed to parse uploaded file:', error);
-        alert('Failed to parse the uploaded file. Please ensure it is a valid GeoJSON or KML file.');
+        alert('Failed to parse the uploaded file. Please ensure it is a valid GeoJSON file.');
       } finally {
         document.body.removeChild(input);
       }
