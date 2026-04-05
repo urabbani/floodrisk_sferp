@@ -595,7 +595,7 @@ function App() {
 
           // Append index for multi-feature uploads
           const featureName = features.length > 1
-            ? `${data.name} (${i + 1})`
+            ? `${data.name}_${i + 1}`
             : data.name;
 
           const newAnnotation: NewAnnotation = {
