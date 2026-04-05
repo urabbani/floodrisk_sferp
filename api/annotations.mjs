@@ -35,6 +35,8 @@ router.get('/', async (req, res) => {
         geometry_type,
         ST_AsGeoJSON(geometry) AS geometry,
         style_config,
+        intervention_type,
+        intervention_info,
         created_by,
         created_at,
         updated_at
@@ -100,6 +102,8 @@ router.get('/:id', async (req, res) => {
         geometry_type,
         ST_AsGeoJSON(geometry) AS geometry,
         style_config,
+        intervention_type,
+        intervention_info,
         created_by,
         created_at,
         updated_at
@@ -162,6 +166,8 @@ router.post('/', authenticate, async (req, res) => {
       geometry_type,
       geometry,
       style_config = {},
+      intervention_type,
+      intervention_info,
     } = req.body;
 
     // Use authenticated user's display name as created_by (server-side trust)
@@ -192,17 +198,19 @@ router.post('/', authenticate, async (req, res) => {
     // Convert GeoJSON to PostGIS geometry (GeoJSON is 4326, transform to 32642)
     const query = `
       INSERT INTO annotations.features (
-        title, description, category, geometry_type, geometry, style_config, created_by
+        title, description, category, geometry_type, geometry, style_config, created_by,
+        intervention_type, intervention_info
       )
       VALUES (
         $1, $2, $3, $4,
         ST_Transform(ST_SetSRID(ST_GeomFromGeoJSON($5), 4326), 32642),
-        $6, $7
+        $6, $7, $8, $9
       )
       RETURNING
         id, title, description, category, geometry_type,
         ST_AsGeoJSON(geometry) AS geometry,
-        style_config, created_by, created_at, updated_at
+        style_config, intervention_type, intervention_info,
+        created_by, created_at, updated_at
     `;
 
     const result = await pool.query(query, [
@@ -213,6 +221,8 @@ router.post('/', authenticate, async (req, res) => {
       JSON.stringify(geometry),
       JSON.stringify(style_config),
       created_by,
+      intervention_type || null,
+      intervention_info ? JSON.stringify(intervention_info) : null,
     ]);
 
     const row = result.rows[0];
@@ -259,6 +269,8 @@ router.put('/:id', authenticate, async (req, res) => {
       category,
       geometry,
       style_config,
+      intervention_type,
+      intervention_info,
     } = req.body;
 
     // Check ownership or admin role
@@ -320,6 +332,16 @@ router.put('/:id', authenticate, async (req, res) => {
       values.push(JSON.stringify(style_config));
     }
 
+    if (intervention_type !== undefined) {
+      updates.push(`intervention_type = $${paramIndex++}`);
+      values.push(intervention_type || null);
+    }
+
+    if (intervention_info !== undefined) {
+      updates.push(`intervention_info = $${paramIndex++}`);
+      values.push(intervention_info ? JSON.stringify(intervention_info) : null);
+    }
+
     // Always update updated_at
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
 
@@ -339,7 +361,8 @@ router.put('/:id', authenticate, async (req, res) => {
       RETURNING
         id, title, description, category, geometry_type,
         ST_AsGeoJSON(geometry) AS geometry,
-        style_config, created_by, created_at, updated_at
+        style_config, intervention_type, intervention_info,
+        created_by, created_at, updated_at
     `;
 
     const result = await pool.query(query, values);

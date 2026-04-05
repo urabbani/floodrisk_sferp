@@ -205,8 +205,8 @@ function App() {
             fillColor: '#ff0000',
             opacity: 0.2,
           });
-          feature.set('interventionType', data.interventionType);
-          feature.set('interventionInfo', data.interventionInfo);
+          feature.set('intervention_type', data.interventionType);
+          feature.set('intervention_info', data.interventionInfo);
           feature.changed();
           // Clear pending data and reset tool
           setPendingInterventionData(null);
@@ -316,13 +316,21 @@ function App() {
 
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = '.geojson,.json,.kml,.zip';
+    input.accept = '.geojson,.json,.kml';
     input.style.display = 'none';
     document.body.appendChild(input);
 
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) {
+        document.body.removeChild(input);
+        return;
+      }
+
+      // File size limit: 10MB
+      const MAX_FILE_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE) {
+        alert(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum size is 10MB.`);
         document.body.removeChild(input);
         return;
       }
@@ -341,10 +349,6 @@ function App() {
             dataProjection: 'EPSG:4326',
             featureProjection: 'EPSG:32642',
           });
-        } else if (ext === 'zip') {
-          alert('Shapefile (.zip) support requires conversion to GeoJSON first. Please convert your shapefile to GeoJSON format.');
-          document.body.removeChild(input);
-          return;
         } else {
           // GeoJSON or JSON — use detected projection
           const format = new GeoJSON();
@@ -360,10 +364,54 @@ function App() {
           return;
         }
 
+        // Feature count limit
+        const MAX_FEATURES = 500;
+        if (features.length > MAX_FEATURES) {
+          alert(`File contains ${features.length} features. Maximum is ${MAX_FEATURES}. Please split your file.`);
+          document.body.removeChild(input);
+          return;
+        }
+
+        // Detect feature types across all features
+        const geometryTypes = new Set<string>();
+        for (const f of features) {
+          const geom = f.getGeometry();
+          if (geom) {
+            geometryTypes.add(geom.getType());
+          }
+        }
+
+        if (geometryTypes.size === 0) {
+          alert('No geometry found in the uploaded features.');
+          document.body.removeChild(input);
+          return;
+        }
+
+        // Mixed geometry type detection
+        const normalizedTypes = new Set<string>();
+        for (const gt of geometryTypes) {
+          if (gt === 'Point' || gt === 'MultiPoint') normalizedTypes.add('point');
+          else if (gt === 'LineString' || gt === 'MultiLineString') normalizedTypes.add('line');
+          else if (gt === 'Polygon' || gt === 'MultiPolygon') normalizedTypes.add('polygon');
+          else normalizedTypes.add('polygon'); // fallback
+        }
+
+        if (normalizedTypes.size > 1) {
+          const proceed = confirm(
+            `This file contains mixed geometry types: ${[...normalizedTypes].join(', ')}.\n` +
+            `All features will be saved as "${[...normalizedTypes][0]}" type.\n\n` +
+            `Continue anyway?`
+          );
+          if (!proceed) {
+            document.body.removeChild(input);
+            return;
+          }
+        }
+
         // Detect feature type from first feature
         const firstGeom = features[0].getGeometry();
         if (!firstGeom) {
-          alert('No geometry found in the uploaded features.');
+          alert('No geometry found in the first feature.');
           document.body.removeChild(input);
           return;
         }
@@ -517,8 +565,7 @@ function App() {
     hydrologicalParams: string;
     interventionInfo?: {
       shortDescription: string;
-      locationShapeInfo: string;
-      hydrologicalParameters: string;
+      shapeAndHydroParams: string;
     };
   }) => {
     if (!isAuthenticated) {
@@ -533,7 +580,9 @@ function App() {
         pendingUploadFeaturesRef.current = null;
 
         let savedCount = 0;
-        for (const feature of features) {
+        const failedFeatures: number[] = [];
+        for (let i = 0; i < features.length; i++) {
+          const feature = features[i];
           const geom = feature.getGeometry();
           if (!geom) continue;
 
@@ -544,8 +593,13 @@ function App() {
             })
           );
 
+          // Append index for multi-feature uploads
+          const featureName = features.length > 1
+            ? `${data.name} (${i + 1})`
+            : data.name;
+
           const newAnnotation: NewAnnotation = {
-            title: data.name,
+            title: featureName,
             description: data.hydrologicalParams,
             category: 'general',
             geometry_type: data.featureType,
@@ -557,14 +611,15 @@ function App() {
               opacity: 0.2,
             },
             created_by: username,
+            intervention_type: data.interventionType,
+            intervention_info: data.interventionInfo,
           };
 
           try {
             const created = await createAnnotation(newAnnotation);
             // Update the uploaded feature in-place with API-returned ID and metadata
-            // (don't remove it — useAnnotations.createAnnotation doesn't add to vector source)
             feature.set('id', created.id);
-            feature.set('title', data.name);
+            feature.set('title', featureName);
             feature.set('description', data.hydrologicalParams);
             feature.set('category', 'general');
             feature.set('geometry_type', data.featureType);
@@ -574,20 +629,23 @@ function App() {
               fillColor: '#ff0000',
               opacity: 0.2,
             });
-            feature.set('interventionType', data.interventionType);
-            feature.set('interventionInfo', data.interventionInfo);
+            feature.set('intervention_type', data.interventionType);
+            feature.set('intervention_info', data.interventionInfo);
             feature.set('created_by', username);
             feature.set('created_at', created.created_at);
             feature.set('updated_at', created.updated_at);
             feature.changed();
             savedCount++;
           } catch (error) {
-            console.error('Failed to create intervention from upload:', error);
+            console.error(`Failed to create intervention ${i + 1} from upload:`, error);
+            failedFeatures.push(i + 1);
           }
         }
 
         if (savedCount === 0) {
           alert('Failed to save any interventions from the uploaded file.');
+        } else if (failedFeatures.length > 0) {
+          alert(`Saved ${savedCount}/${features.length} interventions. Failed: features #${failedFeatures.join(', ')}`);
         }
 
         // Close dialog and reset
@@ -616,6 +674,8 @@ function App() {
             opacity: 0.2,
           },
           created_by: username,
+          intervention_type: data.interventionType,
+          intervention_info: data.interventionInfo,
         };
 
         try {
@@ -631,8 +691,8 @@ function App() {
             fillColor: '#ff0000',
             opacity: 0.2,
           });
-          pendingDrawFeature.set('interventionType', data.interventionType);
-          pendingDrawFeature.set('interventionInfo', data.interventionInfo);
+          pendingDrawFeature.set('intervention_type', data.interventionType);
+          pendingDrawFeature.set('intervention_info', data.interventionInfo);
           pendingDrawFeature.changed();
           setPendingDrawFeature(null);
         } catch (error) {
@@ -669,6 +729,8 @@ function App() {
             fillColor: '#ff0000',
             opacity: 0.2,
           },
+          intervention_type: data.interventionType,
+          intervention_info: data.interventionInfo,
         });
 
         // Update feature properties
@@ -676,6 +738,8 @@ function App() {
         editingAnnotation.feature.set('description', updated.description);
         editingAnnotation.feature.set('category', updated.category);
         editingAnnotation.feature.set('geometry_type', updated.geometry_type);
+        editingAnnotation.feature.set('intervention_type', data.interventionType);
+        editingAnnotation.feature.set('intervention_info', data.interventionInfo);
         editingAnnotation.feature.changed();
 
         // Refresh interventions list
@@ -711,16 +775,21 @@ function App() {
   const handleAnnotationDelete = useCallback(async (id: number) => {
     try {
       // Remove feature from vector source immediately
-      const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
-      if (feature) {
-        vectorSource?.removeFeature(feature);
+      const features = vectorSource?.getFeatures() || [];
+      for (const f of features) {
+        if (f.get('id') === id) {
+          vectorSource?.removeFeature(f);
+          break;
+        }
       }
       await deleteAnnotation(id);
     } catch (error) {
       console.error('Failed to delete intervention:', error);
       alert('Failed to delete intervention');
+      // On failure, reload to restore consistent state
+      await loadInterventions();
     }
-  }, [deleteAnnotation, vectorSource]);
+  }, [deleteAnnotation, vectorSource, loadInterventions]);
 
   const handleAnnotationClick = useCallback((annotation: Annotation) => {
     // Find feature and zoom to it
@@ -1126,7 +1195,7 @@ function App() {
           editingAnnotation
             ? {
                 name: editingAnnotation.feature.get('title') || '',
-                interventionType: editingAnnotation.feature.get('interventionType') || '',
+                interventionType: editingAnnotation.feature.get('intervention_type') || '',
                 featureType: editingAnnotation.feature.get('geometry_type') || 'point',
                 hydrologicalParams: editingAnnotation.feature.get('description') || '',
               }

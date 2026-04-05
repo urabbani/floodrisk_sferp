@@ -91,6 +91,14 @@ export const CATEGORY_INFO: Record<AnnotationCategory, { label: string; color: s
 } as const;
 
 /**
+ * Intervention info stored as JSONB
+ */
+export interface InterventionInfo {
+  shortDescription: string;
+  shapeAndHydroParams: string;
+}
+
+/**
  * Annotation as returned from the API
  */
 export interface Annotation {
@@ -101,6 +109,8 @@ export interface Annotation {
   geometry_type: AnnotationGeometryType;
   geometry: GeoJSONGeometry;
   style_config: StyleConfig;
+  intervention_type: string | null;
+  intervention_info: InterventionInfo | null;
   created_by: string;
   created_at: string;  // ISO 8601 timestamp
   updated_at: string;  // ISO 8601 timestamp
@@ -129,15 +139,8 @@ export interface NewAnnotation {
   geometry: GeoJSONGeometry;
   style_config?: Partial<StyleConfig>;
   created_by: string;
-  // New fields for intervention requirements
-  interventionType?: string;
-  featureType?: AnnotationGeometryType;
-  hydrologicalParams?: string;
-  interventionInfo?: {
-    shortDescription: string;
-    locationShapeInfo: string;
-    hydrologicalParameters: string;
-  };
+  intervention_type?: string;
+  intervention_info?: InterventionInfo;
 }
 
 /**
@@ -149,15 +152,8 @@ export interface UpdateAnnotation {
   category?: AnnotationCategory;
   geometry?: GeoJSONGeometry;
   style_config?: Partial<StyleConfig>;
-  // New fields for intervention requirements
-  interventionType?: string;
-  featureType?: AnnotationGeometryType;
-  hydrologicalParams?: string;
-  interventionInfo?: {
-    shortDescription: string;
-    locationShapeInfo: string;
-    hydrologicalParameters: string;
-  };
+  intervention_type?: string;
+  intervention_info?: InterventionInfo;
 }
 
 /**

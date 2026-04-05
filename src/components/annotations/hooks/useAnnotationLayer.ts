@@ -252,6 +252,8 @@ function annotationToFeature(annotation: Annotation): Feature | null {
       category: annotation.category,
       geometry_type: annotation.geometry_type,
       styleConfig: annotation.style_config,
+      intervention_type: annotation.intervention_type,
+      intervention_info: annotation.intervention_info,
       created_by: annotation.created_by,
       created_at: annotation.created_at,
       updated_at: annotation.updated_at,
