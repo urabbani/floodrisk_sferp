@@ -33,6 +33,15 @@ jobs:
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
+        env:
+          # --- Z.AI CONFIGURATION ---
+          # Point the action to the Z.AI API endpoint
+          ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic
+          # Ensure the API key is available to the environment
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Optional: Map default models to Z.AI's GLM models
+          ANTHROPIC_MODEL: glm-5.1
+          ANTHROPIC_SMALL_FAST_MODEL: glm-4.7
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
 
@@ -47,4 +56,3 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
           # claude_args: '--allowed-tools Bash(gh pr:*)'
-
