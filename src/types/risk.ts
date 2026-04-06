@@ -11,6 +11,20 @@ export type RiskMode = 'Exp' | 'Vul' | 'Dmg';
  */
 export type RiskAssetType = 'crop' | 'buildings';
 
+export type BuildingSubKey = 'buildLow56' | 'buildLow44' | 'buildHigh';
+
+export const BUILDING_SUB_LABELS: Record<BuildingSubKey, string> = {
+  buildLow56: 'Kacha',
+  buildLow44: 'Pakka',
+  buildHigh: 'High-Rise',
+};
+
+export const BUILDING_SUB_COLORS: Record<BuildingSubKey, string> = {
+  buildLow56: '#93c5fd',
+  buildLow44: '#3b82f6',
+  buildHigh: '#1e3a8a',
+};
+
 export const RISK_ASSET_LABELS: Record<RiskAssetType, string> = {
   crop: 'Agriculture Damage (ha)',
   buildings: 'Buildings (sqm)',
@@ -26,6 +40,12 @@ export const RISK_ASSET_COLORS: Record<RiskAssetType, string> = {
   buildings: '#3b82f6',
 };
 
+export const BUILDING_KEYS: BuildingSubKey[] = ['buildLow56', 'buildLow44', 'buildHigh'];
+
+export function buildingsTotal(d: RegionRiskData): number {
+  return d.buildLow56 + d.buildLow44 + d.buildHigh;
+}
+
 export const RISK_MODE_LABELS: Record<RiskMode, string> = {
   Exp: 'Exposure',
   Vul: 'Vulnerability',
@@ -37,14 +57,13 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
  */
 export type RegionRiskData = {
   crop: number;
-  buildings: number;
+  buildLow56: number;
+  buildLow44: number;
+  buildHigh: number;
 };
 
-/**
- * Sum all 4 asset types into a single number
- */
 export function totalRiskValue(data: RegionRiskData): number {
-  return data.crop + data.buildings;
+  return data.crop + data.buildLow56 + data.buildLow44 + data.buildHigh;
 }
 
 /**

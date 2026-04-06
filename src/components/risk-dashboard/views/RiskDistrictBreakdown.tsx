@@ -2,11 +2,12 @@ import { useMemo } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { RiskJsonData, RiskMode, ScenarioKey, RiskAssetType } from '@/types/risk';
+import type { RiskJsonData, RiskMode, ScenarioKey, RiskAssetType, RegionRiskData } from '@/types/risk';
 import {
   DISTRICTS,
   RISK_ASSET_SHORT_LABELS,
   totalRiskValue,
+  buildingsTotal,
   formatRiskValueFull,
   MAINTENANCE_LABELS,
   RISK_MODE_LABELS,
@@ -38,12 +39,13 @@ export function RiskDistrictBreakdown({
     return DISTRICTS.map((district) => {
       const regionData = scenarioData[district]?.[mode];
       if (!regionData) {
-        return { district, crop: 0, buildings: 0 };
+        return { district, crop: 0, buildings: 0, rawData: { crop: 0, buildLow56: 0, buildLow44: 0, buildHigh: 0 } as RegionRiskData };
       }
       return {
         district,
         crop: regionData.crop,
-        buildings: regionData.buildings,
+        buildings: buildingsTotal(regionData),
+        rawData: regionData,
       };
     });
   }, [scenarioData, mode]);
@@ -136,7 +138,7 @@ export function RiskDistrictBreakdown({
                   </td>
                   {assetKeys.map((k) => (
                     <td key={k} className="py-1.5 px-1 text-right text-slate-600">
-                      {rd ? formatRiskValueFull(rd[k], mode) : '0'}
+                      {rd ? formatRiskValueFull(k === 'buildings' ? buildingsTotal(rd) : rd[k], mode) : '0'}
                     </td>
                   ))}
                 </tr>

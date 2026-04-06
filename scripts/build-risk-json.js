@@ -23,7 +23,7 @@ const REGIONS = [
 ];
 
 const MODES = ['Exp', 'Vul', 'Dmg'];
-const ASSET_KEYS = ['crop', 'buildings'];
+const ASSET_KEYS = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
 
 // Parse xlsx files
 const files = fs.readdirSync(RISK_DIR).filter(f => f.endsWith('.xlsx'));
@@ -57,23 +57,18 @@ for (const file of files) {
         if (!wb.Sheets[sheetName]) continue;
       }
 
-      // Compute SUM of rows 4-24 for columns B(1)=crop, C+D+E(2,3,4)=buildings
-      let cropSum = 0;
-      let buildingsSum = 0;
+      // Compute SUM of rows 4-24 for columns B(1), C(2), D(3), E(4)
+      const sums = [0, 0, 0, 0];
       for (let r = 4; r <= 24; r++) {
         for (let c = 0; c < 4; c++) {
           const cellRef = XLSX.utils.encode_cell({ r: r - 1, c: c + 1 });
           const cell = ws[cellRef];
-          const val = (cell && typeof cell.v === 'number') ? cell.v : 0;
-          if (c === 0) cropSum += val;
-          else buildingsSum += val;
+          sums[c] += (cell && typeof cell.v === 'number') ? cell.v : 0;
         }
       }
 
-      const obj = {
-        crop: Math.round(cropSum * 100) / 100,
-        buildings: Math.round(buildingsSum * 100) / 100,
-      };
+      const obj = {};
+      ASSET_KEYS.forEach((k, i) => obj[k] = Math.round(sums[i] * 100) / 100);
       result.data[key][region][mode] = obj;
     }
   }
@@ -114,8 +109,8 @@ const validationScenario = result.data['25_present_perfect'];
 if (validationScenario) {
   const totalDmg = validationScenario.TOTAL?.Dmg;
   if (totalDmg) {
-    const totalAll = totalDmg.crop + totalDmg.buildings;
+    const totalAll = totalDmg.crop + totalDmg.buildLow56 + totalDmg.buildLow44 + totalDmg.buildHigh;
     console.log(`\nValidation (25yr Present Perfect, TOTAL Dmg): $${(totalAll / 1e9).toFixed(2)}B`);
-    console.log(`  Crop: ${totalDmg.crop}, Buildings: ${totalDmg.buildings}`);
+    console.log(`  Crop: ${totalDmg.crop}, Kacha: ${totalDmg.buildLow56}, Pakka: ${totalDmg.buildLow44}, High-Rise: ${totalDmg.buildHigh}`);
   }
 }
