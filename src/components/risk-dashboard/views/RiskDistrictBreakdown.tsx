@@ -38,14 +38,12 @@ export function RiskDistrictBreakdown({
     return DISTRICTS.map((district) => {
       const regionData = scenarioData[district]?.[mode];
       if (!regionData) {
-        return { district, crop: 0, buildLow56: 0, buildLow44: 0, buildHigh: 0 };
+        return { district, crop: 0, buildings: 0 };
       }
       return {
         district,
         crop: regionData.crop,
-        buildLow56: regionData.buildLow56,
-        buildLow44: regionData.buildLow44,
-        buildHigh: regionData.buildHigh,
+        buildings: regionData.buildings,
       };
     });
   }, [scenarioData, mode]);
@@ -75,7 +73,7 @@ export function RiskDistrictBreakdown({
     );
   }
 
-  const assetKeys: RiskAssetType[] = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
+  const assetKeys: RiskAssetType[] = ['crop', 'buildings'];
 
   return (
     <div className={cn('space-y-4', className)}>

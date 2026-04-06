@@ -9,27 +9,21 @@ export type RiskMode = 'Exp' | 'Vul' | 'Dmg';
 /**
  * Asset types from the xlsx columns
  */
-export type RiskAssetType = 'crop' | 'buildLow56' | 'buildLow44' | 'buildHigh';
+export type RiskAssetType = 'crop' | 'buildings';
 
 export const RISK_ASSET_LABELS: Record<RiskAssetType, string> = {
   crop: 'Agriculture Damage (ha)',
-  buildLow56: 'Kacha (sqm)',
-  buildLow44: 'Pakka (sqm)',
-  buildHigh: 'High-Rise (sqm)',
+  buildings: 'Buildings (sqm)',
 };
 
 export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetType, string> = {
   crop: 'Agriculture',
-  buildLow56: 'Kacha',
-  buildLow44: 'Pakka',
-  buildHigh: 'High-Rise',
+  buildings: 'Buildings',
 };
 
 export const RISK_ASSET_COLORS: Record<RiskAssetType, string> = {
   crop: '#22c55e',
-  buildLow56: '#3b82f6',
-  buildLow44: '#8b5cf6',
-  buildHigh: '#ef4444',
+  buildings: '#3b82f6',
 };
 
 export const RISK_MODE_LABELS: Record<RiskMode, string> = {
@@ -43,16 +37,14 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
  */
 export type RegionRiskData = {
   crop: number;
-  buildLow56: number;
-  buildLow44: number;
-  buildHigh: number;
+  buildings: number;
 };
 
 /**
  * Sum all 4 asset types into a single number
  */
 export function totalRiskValue(data: RegionRiskData): number {
-  return data.crop + data.buildLow56 + data.buildLow44 + data.buildHigh;
+  return data.crop + data.buildings;
 }
 
 /**

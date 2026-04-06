@@ -44,7 +44,7 @@ function CustomTooltip({ active, payload, label, mode }: any) {
 }
 
 export function DistrictBarChart({ data, mode, layout = 'horizontal' }: DistrictBarChartProps) {
-  const assetKeys: RiskAssetType[] = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
+  const assetKeys: RiskAssetType[] = ['crop', 'buildings'];
 
   if (layout === 'vertical') {
     return (
