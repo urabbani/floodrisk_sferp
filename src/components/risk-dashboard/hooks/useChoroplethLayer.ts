@@ -6,8 +6,9 @@ import { GeoJSON } from 'ol/format';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
-import type { DistrictName } from '@/types/risk';
-import { getRiskColor } from '@/types/risk';
+import Text from 'ol/style/Text';
+import type { DistrictName, RiskMode } from '@/types/risk';
+import { getRiskColor, formatRiskValue } from '@/types/risk';
 
 interface UseChoroplethLayerOptions {
   map: Map | null;
@@ -15,6 +16,7 @@ interface UseChoroplethLayerOptions {
   min: number;
   max: number;
   visible: boolean;
+  mode: RiskMode;
   onHoverDistrict?: (district: string | null) => void;
 }
 
@@ -24,6 +26,7 @@ export function useChoroplethLayer({
   min,
   max,
   visible,
+  mode,
   onHoverDistrict,
 }: UseChoroplethLayerOptions) {
   const sourceRef = useRef(new VectorSource({ format: new GeoJSON() }));
@@ -97,14 +100,26 @@ export function useChoroplethLayer({
       const b = parseInt(hexColor.slice(5, 7), 16);
       const rgba = `rgba(${r},${g},${b},0.7)`;
 
+      const label = value !== undefined && value > 0
+        ? `${districtName}\n${formatRiskValue(value, mode)}`
+        : districtName;
+
       return new Style({
         fill: new Fill({ color: rgba }),
         stroke: new Stroke({ color: '#334155', width: 1.5 }),
+        text: new Text({
+          text: label,
+          font: 'bold 11px sans-serif',
+          fill: new Fill({ color: '#1e293b' }),
+          stroke: new Stroke({ color: '#ffffff', width: 3 }),
+          overflow: true,
+          textAlign: 'center',
+        }),
       });
     };
 
     layer.setStyle(styleFn);
-  }, [data, min, max, visible]);
+  }, [data, min, max, visible, mode]);
 
   // Handle pointer move for hover
   useEffect(() => {

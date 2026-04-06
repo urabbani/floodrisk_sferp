@@ -127,6 +127,7 @@ function App() {
     min: choroplethMin,
     max: choroplethMax,
     visible: sidebarView === 'risk' && currentRiskView === 'spatial',
+    mode: 'Dmg',
   });
 
   // Handle login dialog events from header
