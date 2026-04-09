@@ -1,4 +1,4 @@
-# Flood Risk Assessment - Indus River
+# Flood Risk Assessment - Right Bank of Indus River
 
 A web-based interactive flood risk assessment tool for the Indus River region in Sindh Province, Pakistan. Built with React 19, TypeScript, Vite, Tailwind CSS, and OpenLayers.
 
