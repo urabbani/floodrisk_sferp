@@ -13,7 +13,7 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Interactive Map Viewer** - OpenLayers-based map with multiple base map options
 - **GeoServer Integration** - WMS services for flood scenario layers
 - **Layer Management** - Hierarchical layer tree with visibility/opacity controls
-- **Three-Panel Interface** - "Hazard", "Impact", and "Interventions" tabs
+- **Three-Panel Interface** - "Hazard", "Impact", "Risk", and "Interventions" tabs
 - **Feature Identification** - Click on any layer to view attributes via WMS GetFeatureInfo
 - **Coordinate Display** - Real-time mouse position in UTM (Zone 42N) and Lat/Lon
 - **Swipe Compare Tool** - Side-by-side comparison of two flood scenarios
@@ -42,6 +42,15 @@ A web-based interactive flood risk assessment tool for the Indus River region in
 - **Area-Based Analysis** - Zonal layers use actual geometric area calculations
 - **Compare View** - Side-by-side Present vs Future climate comparison with insightful charts
 
+### Risk Analysis Module
+- **Expected Annual Damage (EAD)** - Trapezoidal integration across 7 return periods (2.3yr – 500yr)
+- **Summary Table** - EAD by maintenance level (Breaches, Reduced Capacity, Perfect) with asset breakdown
+- **District Comparison** - Ranked district chart showing EAD by Agriculture and Buildings
+- **Choropleth Map** - Spatial visualization of EAD values across 9 districts
+- **42 Scenarios** - 7 return periods × 2 climates (Present/Future) × 3 maintenance levels
+- **4 Asset Types** - Agriculture (crop), Kacha, Pakka, and High-Rise buildings
+- **Static Data** - Pre-computed from `risk/` Excel files, served as `public/data/risk.json`
+
 ## Tech Stack
 - **Frontend**: React 19 with TypeScript, Vite 7.3, Tailwind CSS 3.x
 - **Map Library**: OpenLayers (UTM Zone 42N - EPSG:32642)
@@ -57,6 +66,7 @@ floodrisk_sferp/
 │   ├── components/
 │   │   ├── annotations/          # Interventions (drawing & annotation)
 │   │   ├── impact-matrix/        # Impact Matrix feature
+│   │   ├── risk-dashboard/      # Risk Analysis & EAD calculations
 │   │   ├── layer-tree/           # Layer visibility controls
 │   │   ├── map/                  # OpenLayers map viewer
 │   │   ├── popups/               # Feature info popups

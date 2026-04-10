@@ -5,6 +5,14 @@ All notable changes to the Flood Risk Assessment application are documented in t
 ## [Unreleased]
 
 ### Added
+- **Expected Annual Damage (EAD)** tab in Risk Dashboard
+  - Trapezoidal integration across 7 return periods (2.3yr – 500yr) for 42 scenarios
+  - Summary table showing EAD by maintenance level with 4 asset types
+  - Stacked bar chart comparing EAD across 9 districts (Agriculture + Buildings)
+  - Ranked district table with column headers and asset breakdown
+  - Choropleth map integration ("Show on Map" active by default)
+  - New files: `useEadData.ts`, `EadBarChart.tsx`, `RiskEadView.ts`
+  - New types: `AssetSubKey`, `EadResult`, `calculateEad()` utility function
 - Stream Network layer (HydroSHEDS-derived, DEM:hydrosheds_streamnetwork)
   - Flow accumulation threshold of 500 (values below transparent)
   - Gradient coloring from light blue (small streams) to navy (major rivers)

@@ -84,7 +84,7 @@ export type RiskJsonData = {
   districts: string[];
 };
 
-export type RiskView = 'summary' | 'district' | 'spatial';
+export type RiskView = 'summary' | 'district' | 'spatial' | 'ead';
 
 /**
  * 9 districts in Sindh Province
@@ -203,4 +203,47 @@ export function buildScenarioKey(
   maintenance: 'breaches' | 'redcapacity' | 'perfect'
 ): ScenarioKey {
   return `${returnPeriod}_${climate}_${maintenance}`;
+}
+
+// ---- EAD (Expected Annual Damage) ----
+
+/** Asset sub-keys for individual EAD computation */
+export type AssetSubKey = 'crop' | 'buildLow56' | 'buildLow44' | 'buildHigh';
+
+/** All 4 asset sub-keys in display order */
+export const ASSET_SUB_KEYS: AssetSubKey[] = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
+
+/** Human-readable labels for each asset sub-key */
+export const ASSET_SUB_KEY_LABELS: Record<AssetSubKey, string> = {
+  crop: 'Agriculture',
+  buildLow56: 'Kacha',
+  buildLow44: 'Pakka',
+  buildHigh: 'High-Rise',
+};
+
+/** Result of EAD calculation for one climate × maintenance × region */
+export type EadResult = {
+  climate: 'present' | 'future';
+  maintenance: 'breaches' | 'redcapacity' | 'perfect';
+  region: string;
+  ead: Record<AssetSubKey, number>;
+  eadTotal: number;
+};
+
+/**
+ * Calculate Expected Annual Damage using trapezoidal integration.
+ *
+ * EAD = Σ 0.5 × (Dᵢ + Dᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|
+ *
+ * @param damages - Array of { returnPeriod, damage } sorted by returnPeriod ascending
+ */
+export function calculateEad(damages: { returnPeriod: number; damage: number }[]): number {
+  if (damages.length < 2) return 0;
+  let ead = 0;
+  for (let i = 0; i < damages.length - 1; i++) {
+    const freqLeft = 1 / damages[i].returnPeriod;
+    const freqRight = 1 / damages[i + 1].returnPeriod;
+    ead += 0.5 * (damages[i].damage + damages[i + 1].damage) * Math.abs(freqLeft - freqRight);
+  }
+  return ead;
 }

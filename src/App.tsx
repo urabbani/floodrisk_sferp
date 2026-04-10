@@ -126,7 +126,7 @@ function App() {
     data: choroplethData,
     min: choroplethMin,
     max: choroplethMax,
-    visible: sidebarView === 'risk' && currentRiskView === 'spatial',
+    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead'),
     mode: 'Dmg',
   });
 

@@ -1,13 +1,15 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Shield, Layers, Map, BarChart3, AlertCircle } from 'lucide-react';
+import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
 import { totalRiskValue, buildScenarioKey } from '@/types/risk';
 import { useRiskData } from './hooks/useRiskData';
+import { useEadData } from './hooks/useEadData';
 import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
+import { RiskEadView } from './views/RiskEadView';
 
 const MODE = 'Dmg' as const;
 
@@ -45,6 +47,7 @@ export function RiskDashboard({
 
   // Data
   const { data, isLoading, error } = useRiskData();
+  const eadState = useEadData();
 
   // Notify parent of view changes
   useEffect(() => {
@@ -72,9 +75,9 @@ export function RiskDashboard({
     onChoroplethData?.(choroplethData);
   }, [choroplethData, onChoroplethData]);
 
-  // Clean up choropleth when leaving spatial view
+  // Clean up choropleth when leaving spatial/ead view
   useEffect(() => {
-    if (currentView !== 'spatial') {
+    if (currentView !== 'spatial' && currentView !== 'ead') {
       onChoroplethData?.(null);
     }
   }, [currentView, onChoroplethData]);
@@ -148,6 +151,15 @@ export function RiskDashboard({
             >
               <Map className="w-3.5 h-3.5 mr-1" />
               Spatial
+            </Button>
+            <Button
+              variant={currentView === 'ead' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('ead')}
+              className="text-sm h-8"
+            >
+              <Calculator className="w-3.5 h-3.5 mr-1" />
+              EAD
             </Button>
           </div>
         </div>
@@ -234,6 +246,15 @@ export function RiskDashboard({
             hoveredDistrict={hoveredDistrict}
             onScenarioChange={handleSpatialScenarioChange}
             onHoverDistrict={handleHoverDistrict}
+          />
+        )}
+
+        {/* EAD View */}
+        {currentView === 'ead' && !isLoading && !error && eadState.eadResults && (
+          <RiskEadView
+            eadResults={eadState.eadResults}
+            climate={selectedClimate}
+            onChoroplethData={onChoroplethData}
           />
         )}
       </div>

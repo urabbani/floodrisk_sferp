@@ -75,6 +75,7 @@ Hazard
 - **FeaturePopup** (`src/components/popups/FeaturePopup.tsx`): Displays feature attributes from WMS GetFeatureInfo
 - **SwipeCompare** (`src/components/swipe/SwipeCompare.tsx`): Side-by-side comparison of two flood scenarios
 - **ImpactMatrix** (`src/components/impact-matrix/`): Real-time flood impact analysis with depth distribution charts
+- **RiskDashboard** (`src/components/risk-dashboard/`): Risk analysis with 4 views — Summary Heatmap, District Breakdown, Spatial choropleth, and EAD (Expected Annual Damage)
 - **Interventions** (`src/components/annotations/`): Collaborative drawing and annotation on the map (points, lines, polygons with categories and export)
   - **LoginDialog** (`src/components/annotations/LoginDialog.tsx`): Login form for authentication
   - **useAuth** (`src/hooks/useAuth.tsx`): Auth context providing user state, login/logout functions
@@ -93,6 +94,28 @@ Hazard
       8. Intervention saved automatically with pre-filled data
     - **Hardcoded Data**: All 42 intervention types with exact text from `Exposure_Stats/InterventionWebSiteRequirements_v3.docx`
     - **Non-drawable interventions filtered**: M8, P9, H4, H5, ML7, ML8 (featureType: 'none')
+
+### Risk Analysis & EAD Module
+
+The Risk Dashboard provides flood risk assessment with 4 views: Summary Heatmap, District Breakdown, Spatial (choropleth), and **EAD (Expected Annual Damage)**.
+
+**EAD Calculation:**
+- **Formula:** Trapezoidal integration: `EAD = Σ 0.5 × (Dᵢ + Dᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|` across 7 return periods
+- **Pure utility:** `calculateEad()` in `src/types/risk.ts`
+- **Hook:** `useEadData()` in `src/components/risk-dashboard/hooks/useEadData.ts` computes all 240 EAD values (2 climates × 3 maintenance × 10 regions × 4 assets)
+- **Data source:** Pre-computed from 42 Excel files in `risk/` folder via `scripts/build-risk-json.js` → `public/data/risk.json`
+
+**EAD View Components:**
+- **RiskEadView** (`src/components/risk-dashboard/views/RiskEadView.tsx`): Summary table by maintenance, district chart, ranked table, choropleth toggle
+- **EadBarChart** (`src/components/risk-dashboard/components/EadBarChart.tsx`): Recharts stacked bar (Agriculture + Buildings with Kacha/Pakka/High-Rise sub-shades in tooltip)
+- **useEadData** hook: Transforms raw scenario data into `EadResult[]` using `calculateEad()`
+
+**Key Types:**
+- `AssetSubKey`: `'crop' | 'buildLow56' | 'buildLow44' | 'buildHigh'`
+- `EadResult`: `{ climate, maintenance, region, ead: Record<AssetSubKey, number>, eadTotal }`
+- `RiskView` extended with `'ead'`
+
+**Choropleth integration:** EAD view pushes district EAD totals to the map via `onChoroplethData` callback. "Show on Map" is active by default. Visibility condition in App.tsx includes `'ead'`.
 
 ### Impact Matrix Module
 
@@ -607,6 +630,7 @@ const handleAnnotationDelete = useCallback(async (id: number) => {
 - **Coordinate Display:** Real-time mouse position in UTM (Zone 42N) and Lat/Lon with copy-to-clipboard
 - **Feature Identification:** Click on any layer to view attributes via WMS GetFeatureInfo (works for raster and vector)
 - **Swipe Compare:** Compare two flood scenarios side-by-side with synchronized pan/zoom and draggable divider
+- **Risk Dashboard:** 4-tab analysis panel — Summary Heatmap (7×3 matrix), District Breakdown, Spatial choropleth map, and EAD (Expected Annual Damage with trapezoidal integration)
 - **Interventions:** Draw points, lines, polygons on the map with details (title, description, category), search, filter, visibility toggle, and GeoJSON export
   - **Authentication required:** Must sign in to draw, edit, or delete interventions
   - **Role-based access:** Admins can manage all interventions; regular users can only manage their own
