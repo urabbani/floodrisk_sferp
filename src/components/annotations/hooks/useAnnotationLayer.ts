@@ -257,7 +257,7 @@ function annotationToFeature(annotation: Annotation): Feature | null {
       created_by: annotation.created_by,
       created_at: annotation.created_at,
       updated_at: annotation.updated_at,
-      visible: true, // Default to visible
+      visible: false, // Default to hidden
     });
 
     return feature;

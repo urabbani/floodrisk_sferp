@@ -58,12 +58,12 @@ Hazard
 │       └─ Parameters: Depth, Velocity, Duration, V×h
 │           └─ Return Periods: 2.3, 5, 10, 25, 50, 100, 500 years
 ├─ Flood 2022 (Actual Event data)
-└─ HDTM (GeoServer layer in DEM workspace: HDTM_1-9_1m)
+└─ HDTM (GeoServer layer in DEM workspace: HDTM_shaded_relief)
 ```
 
 **GeoServer Workspaces:**
 - **results**: Static flood scenario layers (raster), survey points, structures
-- **DEM**: DEM layers (HDTM), AOI, SubCatchments, Stream Network (database-backed from public schema)
+- **DEM**: DEM layers (HDTM_shaded_relief), AOI, SubCatchments, Stream Network (database-backed from public schema)
 - **exposures**: Impact exposure layers (378 layers across 42 scenarios, database-backed)
 
 ### Key Components
@@ -239,7 +239,7 @@ node api/seed-user.mjs toggle <username>
 
 - **Workspaces:**
   - `results` - Flood scenario layers (depth, velocity, duration, V×h)
-  - `DEM` - Terrain tiles (HDTM_1-9_1m)
+  - `DEM` - Terrain tiles (HDTM_shaded_relief)
   - `exposures` - Impact exposure layers (378 layers: 9 exposure types × 42 scenarios)
 - **WMS Version:** 1.1.1
 - **Legend Graphics:** Dynamically generated via `GetLegendGraphic` request

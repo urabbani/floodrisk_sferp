@@ -224,8 +224,8 @@ export const layerTree: LayerGroup = {
       ],
     },
     
-    // HDTM (DEM workspace - merged tiles 1-9 at 1m resolution)
-    createRasterLayer('HDTM', 'HDTM_1-9_1m', false, 0.6, GEOSERVER_CONFIG.workspaces.dem),
+    // HDTM (DEM workspace - hillshaded color-relief map)
+    createRasterLayer('HDTM', 'HDTM_shaded_relief', false, 0.6, GEOSERVER_CONFIG.workspaces.dem),
   ],
 };
 

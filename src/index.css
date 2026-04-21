@@ -233,3 +233,8 @@
 .layer-tree-item {
   transition: background-color 0.15s ease;
 }
+
+/* Grayscale filter for satellite base map */
+.satellite-grayscale {
+  filter: grayscale(100%);
+}
