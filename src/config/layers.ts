@@ -235,13 +235,13 @@ export const baseMaps = [
     id: 'esri-dark',
     name: 'Esri Gray (Dark)',
     url: 'https://services.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
-    visible: true,
+    visible: false,
   },
   {
     id: 'satellite',
     name: 'Google Satellite',
     url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-    visible: false,
+    visible: true,
   },
   {
     id: 'osm',
