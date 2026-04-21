@@ -28,6 +28,9 @@ npm run preview
 
 # WSL workaround (if you encounter EPERM symlink errors)
 npm install --no-bin-links
+
+# WSL build (when tsc/vite not in PATH after --no-bin-links)
+node ./node_modules/typescript/lib/tsc.js --skipLibCheck && node ./node_modules/vite/bin/vite.js build
 ```
 
 **Note:** The Impact Matrix feature requires both the frontend dev server (port 5173) and the backend API server (port 3001) to be running simultaneously.
@@ -92,8 +95,9 @@ Hazard
       6. Click "Create" → dialog closes
       7. Draw geometry on map
       8. Intervention saved automatically with pre-filled data
-    - **Hardcoded Data**: All 42 intervention types with exact text from `Exposure_Stats/InterventionWebSiteRequirements_v3.docx`
+    - **Hardcoded Data**: All 42 intervention types with exact text from `docs/InterventionWebSiteRequirements_v3.docx`
     - **Non-drawable interventions filtered**: M8, P9, H4, H5, ML7, ML8 (featureType: 'none')
+    - **Default visibility**: Intervention features are hidden by default (`visible: false` in `useAnnotationLayer.ts`), users toggle visibility via eye icon in the Interventions panel
 
 ### Risk Analysis & EAD Module
 
@@ -104,6 +108,7 @@ The Risk Dashboard provides flood risk assessment with 4 views: Summary Heatmap,
 - **Pure utility:** `calculateEad()` in `src/types/risk.ts`
 - **Hook:** `useEadData()` in `src/components/risk-dashboard/hooks/useEadData.ts` computes all 240 EAD values (2 climates × 3 maintenance × 10 regions × 4 assets)
 - **Data source:** Pre-computed from 42 Excel files in `risk/` folder via `scripts/build-risk-json.js` → `public/data/risk.json`
+- **Data update:** Run `node scripts/build-risk-json.js` to regenerate from updated Excel files. EAD is computed client-side from risk.json, no separate update needed.
 
 **EAD View Components:**
 - **RiskEadView** (`src/components/risk-dashboard/views/RiskEadView.tsx`): Summary table by maintenance, district chart, ranked table, choropleth toggle
@@ -142,7 +147,7 @@ The Impact Matrix provides comprehensive flood impact assessment across 42 scena
 4. **Overall Risk** - Severity level (Low/Medium/High/Extreme) based on affected layers
 
 **Population Impact Data:**
-- **Source:** Excel files in `Exposure_Stats/` folder (42 files)
+- **Source:** Excel files in `risk/` folder (42 files)
 - **Loader:** `api/load-population-stats.mjs` script
 - **Database:** `impact.population_stats` table with depth bin breakdown
 - **Display:** Population Impact chart shows distribution across flood depth bins
@@ -329,7 +334,7 @@ UI components are from shadcn/ui (Radix UI primitives). Components are in `src/c
    - ON CONFLICT UPDATE for easy reloading
 
 2. **Excel Data Loader:** `api/load-population-stats.mjs`
-   - Parses 42 Excel files from `Exposure_Stats/` folder
+   - Parses 42 Excel files from `risk/` folder
    - Filename format: `Exposure_Consolidated_T3_{rp}yrs_{Climate}_{Maintenance}.xlsx`
    - Extracts population row (row 12) with depth bin values
    - Loads into database with deduplication
@@ -618,6 +623,54 @@ const handleAnnotationDelete = useCallback(async (id: number) => {
 
 ---
 
+### HDTM Layer Replaced with Hillshaded Relief (April 2026)
+
+**What:** Replaced `DEM:HDTM_1-9_1m` with `DEM:HDTM_shaded_relief` (hillshaded color-relief map).
+
+**Files Modified:**
+- `src/config/layers.ts` - Changed layer name
+- `CLAUDE.md` - Updated documentation references
+
+---
+
+### Google Satellite Basemap Grayscale (April 2026)
+
+**What:** Applied grayscale CSS filter to Google Satellite basemap for better visual contrast with flood data layers.
+
+**Implementation:**
+- CSS class `.satellite-grayscale` with `filter: grayscale(100%)` in `src/index.css`
+- Applied via `className` prop on TileLayer in `MapViewer.tsx` and `SwipeCompare.tsx`
+
+**Files Modified:**
+- `src/index.css` - Added `.satellite-grayscale` CSS class
+- `src/components/map/MapViewer.tsx` - Applied className to satellite layer
+- `src/components/swipe/SwipeCompare.tsx` - Applied className to satellite layer
+
+---
+
+### Intervention Default Visibility Changed (April 2026)
+
+**What:** Intervention features now default to hidden (`visible: false`) instead of visible. Users toggle visibility via the eye icon in the Interventions panel.
+
+**Files Modified:**
+- `src/components/annotations/hooks/useAnnotationLayer.ts` - Changed `visible: true` to `visible: false` in `annotationToFeature()`
+
+---
+
+### Risk Data Updated (April 2026)
+
+**What:** Updated 42 Excel source files in `risk/` folder with corrected validated building damage values. Building damages reduced ~33.4-33.7%, crop values unchanged.
+
+**Data Pipeline:**
+```
+risk/*.xlsx (42 files) → scripts/build-risk-json.js → public/data/risk.json
+    → useRiskData() → useEadData() → Dashboard components
+```
+
+**Note:** Risk Excel files moved from `Exposure_Stats/risk/` to `risk/` (project root). EAD is computed client-side from risk.json, no separate update needed.
+
+---
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior
@@ -632,6 +685,7 @@ const handleAnnotationDelete = useCallback(async (id: number) => {
 - **Swipe Compare:** Compare two flood scenarios side-by-side with synchronized pan/zoom and draggable divider
 - **Risk Dashboard:** 4-tab analysis panel — Summary Heatmap (7×3 matrix), District Breakdown, Spatial choropleth map, and EAD (Expected Annual Damage with trapezoidal integration)
 - **Interventions:** Draw points, lines, polygons on the map with details (title, description, category), search, filter, visibility toggle, and GeoJSON export
+  - **Default hidden:** Intervention features are hidden by default, toggle via eye icon
   - **Authentication required:** Must sign in to draw, edit, or delete interventions
   - **Role-based access:** Admins can manage all interventions; regular users can only manage their own
 - All groups default to collapsed state except root
