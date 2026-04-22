@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator } from 'lucide-react';
+import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
@@ -10,6 +10,7 @@ import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
 import { RiskEadView } from './views/RiskEadView';
+import { RiskCurveModal } from './components/RiskCurveModal';
 
 const MODE = 'Dmg' as const;
 
@@ -28,6 +29,9 @@ export function RiskDashboard({
   const [currentView, setCurrentView] = useState<RiskView>('summary');
   const [selectedClimate, setSelectedClimate] = useState<'present' | 'future'>('present');
   const [selectedScenarioKey, setSelectedScenarioKey] = useState<ScenarioKey | null>(null);
+
+  // Risk Curve modal state
+  const [riskCurveOpen, setRiskCurveOpen] = useState(false);
 
   // Spatial view state
   const [spatialReturnPeriod, setSpatialReturnPeriod] = useState<number>(25);
@@ -113,6 +117,7 @@ export function RiskDashboard({
   }, []);
 
   return (
+    <>
     <div className={cn('bg-white rounded-lg border border-slate-200 flex flex-col h-full', className)}>
       {/* Header */}
       <div className="px-4 py-3 bg-gradient-to-r from-green-50 to-slate-50 border-b border-slate-200 flex-shrink-0">
@@ -122,8 +127,20 @@ export function RiskDashboard({
             <h3 className="text-base font-semibold text-slate-800">Risk Analysis</h3>
           </div>
 
-          {/* View Toggle */}
-          <div className="flex gap-1">
+          <div className="flex items-center gap-2">
+            {/* Risk Curve Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRiskCurveOpen(true)}
+              className="text-sm h-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+            >
+              <TrendingUp className="w-3.5 h-3.5 mr-1" />
+              Risk Curves
+            </Button>
+
+            {/* View Toggle */}
+            <div className="flex gap-1">
             <Button
               variant={currentView === 'summary' ? 'default' : 'ghost'}
               size="sm"
@@ -161,6 +178,7 @@ export function RiskDashboard({
               <Calculator className="w-3.5 h-3.5 mr-1" />
               EAD
             </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -268,5 +286,15 @@ export function RiskDashboard({
         </div>
       )}
     </div>
+
+    {/* Risk Curve Modal */}
+    {riskCurveOpen && (
+      <RiskCurveModal
+        onClose={() => setRiskCurveOpen(false)}
+        initialClimate={selectedClimate}
+        initialMode={MODE}
+      />
+    )}
+  </>
   );
 }
