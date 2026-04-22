@@ -671,6 +671,49 @@ risk/*.xlsx (42 files) → scripts/build-risk-json.js → public/data/risk.json
 
 ---
 
+### Districts Excluded from Risk Dashboard (April 22, 2026)
+
+**What:** Excluded 2 districts from all Risk Dashboard views, statistics, and map features.
+
+**Districts Removed:**
+- Naushahro Feroze
+- Shaheed Benazirabad
+
+**7 Active Districts:**
+Dadu, Jacobabad, Jamshoro, Kashmore, Larkana, Qambar Shahdadkot, Shikarpur
+
+**Problem:** The pre-computed TOTAL values in Excel source files included all 9 districts. When displaying Risk Dashboard statistics (Summary Heatmap, District Breakdown, EAD), the TOTAL didn't match the sum of the visible 7 districts.
+
+**Solution:** Calculate TOTAL dynamically by summing only the 7 active districts.
+
+**Files Modified:**
+1. `src/types/risk.ts`:
+   - Updated `DISTRICTS` array (7 districts)
+   - Added `calculateTotalRisk()` utility function
+2. `scripts/build-risk-json.js`:
+   - Updated `REGIONS` array to exclude 2 districts
+3. `public/data/risk.json`:
+   - Regenerated with 7 districts (run: `node scripts/build-risk-json.js`)
+4. `public/data/districts.geojson`:
+   - Manually remove 2 district features after running build script (shapefile has all 9)
+5. `src/components/impact-matrix/ImpactMatrix.tsx`:
+   - Compare tab hidden (button commented out, code preserved)
+6. `src/components/risk-dashboard/hooks/useEadData.ts`:
+   - EAD TOTAL calculated dynamically from 7 districts
+7. `src/components/risk-dashboard/views/RiskSummaryHeatmap.tsx`:
+   - Uses `calculateTotalRisk()` instead of pre-computed TOTAL
+8. `src/components/risk-dashboard/views/RiskDistrictBreakdown.tsx`:
+   - Uses `calculateTotalRisk()` instead of pre-computed TOTAL
+
+**Important:** After running `node scripts/build-risk-json.js`, always manually remove the 2 excluded districts from `public/data/districts.geojson` before building, as the script regenerates it from the shapefile which has all 9 districts.
+
+**Build Command (WSL):**
+```bash
+node ./node_modules/typescript/lib/tsc.js --skipLibCheck && node ./node_modules/vite/bin/vite.js build
+```
+
+---
+
 ## Mobile Responsiveness
 
 - App uses `use-mobile.ts` hook for responsive behavior
