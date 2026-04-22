@@ -118,21 +118,9 @@ export function RiskCurveModal({
           <div className="flex flex-wrap gap-4 mt-3">
             {seriesBy === 'climate' && (
               <>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600">Climate:</span>
-                  <div className="flex gap-1">
-                    {(['present', 'future'] as const).map((c) => (
-                      <Button
-                        key={c}
-                        variant={climate === c ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setClimate(c)}
-                        className="text-xs h-7"
-                      >
-                        {c === 'present' ? 'Present' : 'Future'}
-                      </Button>
-                    ))}
-                  </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500 italic">
+                  <Info className="w-3.5 h-3.5" />
+                  Shows both Present and Future climates on the graph
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-slate-600">Maintenance:</span>
