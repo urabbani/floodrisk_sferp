@@ -127,20 +127,8 @@ export function RiskDashboard({
             <h3 className="text-base font-semibold text-slate-800">Risk Analysis</h3>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Risk Curve Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setRiskCurveOpen(true)}
-              className="text-sm h-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-            >
-              <TrendingUp className="w-3.5 h-3.5 mr-1" />
-              Risk Curves
-            </Button>
-
-            {/* View Toggle */}
-            <div className="flex gap-1">
+          {/* View Toggle */}
+          <div className="flex gap-1">
             <Button
               variant={currentView === 'summary' ? 'default' : 'ghost'}
               size="sm"
@@ -178,14 +166,13 @@ export function RiskDashboard({
               <Calculator className="w-3.5 h-3.5 mr-1" />
               EAD
             </Button>
-            </div>
           </div>
         </div>
       </div>
 
       {/* Controls Bar — Climate only */}
       <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium text-slate-700">Climate:</label>
             <div className="flex gap-1">
@@ -205,6 +192,17 @@ export function RiskDashboard({
               ))}
             </div>
           </div>
+
+          {/* Risk Curve Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setRiskCurveOpen(true)}
+            className="text-sm h-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+          >
+            <TrendingUp className="w-3.5 h-3.5 mr-1" />
+            Risk Curves
+          </Button>
         </div>
       </div>
 
