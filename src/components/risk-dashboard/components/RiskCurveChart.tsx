@@ -30,7 +30,7 @@ function CustomTooltip({ active, payload, label, mode }: any) {
       </p>
       {payload.map((entry: any) => {
         const val = entry.value as number;
-        if (val === 0) return null;
+        if (val === 0 || val === undefined) return null;
         return (
           <div key={entry.name} className="flex items-center gap-2 mb-0.5">
             <div
@@ -55,7 +55,16 @@ export function RiskCurveChart({
   height = 400,
   className,
 }: RiskCurveChartProps) {
-  const allDataPoints = series[0]?.data || [];
+  // Transform series data into format expected by Recharts
+  // Each data point should have all series values as named properties
+  const chartData = series[0]?.data.map((point, index) => {
+    const dataPoint: Record<string, number> = { returnPeriod: point.returnPeriod };
+    series.forEach((s) => {
+      dataPoint[s.label] = s.data[index]?.value || 0;
+    });
+    return dataPoint;
+  }) || [];
+
   const maxValue = Math.max(...series.flatMap((s) => s.data.map((d) => d.value)));
 
   const domain = logScale
@@ -66,7 +75,7 @@ export function RiskCurveChart({
     <div className={className}>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
-          data={allDataPoints}
+          data={chartData}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -109,7 +118,6 @@ export function RiskCurveChart({
               key={s.label}
               name={s.label}
               dataKey={s.label}
-              data={s.data}
               type="monotone"
               stroke={s.color}
               strokeWidth={2}
