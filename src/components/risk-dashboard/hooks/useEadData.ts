@@ -11,8 +11,6 @@ import {
   type AssetSubKey,
 } from '@/types/risk';
 
-const ALL_REGIONS = ['TOTAL', ...DISTRICTS] as const;
-
 export function useEadData() {
   const { data, isLoading, error } = useRiskData();
 
@@ -23,7 +21,10 @@ export function useEadData() {
 
     for (const climate of ['present', 'future'] as const) {
       for (const maintenance of MAINTENANCE_LEVELS) {
-        for (const region of ALL_REGIONS) {
+        // First, compute EAD for each district
+        const districtResults: EadResult[] = [];
+
+        for (const region of DISTRICTS) {
           const damagesByAsset: Record<AssetSubKey, { returnPeriod: number; damage: number }[]> = {
             crop: [],
             buildLow56: [],
@@ -48,14 +49,38 @@ export function useEadData() {
             buildHigh: calculateEad(damagesByAsset.buildHigh),
           };
 
-          results.push({
+          const result: EadResult = {
             climate,
             maintenance,
             region,
             ead,
             eadTotal: ead.crop + ead.buildLow56 + ead.buildLow44 + ead.buildHigh,
-          });
+          };
+          districtResults.push(result);
+          results.push(result);
         }
+
+        // Calculate TOTAL as sum of 7 districts
+        const totalEad: Record<AssetSubKey, number> = {
+          crop: 0,
+          buildLow56: 0,
+          buildLow44: 0,
+          buildHigh: 0,
+        };
+
+        for (const districtResult of districtResults) {
+          for (const asset of ASSET_SUB_KEYS) {
+            totalEad[asset] += districtResult.ead[asset];
+          }
+        }
+
+        results.push({
+          climate,
+          maintenance,
+          region: 'TOTAL',
+          ead: totalEad,
+          eadTotal: totalEad.crop + totalEad.buildLow56 + totalEad.buildLow44 + totalEad.buildHigh,
+        });
       }
     }
 
