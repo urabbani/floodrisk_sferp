@@ -9,6 +9,7 @@ import {
   totalRiskValue,
   buildScenarioKey,
   formatRiskValue,
+  calculateTotalRisk,
 } from '@/types/risk';
 import { RiskHeatmapCell } from '../components/RiskHeatmapCell';
 import { RiskColorLegend } from '../components/RiskColorLegend';
@@ -42,7 +43,7 @@ export function RiskSummaryHeatmap({
     for (const rp of RETURN_PERIODS) {
       for (const m of MAINTENANCE_LEVELS) {
         const key = buildScenarioKey(rp, climate, m);
-        const regionData = data.data[key]?.['TOTAL']?.[mode];
+        const regionData = calculateTotalRisk(data, key, mode);
         if (!regionData) continue;
 
         const total = totalRiskValue(regionData);
@@ -117,7 +118,7 @@ export function RiskSummaryHeatmap({
                 {MAINTENANCE_LEVELS.map((m) => {
                   const key = buildScenarioKey(rp, climate, m);
                   const entry = matrix.get(key);
-                  const regionData = data.data[key]?.['TOTAL']?.[mode];
+                  const regionData = calculateTotalRisk(data, key, mode);
 
                   if (!regionData || !entry) {
                     return (

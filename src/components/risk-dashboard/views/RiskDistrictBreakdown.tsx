@@ -11,6 +11,7 @@ import {
   formatRiskValueFull,
   MAINTENANCE_LABELS,
   RISK_MODE_LABELS,
+  calculateTotalRisk,
 } from '@/types/risk';
 import { DistrictBarChart } from '../components/DistrictBarChart';
 
@@ -62,8 +63,8 @@ export function RiskDistrictBreakdown({
       .sort((a, b) => b.total - a.total);
   }, [scenarioData, mode]);
 
-  // TOTAL region data
-  const totalData = scenarioData?.['TOTAL']?.[mode];
+  // TOTAL region data (sum of 7 districts)
+  const totalData = calculateTotalRisk(data, scenarioKey, mode);
   const grandTotal = totalData ? totalRiskValue(totalData) : 0;
 
   if (!meta) {

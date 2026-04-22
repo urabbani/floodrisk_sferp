@@ -245,3 +245,36 @@ export function calculateEad(damages: { returnPeriod: number; damage: number }[]
   }
   return ead;
 }
+
+/**
+ * Calculate TOTAL risk data by summing all districts for a given scenario and mode.
+ * This ensures TOTAL reflects only the active districts (7, not 9).
+ */
+export function calculateTotalRisk(
+  data: RiskJsonData,
+  scenarioKey: ScenarioKey,
+  mode: RiskMode
+): RegionRiskData | null {
+  const scenarioData = data.data[scenarioKey];
+  if (!scenarioData) return null;
+
+  // Sum all districts
+  const total: RegionRiskData = {
+    crop: 0,
+    buildLow56: 0,
+    buildLow44: 0,
+    buildHigh: 0,
+  };
+
+  for (const district of DISTRICTS) {
+    const districtData = scenarioData[district]?.[mode];
+    if (!districtData) continue;
+
+    total.crop += districtData.crop;
+    total.buildLow56 += districtData.buildLow56;
+    total.buildLow44 += districtData.buildLow44;
+    total.buildHigh += districtData.buildHigh;
+  }
+
+  return total;
+}
