@@ -18,8 +18,7 @@ const GEOJSON_OUTPUT = path.join(ROOT, 'public', 'data', 'districts.geojson');
 
 const REGIONS = [
   'TOTAL', 'Dadu', 'Jacobabad', 'Jamshoro', 'Kashmore',
-  'Larkana', 'Naushahro Feroze', 'Qambar Shahdadkot',
-  'Shaheed Benazirabad', 'Shikarpur',
+  'Larkana', 'Qambar Shahdadkot', 'Shikarpur',
 ];
 
 const MODES = ['Exp', 'Vul', 'Dmg'];
