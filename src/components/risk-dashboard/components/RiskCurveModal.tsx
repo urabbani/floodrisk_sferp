@@ -74,7 +74,7 @@ export function RiskCurveModal({
   ] as const;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center overflow-y-auto py-8">
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center overflow-y-auto py-8">
       <div className="bg-white rounded-lg shadow-2xl w-[95vw] max-w-6xl flex flex-col max-h-[95vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">

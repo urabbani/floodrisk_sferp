@@ -299,7 +299,7 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
   const rasterLayers = rasterLayersRef.current;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-2xl w-[95vw] h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
