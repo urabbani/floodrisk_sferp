@@ -26,12 +26,14 @@ export function RiskCurveModal({
   initialMode = 'Dmg',
 }: RiskCurveModalProps) {
   const [climate, setClimate] = useState<'present' | 'future'>(initialClimate);
-  const [mode, setMode] = useState<RiskMode>(initialMode);
-  const [seriesBy, setSeriesBy] = useState<'climate' | 'maintenance' | 'district' | 'asset'>('climate');
+  const [seriesBy, setSeriesBy] = useState<'climate' | 'district' | 'asset'>('climate');
   const [maintenance, setMaintenance] = useState<'breaches' | 'redcapacity' | 'perfect'>('breaches');
   const [region, setRegion] = useState<'TOTAL' | typeof DISTRICTS[number]>('TOTAL');
   const [logScale, setLogScale] = useState(false);
   const [selectedAssets, setSelectedAssets] = useState<AssetSubKey[]>(ASSET_SUB_KEYS);
+
+  // Fixed to Economic Damage mode
+  const mode: RiskMode = 'Dmg';
 
   const assetOptions: { value: AssetSubKey; label: string; color: string }[] = [
     { value: 'crop', label: ASSET_SUB_KEY_LABELS.crop, color: '#22c55e' },
@@ -62,15 +64,8 @@ export function RiskCurveModal({
 
   const seriesByOptions = [
     { value: 'climate', label: 'Compare Climates' },
-    { value: 'maintenance', label: 'Compare Maintenance' },
     { value: 'district', label: 'Compare Districts' },
     { value: 'asset', label: 'Compare Assets' },
-  ] as const;
-
-  const modeOptions = [
-    { value: 'Exp', label: 'Exposure', description: 'Area exposed to flooding' },
-    { value: 'Vul', label: 'Vulnerability', description: 'Area with potential damage' },
-    { value: 'Dmg', label: 'Economic Damage', description: 'Monetary value of damage' },
   ] as const;
 
   return (
@@ -93,22 +88,6 @@ export function RiskCurveModal({
         {/* Controls */}
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
           <div className="flex flex-wrap gap-4">
-            {/* Risk Mode */}
-            <div className="flex gap-1">
-              {modeOptions.map((opt) => (
-                <Button
-                  key={opt.value}
-                  variant={mode === opt.value ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setMode(opt.value)}
-                  className="text-xs h-7"
-                  title={opt.description}
-                >
-                  {opt.label}
-                </Button>
-              ))}
-            </div>
-
             {/* Series By */}
             <div className="flex gap-1">
               {seriesByOptions.map((opt) => (
@@ -167,42 +146,6 @@ export function RiskCurveModal({
                         className="text-xs h-7"
                       >
                         {MAINTENANCE_LABELS[m]}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600">Region:</span>
-                  <select
-                    value={region}
-                    onChange={(e) => setRegion(e.target.value as typeof region)}
-                    className="px-2 py-1 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="TOTAL">TOTAL (All Districts)</option>
-                    {DISTRICTS.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
-
-            {seriesBy === 'maintenance' && (
-              <>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-600">Climate:</span>
-                  <div className="flex gap-1">
-                    {(['present', 'future'] as const).map((c) => (
-                      <Button
-                        key={c}
-                        variant={climate === c ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => setClimate(c)}
-                        className="text-xs h-7"
-                      >
-                        {c === 'present' ? 'Present' : 'Future'}
                       </Button>
                     ))}
                   </div>
@@ -375,7 +318,7 @@ export function RiskCurveModal({
                     <p className="font-medium mb-1">Understanding Risk Curves</p>
                     <ul className="space-y-0.5 text-blue-800 text-xs">
                       <li>• X-axis: Return period (flood rarity) from 2.3 years (frequent) to 500 years (extreme)</li>
-                      <li>• Y-axis: Risk value based on selected mode (Exposure, Vulnerability, or Damage)</li>
+                      <li>• Y-axis: Economic Damage (USD) - monetary value of flood damage</li>
                       <li>• Higher curves indicate greater risk; steeper curves show faster risk growth</li>
                       <li>• Use <strong>Log Scale</strong> to better visualize differences across return periods</li>
                     </ul>

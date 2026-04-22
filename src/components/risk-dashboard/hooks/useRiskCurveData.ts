@@ -14,7 +14,6 @@ import {
 
 export type CurveSeriesType =
   | 'climate'      // Compare Present vs Future
-  | 'maintenance'  // Compare Breaches vs Reduced vs Perfect
   | 'district'     // Compare districts
   | 'asset';       // Compare Agriculture vs Buildings
 
@@ -97,19 +96,6 @@ export function useRiskCurveData(options: RiskCurveOptions) {
           data: RETURN_PERIODS.map((rp) => ({
             returnPeriod: rp,
             value: getSeriesValue(rp, clim, maintenance, region),
-          })),
-          color: COLORS[idx],
-        }));
-        break;
-      }
-
-      case 'maintenance': {
-        // Compare Breaches vs Reduced Capacity vs Perfect
-        series = MAINTENANCE_LEVELS.map((maint, idx) => ({
-          label: maint === 'perfect' ? 'Perfect' : maint === 'breaches' ? 'Breaches' : 'Reduced Capacity',
-          data: RETURN_PERIODS.map((rp) => ({
-            returnPeriod: rp,
-            value: getSeriesValue(rp, climate, maint, region),
           })),
           color: COLORS[idx],
         }));
