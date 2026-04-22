@@ -252,7 +252,8 @@ export function ImpactMatrix({
               <Layers className="w-3.5 h-3.5 mr-1" />
               Summary
             </Button>
-            <Button
+            {/* Compare tab hidden - functionality preserved in code */}
+            {/* <Button
               variant={currentView === 'compare' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('compare')}
@@ -260,7 +261,7 @@ export function ImpactMatrix({
             >
               <BarChart3 className="w-3.5 h-3.5 mr-1" />
               Compare
-            </Button>
+            </Button> */}
           </div>
         </div>
       </div>

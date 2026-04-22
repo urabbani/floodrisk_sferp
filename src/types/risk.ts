@@ -87,7 +87,7 @@ export type RiskJsonData = {
 export type RiskView = 'summary' | 'district' | 'spatial' | 'ead';
 
 /**
- * 9 districts in Sindh Province
+ * 7 districts in Sindh Province (Naushahro Feroze and Shaheed Benazirabad excluded)
  */
 export const DISTRICTS = [
   'Dadu',
@@ -95,9 +95,7 @@ export const DISTRICTS = [
   'Jamshoro',
   'Kashmore',
   'Larkana',
-  'Naushahro Feroze',
   'Qambar Shahdadkot',
-  'Shaheed Benazirabad',
   'Shikarpur',
 ] as const;
 
