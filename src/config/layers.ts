@@ -225,7 +225,7 @@ export const layerTree: LayerGroup = {
     },
     
     // HDTM (DEM workspace - hillshaded color-relief map)
-    createRasterLayer('HDTM', 'HDTM_shaded_relief', false, 0.6, GEOSERVER_CONFIG.workspaces.dem),
+    createRasterLayer('HDTM', 'HDTM_shaded_relief', false, 1.0, GEOSERVER_CONFIG.workspaces.dem),
   ],
 };
 
