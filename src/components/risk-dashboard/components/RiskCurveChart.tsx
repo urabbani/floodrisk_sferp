@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { CurveDataPoint, CurveSeries } from '../hooks/useRiskCurveData';
+import type { CurveSeries } from '../hooks/useRiskCurveData';
 import type { RiskMode } from '@/types/risk';
 import { formatRiskValue, formatRiskValueFull } from '@/types/risk';
 

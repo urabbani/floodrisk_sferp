@@ -19,18 +19,18 @@ export type CurveSeriesType =
 
 export type CurveRegion = 'TOTAL' | typeof DISTRICTS[number];
 
-export interface CurveDataPoint {
+export type CurveDataPoint = {
   returnPeriod: number;
   value: number;
-}
+};
 
-export interface CurveSeries {
+export type CurveSeries = {
   label: string;
   data: CurveDataPoint[];
   color: string;
-}
+};
 
-export interface RiskCurveOptions {
+export type RiskCurveOptions = {
   climate?: 'present' | 'future';
   maintenance?: 'breaches' | 'redcapacity' | 'perfect';
   region?: CurveRegion;
@@ -38,7 +38,7 @@ export interface RiskCurveOptions {
   seriesBy: CurveSeriesType;
   includeTotal?: boolean;
   selectedAssets?: AssetSubKey[];
-}
+};
 
 const COLORS = [
   '#3b82f6', // blue

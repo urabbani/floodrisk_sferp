@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Layers, BarChart3, AlertCircle } from 'lucide-react';
+import { Layers, BarChart3, AlertCircle, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ImpactCurveModal } from './components/ImpactCurveModal';
 import type {
   ScenarioImpactSummary,
   ExposureLayerType,
@@ -76,6 +77,7 @@ export function ImpactMatrix({
   const [selectedClimate, setSelectedClimate] = useState<'present' | 'future'>(initialClimate);
   const [selectedScenario, setSelectedScenario] = useState<ScenarioImpactSummary | null>(null);
   const [depthThreshold, setDepthThreshold] = useState<number>(0); // Depth filter in meters
+  const [showImpactCurves, setShowImpactCurves] = useState(false);
 
   // Build query for the hook (memoized to prevent unnecessary refetches)
   const query: ImpactSummaryQuery = useMemo(() => ({
@@ -232,6 +234,7 @@ export function ImpactMatrix({
   }, [selectedScenario, onImpactLayersChange, cqlFilter]);
 
   return (
+    <>
     <div className={cn('bg-white rounded-lg border border-slate-200 flex flex-col h-full', className)}>
       {/* Header */}
       <div className="px-4 py-3 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-slate-200 flex-shrink-0">
@@ -251,6 +254,15 @@ export function ImpactMatrix({
             >
               <Layers className="w-3.5 h-3.5 mr-1" />
               Summary
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowImpactCurves(true)}
+              className="text-sm h-7 gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              Impact Curves
             </Button>
             {/* Compare tab hidden - functionality preserved in code */}
             {/* <Button
@@ -373,5 +385,14 @@ export function ImpactMatrix({
         </div>
       )}
     </div>
+
+    {/* Impact Curves Modal */}
+    {showImpactCurves && (
+      <ImpactCurveModal
+        onClose={() => setShowImpactCurves(false)}
+        initialClimate={selectedClimate}
+      />
+    )}
+    </>
   );
 }
