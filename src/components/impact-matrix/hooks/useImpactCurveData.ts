@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useImpactData } from './useImpactData';
-import { RETURN_PERIODS, MAINTENANCE_LEVELS } from '@/types/risk';
+import { RETURN_PERIODS } from '@/types/risk';
 import type { ScenarioImpactSummary } from '@/types/impact';
 
 type Climate = 'present' | 'future';
@@ -12,23 +12,10 @@ export interface ImpactDataPoint {
   builtUpArea: number;
 }
 
-export interface ImpactSeries {
-  label: string;
-  data: ImpactDataPoint[];
-  color: string;
-}
-
 export interface ImpactCurveOptions {
   climate?: Climate;
   maintenance?: Maintenance;
 }
-
-const COLORS = {
-  cropped: '#22c55e',  // green for crops
-  builtup: '#3b82f6',  // blue for built-up
-  present: '#3b82f6',
-  future: '#f59e0b',
-};
 
 /**
  * Extract affected area (in square meters) from scenario impact data
@@ -47,21 +34,17 @@ function getAffectedArea(
  * Hook to fetch and process Impact curve data
  */
 export function useImpactCurveData(options: ImpactCurveOptions) {
-  const { data: presentData, isLoading: presentLoading, error: presentError } = useImpactData({ climate: 'present' });
-  const { data: futureData, isLoading: futureLoading, error: futureError } = useImpactData({ climate: 'future' });
+  const { climate = 'present', maintenance = 'breaches' } = options;
 
-  const isLoading = presentLoading || futureLoading;
-  const error = presentError || futureError;
+  // Only fetch data for the selected climate
+  const { data, isLoading, error } = useImpactData({ climate });
 
   const curveData = useMemo(() => {
-    if (!presentData || !futureData) return null;
-
-    const { climate = 'present', maintenance = 'breaches' } = options;
-    const climateData = climate === 'present' ? presentData : futureData;
+    if (!data?.summaries) return null;
 
     // Build data points for each return period
     const dataPoints: ImpactDataPoint[] = RETURN_PERIODS.map((rp) => {
-      const scenario = climateData.summaries.find(
+      const scenario = data.summaries.find(
         (s) => s.returnPeriod === String(rp) && s.maintenance === maintenance
       );
       return {
@@ -72,7 +55,7 @@ export function useImpactCurveData(options: ImpactCurveOptions) {
     });
 
     return { dataPoints };
-  }, [presentData, futureData, options]);
+  }, [data, climate, maintenance]);
 
   return { curveData, isLoading, error };
 }

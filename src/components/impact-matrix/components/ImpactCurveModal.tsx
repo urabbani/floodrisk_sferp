@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useImpactCurveData } from '../hooks/useImpactCurveData';
 import { ImpactCurveChart } from './ImpactCurveChart';
-import { MAINTENANCE_LEVELS, MAINTENANCE_LABELS } from '@/types/risk';
+import { MAINTENANCE_LEVELS, MAINTENANCE_LABELS, RETURN_PERIODS } from '@/types/risk';
 
 type Climate = 'present' | 'future';
 type Maintenance = 'breaches' | 'redcapacity' | 'perfect';
@@ -25,11 +26,31 @@ export function ImpactCurveModal({
     maintenance,
   });
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center overflow-y-auto py-8 z-[10000]">
-      <div className="bg-white rounded-lg shadow-2xl w-[95vw] max-w-4xl flex flex-col max-h-[95vh] relative">
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" onClick={onClose}>
+      <div
+        className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <h2 className="text-lg font-semibold text-slate-800">
@@ -45,11 +66,11 @@ export function ImpactCurveModal({
         </div>
 
         {/* Controls */}
-        <div className="px-4 py-3 bg-slate-50 border-b border-slate-200">
+        <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 shrink-0">
           <div className="flex flex-wrap gap-4 items-center">
             {/* Climate Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600">Climate:</span>
+              <span className="text-sm font-medium text-slate-600">Climate:</span>
               <div className="flex gap-1">
                 {(['present', 'future'] as Climate[]).map((c) => (
                   <Button
@@ -57,7 +78,7 @@ export function ImpactCurveModal({
                     variant={climate === c ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setClimate(c)}
-                    className="text-xs h-7"
+                    className="text-sm h-8"
                   >
                     {c === 'present' ? 'Present' : 'Future'}
                   </Button>
@@ -67,7 +88,7 @@ export function ImpactCurveModal({
 
             {/* Maintenance Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-slate-600">Maintenance:</span>
+              <span className="text-sm font-medium text-slate-600">Maintenance:</span>
               <div className="flex gap-1">
                 {MAINTENANCE_LEVELS.map((m) => (
                   <Button
@@ -75,7 +96,7 @@ export function ImpactCurveModal({
                     variant={maintenance === m ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => setMaintenance(m)}
-                    className="text-xs h-7"
+                    className="text-sm h-8"
                   >
                     {MAINTENANCE_LABELS[m]}
                   </Button>
@@ -85,27 +106,33 @@ export function ImpactCurveModal({
           </div>
         </div>
 
-        {/* Chart */}
-        <div className="flex-1 p-6 overflow-y-auto">
+        {/* Chart Content */}
+        <div className="flex-1 p-6 overflow-y-auto min-h-0">
           {isLoading ? (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-slate-500">Loading Impact curve data...</div>
+            <div className="flex items-center justify-center h-80">
+              <div className="text-center">
+                <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-sm text-slate-500">Loading Impact curve data...</p>
+              </div>
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-red-500">Error loading Impact data: {error}</div>
+            <div className="flex items-center justify-center h-80">
+              <div className="text-red-500 text-center">
+                <p className="font-medium">Error loading Impact data</p>
+                <p className="text-sm mt-1">{error}</p>
+              </div>
             </div>
           ) : curveData?.dataPoints ? (
             <>
-              <ImpactCurveChart series={curveData} />
+              <ImpactCurveChart series={curveData} height={350} />
 
               {/* Stats Table */}
-              <div className="mt-6 bg-slate-50 rounded-lg p-4">
+              <div className="mt-6">
                 <h3 className="text-sm font-semibold text-slate-700 mb-3">
                   Affected Area by Return Period
                 </h3>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200">
                         <th className="text-left py-2 px-3 text-slate-600 font-medium">Return Period</th>
@@ -118,20 +145,10 @@ export function ImpactCurveModal({
                         <tr key={point.returnPeriod} className="border-b border-slate-100">
                           <td className="py-2 px-3 font-medium text-slate-700">{point.returnPeriod} years</td>
                           <td className="py-2 px-3 text-right text-slate-600">
-                            {point.croppedArea >= 1000000
-                              ? `${(point.croppedArea / 1000000).toFixed(2)}M`
-                              : point.croppedArea >= 1000
-                              ? `${(point.croppedArea / 1000).toFixed(1)}K`
-                              : point.croppedArea.toLocaleString()}
-                            {' '}m²
+                            {formatArea(point.croppedArea)}
                           </td>
                           <td className="py-2 px-3 text-right text-slate-600">
-                            {point.builtUpArea >= 1000000
-                              ? `${(point.builtUpArea / 1000000).toFixed(2)}M`
-                              : point.builtUpArea >= 1000
-                              ? `${(point.builtUpArea / 1000).toFixed(1)}K`
-                              : point.builtUpArea.toLocaleString()}
-                            {' '}m²
+                            {formatArea(point.builtUpArea)}
                           </td>
                         </tr>
                       ))}
@@ -140,11 +157,15 @@ export function ImpactCurveModal({
                 </div>
               </div>
             </>
-          ) : null}
+          ) : (
+            <div className="flex items-center justify-center h-80">
+              <p className="text-slate-500">No data available</p>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 shrink-0 flex justify-end">
           <Button onClick={onClose} variant="outline" size="sm">
             Close
           </Button>
@@ -152,4 +173,12 @@ export function ImpactCurveModal({
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
+}
+
+function formatArea(value: number): string {
+  if (value >= 1000000) return `${(value / 1000000).toFixed(2)}M m²`;
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K m²`;
+  return `${value.toLocaleString()} m²`;
 }
