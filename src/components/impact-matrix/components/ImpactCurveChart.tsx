@@ -8,25 +8,28 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import type { ImpactSeries } from '../hooks/useImpactCurveData';
+
+interface ImpactDataPoint {
+  returnPeriod: number;
+  croppedArea: number;
+  builtUpArea: number;
+}
 
 interface ImpactCurveChartProps {
-  series: ImpactSeries[];
-  layerType: 'Cropped_Area' | 'Built_up_Area';
-  logScale?: boolean;
+  series: {
+    data: ImpactDataPoint[];
+  };
   height?: number;
   className?: string;
 }
 
-function CustomTooltip({ active, payload, label, layerType }: any) {
+function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
 
-  const layerLabel = layerType === 'Cropped_Area' ? 'Cropped Area' : 'Built-up Area';
-
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm max-w-xs">
-      <p className="font-semibold text-slate-800 mb-1.5">
-        Return Period: {label} years
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-semibold text-slate-800 mb-2">
+        Return Period: {payload[0].payload.returnPeriod} years
       </p>
       {payload.map((entry: any, index: number) => (
         <div key={index} className="flex items-center gap-2">
@@ -46,52 +49,23 @@ function CustomTooltip({ active, payload, label, layerType }: any) {
 
 /**
  * ImpactCurveChart - Line chart showing affected area vs return period
- *
- * X-axis: Return Period (years) - Log scale
- * Y-axis: Affected Area (square meters) - Linear or Log scale
+ * Shows both Cropped Area and Built-up Area as two lines
  */
 export function ImpactCurveChart({
   series,
-  layerType,
-  logScale = false,
   height = 400,
   className,
 }: ImpactCurveChartProps) {
-  // Create combined data array for the chart
-  const chartData = series[0]?.data.map((point) => {
-    const dataPoint: any = {
-      returnPeriod: point.returnPeriod,
-    };
-    series.forEach((s) => {
-      dataPoint[s.label] = point.value;
-    });
-    return dataPoint;
-  }) || [];
-
-  // Calculate domain for Y-axis
-  const allValues = series.flatMap((s) => s.data.map((d) => d.value));
-  const minValue = Math.min(...allValues.filter((v) => v > 0));
-  const maxValue = Math.max(...allValues);
-
-  const yAxisDomain = logScale
-    ? [minValue / 10, maxValue * 1.1]
-    : [0, maxValue * 1.1];
-
-  const layerLabel = layerType === 'Cropped_Area' ? 'Cropped Area' : 'Built-up Area';
-
   return (
     <div className={className}>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart
-          data={chartData}
+          data={series.data}
           margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="returnPeriod"
-            scale="log"
-            domain={[2, 600]}
-            type="number"
             tick={{ fill: '#64748b', fontSize: 12 }}
             tickFormatter={(value) => `${value} yrs`}
             label={{
@@ -102,37 +76,42 @@ export function ImpactCurveChart({
             }}
           />
           <YAxis
-            scale={logScale ? 'log' : 'linear'}
-            domain={yAxisDomain}
             tick={{ fill: '#64748b', fontSize: 12 }}
             tickFormatter={(value) => {
-              if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M km²`;
-              if (value >= 1000) return `${(value / 1000).toFixed(0)}K m²`;
-              return `${value} m²`;
+              if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+              if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+              return `${value}`;
             }}
             label={{
-              value: `Affected ${layerLabel} (m²)`,
+              value: 'Affected Area (m²)',
               angle: -90,
               position: 'insideLeft',
               style: { fill: '#64748b', fontSize: 13, fontWeight: 500 },
             }}
           />
-          <Tooltip content={<CustomTooltip layerType={layerType} />} />
+          <Tooltip content={<CustomTooltip />} />
           <Legend
             wrapperStyle={{ fontSize: 12, paddingTop: '10px' }}
             iconType="circle"
           />
-          {series.map((s) => (
-            <Line
-              key={s.label}
-              type="monotone"
-              dataKey={s.label}
-              stroke={s.color}
-              strokeWidth={2}
-              dot={{ r: 4, fill: s.color }}
-              activeDot={{ r: 6, fill: s.color }}
-            />
-          ))}
+          <Line
+            type="monotone"
+            dataKey="croppedArea"
+            name="Cropped Area"
+            stroke="#22c55e"
+            strokeWidth={2}
+            dot={{ r: 4, fill: '#22c55e' }}
+            activeDot={{ r: 6, fill: '#22c55e' }}
+          />
+          <Line
+            type="monotone"
+            dataKey="builtUpArea"
+            name="Built-up Area"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            dot={{ r: 4, fill: '#3b82f6' }}
+            activeDot={{ r: 6, fill: '#3b82f6' }}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>
