@@ -4,7 +4,7 @@
  * Displays 4 key metrics showing deltas between Present and Future climate:
  * - Population Affected
  * - Infrastructure Impact
- * - Agriculture & Buildings
+ * - Agriculture
  * - Overall Risk Severity
  *
  * Follows ui-skills guidelines:
@@ -117,14 +117,14 @@ export function ClimateSummaryCards({ deltas }: ClimateSummaryCardsProps) {
         ? 'Lower infrastructure impact in future climate'
         : 'No significant change in infrastructure impact';
 
-  // Format ag/building delta
+  // Format agriculture delta
   const agBuildingValue = `${Math.abs(deltas.agBuilding.relative).toFixed(1)}%`;
   const agBuildingDescription =
     deltas.agBuilding.direction === 'increase'
-      ? 'More agriculture and buildings affected'
+      ? 'More agriculture area affected'
       : deltas.agBuilding.direction === 'decrease'
-        ? 'Less agriculture and buildings affected'
-        : 'No significant change in agriculture and buildings';
+        ? 'Less agriculture area affected'
+        : 'No significant change in agriculture area';
 
   // Format severity change
   const severityLabel =
@@ -157,7 +157,7 @@ export function ClimateSummaryCards({ deltas }: ClimateSummaryCardsProps) {
         description={infrastructureDescription}
       />
       <SummaryCard
-        title="Ag & Buildings"
+        title="Agriculture"
         value={agBuildingValue}
         delta={deltas.agBuilding}
         icon={Building2}

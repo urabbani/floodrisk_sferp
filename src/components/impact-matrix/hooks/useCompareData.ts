@@ -115,13 +115,13 @@ function calculateInfrastructureDelta(
 }
 
 /**
- * Calculate agriculture and building impact delta
+ * Calculate agriculture impact delta (Cropped Area and Built-up Area)
  */
 function calculateAgBuildingDelta(
   baseline: ScenarioImpactSummary,
   comparison: ScenarioImpactSummary
 ): ClimateDelta | undefined {
-  const agBuildingTypes: ExposureLayerType[] = ['Buildings', 'Built_up_Area', 'Cropped_Area'];
+  const agBuildingTypes: ExposureLayerType[] = ['Built_up_Area', 'Cropped_Area'];
 
   let baselineAvg = 0;
   let comparisonAvg = 0;

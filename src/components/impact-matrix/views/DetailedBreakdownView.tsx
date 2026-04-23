@@ -66,9 +66,9 @@ interface DetailedBreakdownViewProps {
  *
  * Displays:
  * - Scenario header with summary stats
- * - 4 summary cards: Population, Infrastructure, Agriculture/Buildings, Overall Severity
+ * - 4 summary cards: Population, Infrastructure, Agriculture, Overall Severity
  * - Population depth distribution chart (if data available)
- * - All 9 exposure layers with their impact details
+ * - All 8 exposure layers with their impact details
  * - Layer toggles for map visibility
  * - Depth distribution charts per exposure layer
  * - Zoom to extent functionality
@@ -148,8 +148,8 @@ export function DetailedBreakdownView({
       ? (infrastructureAffected / infrastructureTotal) * 100
       : 0;
 
-    // Agriculture & Buildings Impact (Cropped Area, Buildings)
-    const agBuildingLayers: ExposureLayerType[] = ['Cropped_Area', 'Buildings'];
+    // Agriculture Impact (Cropped Area only)
+    const agBuildingLayers: ExposureLayerType[] = ['Cropped_Area'];
     const agBuildingImpacts = agBuildingLayers
       .map(layer => impacts[layer])
       .filter(impact => impact && impact.totalFeatures > 0);
@@ -269,14 +269,14 @@ export function DetailedBreakdownView({
           </div>
         </div>
 
-        {/* 3. Agriculture & Buildings */}
+        {/* 3. Agriculture */}
         <div className="bg-white p-3 rounded-lg border border-slate-200">
-          <div className="text-sm text-slate-500 mb-1">Ag. & Buildings</div>
+          <div className="text-sm text-slate-500 mb-1">Agriculture</div>
           <div className="text-lg font-bold text-amber-600">
             {summaryStats.agBuildingPercentage.toFixed(1)}%
           </div>
           <div className="text-[9px] text-slate-400">
-            Crops, Buildings affected
+            Cropped area affected
           </div>
         </div>
 

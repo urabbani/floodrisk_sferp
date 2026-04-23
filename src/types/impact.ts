@@ -2,11 +2,10 @@
 // These types define the structure for displaying flood impact and exposure data
 
 /**
- * The 9 exposure layer types that can be impacted by flooding
+ * The 8 exposure layer types that can be impacted by flooding
  */
 export type ExposureLayerType =
   | 'BHU'
-  | 'Buildings'
   | 'Built_up_Area'
   | 'Cropped_Area'
   | 'Electric_Grid'
@@ -123,7 +122,6 @@ export type ImpactSummaryResponse = {
  */
 export const EXPOSURE_LAYER_TYPES: ExposureLayerType[] = [
   'BHU',
-  'Buildings',
   'Built_up_Area',
   'Cropped_Area',
   'Electric_Grid',
@@ -138,7 +136,6 @@ export const EXPOSURE_LAYER_TYPES: ExposureLayerType[] = [
  */
 export const EXPOSURE_LAYER_LABELS: Record<ExposureLayerType, string> = {
   'BHU': 'Basic Health Units',
-  'Buildings': 'Buildings',
   'Built_up_Area': 'Built-up Area',
   'Cropped_Area': 'Cropped Area',
   'Electric_Grid': 'Electric Grid',
@@ -153,7 +150,6 @@ export const EXPOSURE_LAYER_LABELS: Record<ExposureLayerType, string> = {
  */
 export const EXPOSURE_LAYER_GEOMETRY: Record<ExposureLayerType, 'point' | 'line' | 'polygon'> = {
   'BHU': 'point',
-  'Buildings': 'polygon',
   'Built_up_Area': 'polygon',
   'Cropped_Area': 'polygon',
   'Electric_Grid': 'line',
@@ -194,13 +190,13 @@ export const DEPTH_BIN_RANGES: Record<DepthBinRange, { min: number; max: number 
 };
 
 /**
- * Severity thresholds based on number of affected exposure types (out of 9)
+ * Severity thresholds based on number of affected exposure types (out of 8)
  */
 export const SEVERITY_THRESHOLDS = {
   low: { min: 0, max: 2 },      // 0-2 exposure types affected
   medium: { min: 3, max: 5 },   // 3-5 exposure types affected
   high: { min: 6, max: 7 },     // 6-7 exposure types affected
-  extreme: { min: 8, max: 9 },  // 8-9 exposure types affected
+  extreme: { min: 8, max: 8 },  // 8 exposure types affected
 };
 
 /**

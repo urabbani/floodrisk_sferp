@@ -343,8 +343,8 @@ export function ScenarioComparisonCharts({
       : ('neutral' as const),
   };
 
-  // Calculate ag/building delta
-  const agBuildingTypes = ['Buildings', 'Built_up_Area', 'Cropped_Area'] as const;
+  // Calculate agriculture delta
+  const agBuildingTypes = ['Built_up_Area', 'Cropped_Area'] as const;
 
   let agBuildingPresentAvg = 0;
   let agBuildingFutureAvg = 0;
@@ -414,7 +414,7 @@ export function ScenarioComparisonCharts({
           unit="%"
         />
         <SummaryCard
-          title="Ag & Buildings"
+          title="Agriculture"
           presentValue={agBuildingPresentAvg}
           futureValue={agBuildingFutureAvg}
           delta={agBuildingDelta}
