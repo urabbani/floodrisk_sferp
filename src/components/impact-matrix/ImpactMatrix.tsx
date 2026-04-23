@@ -255,7 +255,8 @@ export function ImpactMatrix({
               <Layers className="w-3.5 h-3.5 mr-1" />
               Summary
             </Button>
-            <Button
+            {/* Impact Curves button hidden - fixing blinking issue */}
+            {/* <Button
               variant="outline"
               size="sm"
               onClick={() => setShowImpactCurves(true)}
@@ -263,7 +264,7 @@ export function ImpactMatrix({
             >
               <TrendingUp className="w-3.5 h-3.5" />
               Impact Curves
-            </Button>
+            </Button> */}
             {/* Compare tab hidden - functionality preserved in code */}
             {/* <Button
               variant={currentView === 'compare' ? 'default' : 'ghost'}
@@ -386,13 +387,13 @@ export function ImpactMatrix({
       )}
     </div>
 
-    {/* Impact Curves Modal */}
-    {showImpactCurves && (
+    {/* Impact Curves Modal - hidden for now */}
+    {/* {showImpactCurves && (
       <ImpactCurveModal
         onClose={() => setShowImpactCurves(false)}
         initialClimate={selectedClimate}
       />
-    )}
+    )} */}
     </>
   );
 }
