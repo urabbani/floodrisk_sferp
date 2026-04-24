@@ -216,7 +216,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
         </CardContent>
       </Card>
 
-      {/* District Details */}
+      {/* District Details - Bar Chart */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">District Breakdown</CardTitle>
@@ -225,46 +225,54 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {sortedDistricts.map((district) => (
-              <div
-                key={district.district}
-                className="border rounded-lg p-4 space-y-2"
-                style={{ borderColor: RISK_LEVEL_COLORS[district.fatalityRiskLevel] }}
-              >
-                <div className="flex justify-between items-start">
-                  <h4 className="font-medium">{district.district}</h4>
-                  <Badge
-                    variant="outline"
-                    style={{ backgroundColor: RISK_LEVEL_COLORS[district.fatalityRiskLevel] }}
-                  >
-                    {RISK_LEVEL_LABELS[district.fatalityRiskLevel]}
-                  </Badge>
-                </div>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Affected:</span>
-                    <span>{Math.round(district.affectedPopulation).toLocaleString()}</span>
+          <div className="space-y-4">
+            {sortedDistricts.map((district) => {
+              const fatalities = district.estimatedFatalities.moderate;
+              const maxFatalities = sortedDistricts[0]?.estimatedFatalities.moderate || 1;
+              const barWidth = (fatalities / maxFatalities) * 100;
+              const riskColor = RISK_LEVEL_COLORS[district.fatalityRiskLevel];
+
+              return (
+                <div key={district.district} className="space-y-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="font-medium w-28">{district.district}</span>
+                      <div className="flex-1 bg-muted rounded-full h-7 overflow-hidden relative">
+                        <div
+                          className="h-full transition-all duration-300"
+                          style={{ width: `${barWidth}%`, backgroundColor: riskColor }}
+                        />
+                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white drop-shadow-sm">
+                          {formatModerateEstimate(district.estimatedFatalities)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 ml-4 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="text-xs"
+                        style={{ backgroundColor: riskColor }}
+                      >
+                        {RISK_LEVEL_LABELS[district.fatalityRiskLevel]}
+                      </Badge>
+                      <span className="text-muted-foreground">
+                        {Math.round(district.affectedPopulation).toLocaleString()} affected
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Fatalities:</span>
-                    <span className="font-medium text-red-600">
-                      {formatModerateEstimate(district.estimatedFatalities)}
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Legend */}
           <div className="mt-6 pt-4 border-t">
-            <div className="flex items-center gap-2 text-sm flex-wrap">
+            <div className="flex items-center gap-3 text-sm">
               <span className="font-medium">Risk Level:</span>
               {Object.entries(RISK_LEVEL_LABELS).map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1">
                   <div
-                    className="w-4 h-4 border"
+                    className="w-4 h-4 border rounded-sm"
                     style={{ backgroundColor: RISK_LEVEL_COLORS[key as RiskLevel] }}
                   />
                   <span>{label}</span>
