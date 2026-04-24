@@ -167,6 +167,8 @@ export function RiskDashboard({
               <Calculator className="w-3.5 h-3.5 mr-1" />
               EAD
             </Button>
+            {/* Population Risk tab - temporarily hidden for debugging */}
+            {/*
             <Button
               variant={currentView === 'population' ? 'default' : 'ghost'}
               size="sm"
@@ -176,6 +178,7 @@ export function RiskDashboard({
               <Users className="w-3.5 h-3.5 mr-1" />
               Population
             </Button>
+            */}
           </div>
         </div>
       </div>
