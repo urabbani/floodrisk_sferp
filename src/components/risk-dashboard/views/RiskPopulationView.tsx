@@ -78,7 +78,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
     const result: Record<string, { value: number; level: RiskLevel }> = {};
     selectedScenario.districtBreakdown.forEach((district) => {
       result[district.district] = {
-        value: district.estimatedFatalities.moderate,
+        value: Math.round(district.estimatedFatalities.moderate),
         level: district.fatalityRiskLevel,
       };
     });
@@ -194,7 +194,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
               <div className="ml-auto flex gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Affected Population:</span>{' '}
-                  <span className="font-medium">{totalCasualties.affectedPopulation.toLocaleString()}</span>
+                  <span className="font-medium">{Math.round(totalCasualties.affectedPopulation).toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Fatalities:</span>{' '}
@@ -244,7 +244,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Affected:</span>
-                    <span>{district.affectedPopulation.toLocaleString()}</span>
+                    <span>{Math.round(district.affectedPopulation).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Fatalities:</span>

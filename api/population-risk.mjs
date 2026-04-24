@@ -165,12 +165,12 @@ router.get('/', async (req, res) => {
 
       // Build depth bins object
       const depthBins = {
-        '15-100cm': parseFloat(row.depth_15_100cm) || 0,
-        '1-2m': parseFloat(row.depth_1_2m) || 0,
-        '2-3m': parseFloat(row.depth_2_3m) || 0,
-        '3-4m': parseFloat(row.depth_3_4m) || 0,
-        '4-5m': parseFloat(row.depth_4_5m) || 0,
-        'above5m': parseFloat(row.depth_above5m) || 0,
+        '15-100cm': Math.round(parseFloat(row.depth_15_100cm) || 0),
+        '1-2m': Math.round(parseFloat(row.depth_1_2m) || 0),
+        '2-3m': Math.round(parseFloat(row.depth_2_3m) || 0),
+        '3-4m': Math.round(parseFloat(row.depth_3_4m) || 0),
+        '4-5m': Math.round(parseFloat(row.depth_4_5m) || 0),
+        'above5m': Math.round(parseFloat(row.depth_above5m) || 0),
       };
 
       // Process district breakdown
@@ -192,7 +192,7 @@ router.get('/', async (req, res) => {
 
         districtBreakdown.push({
           district,
-          affectedPopulation: parseFloat(districtData.affected_population) || 0,
+          affectedPopulation: Math.round(parseFloat(districtData.affected_population) || 0),
           fatalityRiskLevel: districtCasualties.fatalityRiskLevel,
           injuryRiskLevel: districtCasualties.injuryRiskLevel,
           estimatedFatalities: districtCasualties.fatalities,
@@ -206,7 +206,7 @@ router.get('/', async (req, res) => {
         climate: row.climate,
         maintenance: row.maintenance,
         returnPeriod: row.return_period,
-        totalAffectedPopulation: parseFloat(row.total_affected_population) || 0,
+        totalAffectedPopulation: Math.round(parseFloat(row.total_affected_population) || 0),
         depthBins,
         casualtyEstimate: {
           ...casualtyEstimate,
