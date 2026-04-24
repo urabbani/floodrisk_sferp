@@ -160,39 +160,72 @@ router.get('/', async (req, res) => {
     // Process results
     const scenarios = [];
     for (const row of result.rows) {
+      // pg returns numeric columns as strings — parse them for the estimator
+      const numericKeys = Object.keys(row).filter(
+        (k) => !['id', 'scenario_name', 'climate', 'maintenance', 'return_period', 'district_stats', 'source_file', 'created_at', 'updated_at'].includes(k)
+      );
+      const parsedRow = { ...row };
+      for (const key of numericKeys) {
+        if (typeof parsedRow[key] === 'string') {
+          parsedRow[key] = parseFloat(parsedRow[key]);
+        }
+      }
+
       // Calculate casualties for the scenario
-      const casualtyEstimate = casualtyEstimator.calculateScenarioCasualties(row);
+      const casualtyEstimate = casualtyEstimator.calculateScenarioCasualties(parsedRow);
 
       // Build depth bins object
       const depthBins = {
-        '15-100cm': Math.round(parseFloat(row.depth_15_100cm) || 0),
-        '1-2m': Math.round(parseFloat(row.depth_1_2m) || 0),
-        '2-3m': Math.round(parseFloat(row.depth_2_3m) || 0),
-        '3-4m': Math.round(parseFloat(row.depth_3_4m) || 0),
-        '4-5m': Math.round(parseFloat(row.depth_4_5m) || 0),
-        'above5m': Math.round(parseFloat(row.depth_above5m) || 0),
+        '15-100cm': Math.round(parsedRow.depth_15_100cm || 0),
+        '1-2m': Math.round(parsedRow.depth_1_2m || 0),
+        '2-3m': Math.round(parsedRow.depth_2_3m || 0),
+        '3-4m': Math.round(parsedRow.depth_3_4m || 0),
+        '4-5m': Math.round(parsedRow.depth_4_5m || 0),
+        'above5m': Math.round(parsedRow.depth_above5m || 0),
       };
 
       // Process district breakdown
       const districtBreakdown = [];
-      const districtStats = row.district_stats || {};
+      const districtStats = parsedRow.district_stats || {};
 
       for (const district of ACTIVE_DISTRICTS) {
         const districtData = districtStats[district];
         if (!districtData) {
-          // District not in data - skip or add with zeros
           continue;
         }
 
-        // Calculate casualties for this district
+        // Ensure district numeric values are numbers (JSONB may store strings)
+        const parsedDistrict = {
+          affected_population: parseFloat(districtData.affected_population) || 0,
+          vh_exceed_population: parseFloat(districtData.vh_exceed_population) || 0,
+          depth_bins: {},
+          depth_velocity_cross: {},
+          depth_duration_cross: {},
+        };
+        for (const [dk, dv] of Object.entries(districtData.depth_bins || {})) {
+          parsedDistrict.depth_bins[dk] = parseFloat(dv) || 0;
+        }
+        for (const [dk, dv] of Object.entries(districtData.depth_velocity_cross || {})) {
+          parsedDistrict.depth_velocity_cross[dk] = {};
+          for (const [vk, vv] of Object.entries(dv)) {
+            parsedDistrict.depth_velocity_cross[dk][vk] = parseFloat(vv) || 0;
+          }
+        }
+        for (const [dk, dv] of Object.entries(districtData.depth_duration_cross || {})) {
+          parsedDistrict.depth_duration_cross[dk] = {};
+          for (const [vk, vv] of Object.entries(dv)) {
+            parsedDistrict.depth_duration_cross[dk][vk] = parseFloat(vv) || 0;
+          }
+        }
+
         const districtCasualties = casualtyEstimator.calculateDistrictCasualties(
-          districtData,
-          parseFloat(row.vh_exceed_population) || 0
+          parsedDistrict,
+          parsedRow.vh_exceed_population || 0
         );
 
         districtBreakdown.push({
           district,
-          affectedPopulation: Math.round(parseFloat(districtData.affected_population) || 0),
+          affectedPopulation: Math.round(parsedDistrict.affected_population),
           fatalityRiskLevel: districtCasualties.fatalityRiskLevel,
           injuryRiskLevel: districtCasualties.injuryRiskLevel,
           estimatedFatalities: districtCasualties.fatalities,
@@ -202,11 +235,11 @@ router.get('/', async (req, res) => {
 
       // Build scenario object
       scenarios.push({
-        scenarioName: row.scenario_name,
-        climate: row.climate,
-        maintenance: row.maintenance,
-        returnPeriod: row.return_period,
-        totalAffectedPopulation: Math.round(parseFloat(row.total_affected_population) || 0),
+        scenarioName: parsedRow.scenario_name,
+        climate: parsedRow.climate,
+        maintenance: parsedRow.maintenance,
+        returnPeriod: parsedRow.return_period,
+        totalAffectedPopulation: Math.round(parsedRow.total_affected_population || 0),
         depthBins,
         casualtyEstimate: {
           ...casualtyEstimate,

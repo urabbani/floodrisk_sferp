@@ -365,14 +365,14 @@ function calculateScenarioCasualties(scenarioData) {
             depthBin,
             velocityClass: velClass,
             durationModifier,
-            isVhExceed: vhExceed > 0,
+            isVhExceed: false,
           })
         );
       }
     }
   }
 
-  // Add V×h exceedance casualties (separate calculation)
+  // Add V×h exceedance casualties — only the V×h exceed population gets the high rate
   if (vhExceed > 0) {
     segmentCasualties.push(
       calculateSegmentCasualties({
