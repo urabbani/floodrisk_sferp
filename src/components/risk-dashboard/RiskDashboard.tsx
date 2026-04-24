@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp } from 'lucide-react';
+import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
@@ -10,6 +10,7 @@ import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
 import { RiskEadView } from './views/RiskEadView';
+import { RiskPopulationView } from './views/RiskPopulationView';
 import { RiskCurveModal } from './components/RiskCurveModal';
 
 const MODE = 'Dmg' as const;
@@ -166,6 +167,15 @@ export function RiskDashboard({
               <Calculator className="w-3.5 h-3.5 mr-1" />
               EAD
             </Button>
+            <Button
+              variant={currentView === 'population' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('population')}
+              className="text-sm h-8"
+            >
+              <Users className="w-3.5 h-3.5 mr-1" />
+              Population
+            </Button>
           </div>
         </div>
       </div>
@@ -272,6 +282,11 @@ export function RiskDashboard({
             climate={selectedClimate}
             onChoroplethData={onChoroplethData}
           />
+        )}
+
+        {/* Population Risk View */}
+        {currentView === 'population' && !isLoading && !error && (
+          <RiskPopulationView climate={selectedClimate} />
         )}
       </div>
 

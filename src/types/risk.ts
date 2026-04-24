@@ -84,7 +84,7 @@ export type RiskJsonData = {
   districts: string[];
 };
 
-export type RiskView = 'summary' | 'district' | 'spatial' | 'ead';
+export type RiskView = 'summary' | 'district' | 'spatial' | 'ead' | 'population';
 
 /**
  * 7 districts in Sindh Province (Naushahro Feroze and Shaheed Benazirabad excluded)

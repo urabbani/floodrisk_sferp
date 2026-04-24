@@ -17,6 +17,7 @@ import pool from './db.mjs';
 import cors from 'cors';
 import annotationsRouter from './annotations.mjs';
 import authRouter from './auth.mjs';
+import populationRiskRouter from './population-risk.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -693,6 +694,9 @@ app.use('/api/annotations', annotationsRouter);
 // Mount auth router
 app.use('/api/auth', authRouter);
 
+// Mount population risk router
+app.use('/api/population-risk', populationRiskRouter);
+
 /**
  * Start server
  */
@@ -703,6 +707,7 @@ app.listen(PORT, () => {
   console.log(`Impact summary: http://localhost:${PORT}/api/impact/summary?climate=present`);
   console.log(`Cache stats: http://localhost:${PORT}/api/cache/stats`);
   console.log(`Annotations API: http://localhost:${PORT}/api/annotations`);
+  console.log(`Population Risk API: http://localhost:${PORT}/api/population-risk?climate=present`);
 });
 
 /**
