@@ -192,12 +192,22 @@ function calculateSegmentCasualties({
  * Sum casualty ranges
  */
 function sumCasualtyRanges(ranges) {
+  if (!ranges || ranges.length === 0) {
+    return { low: 0, moderate: 0, high: 0 };
+  }
+
   return ranges.reduce(
-    (sum, range) => ({
-      low: sum.low + range.fatalities.low,
-      moderate: sum.moderate + range.fatalities.moderate,
-      high: sum.high + range.fatalities.high,
-    }),
+    (sum, range) => {
+      const fatalities = range?.fatalities;
+      if (!fatalities) {
+        return sum;
+      }
+      return {
+        low: (sum.low || 0) + (fatalities.low || 0),
+        moderate: (sum.moderate || 0) + (fatalities.moderate || 0),
+        high: (sum.high || 0) + (fatalities.high || 0),
+      };
+    },
     { low: 0, moderate: 0, high: 0 }
   );
 }
@@ -486,9 +496,12 @@ function calculateDistrictCasualties(districtData, scenarioVhExceed) {
 
   if (depth_velocity_cross) {
     Object.entries(depth_velocity_cross).forEach(([depthKey, velocities]) => {
-      const depthPrefix = depthKey.replace('-', '').replace('m', '').replace('cm', '').replace('above', 'above5');
+      // Convert depth key from JSONB format (1-2m) to column format (1_2m)
+      const depthKeyNormalized = depthKey.replace('-', '_');
       Object.entries(velocities).forEach(([velKey, value]) => {
-        const colName = `vel_${velKey}_depth_${depthKey}`;
+        // Remove v_ prefix from velKey if present (v_low -> low)
+        const velShort = velKey.replace('v_', '');
+        const colName = `vel_${velShort}_depth_${depthKeyNormalized}`;
         scenarioLikeData[colName] = value;
       });
     });
@@ -496,8 +509,12 @@ function calculateDistrictCasualties(districtData, scenarioVhExceed) {
 
   if (depth_duration_cross) {
     Object.entries(depth_duration_cross).forEach(([depthKey, durations]) => {
+      // Convert depth key from JSONB format (1-2m) to column format (1_2m)
+      const depthKeyNormalized = depthKey.replace('-', '_');
       Object.entries(durations).forEach(([durKey, value]) => {
-        const colName = `dur_${durKey}_depth_${depthKey}`;
+        // Remove d_ prefix from durKey if present (d_short -> short)
+        const durShort = durKey.replace('d_', '');
+        const colName = `dur_${durShort}_depth_${depthKeyNormalized}`;
         scenarioLikeData[colName] = value;
       });
     });
