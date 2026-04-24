@@ -9,7 +9,7 @@ import { FeaturePopup } from '@/components/popups/FeaturePopup';
 import { SwipeCompare } from '@/components/swipe/SwipeCompare';
 import { ImpactMatrix } from '@/components/impact-matrix';
 import { RiskDashboard } from '@/components/risk-dashboard';
-import type { RiskView, DistrictName } from '@/types/risk';
+import type { RiskView, DistrictName, RiskMode } from '@/types/risk';
 import { useChoroplethLayer } from '@/components/risk-dashboard/hooks/useChoroplethLayer';
 import { InterventionPanel } from '@/components/annotations/InterventionPanel';
 import { InterventionDialog } from '@/components/annotations/InterventionDialog';
@@ -121,13 +121,14 @@ function App() {
   const choroplethValues = choroplethData ? Object.values(choroplethData).filter((v) => v > 0) : [];
   const choroplethMin = choroplethValues.length > 0 ? Math.min(...choroplethValues) : 0;
   const choroplethMax = choroplethValues.length > 0 ? Math.max(...choroplethValues) : 0;
+  const choroplethMode = currentRiskView === 'population' ? ('Pop' as RiskMode) : 'Dmg';
   useChoroplethLayer({
     map,
     data: choroplethData,
     min: choroplethMin,
     max: choroplethMax,
-    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead'),
-    mode: 'Dmg',
+    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'population'),
+    mode: choroplethMode,
   });
 
   // Handle login dialog events from header

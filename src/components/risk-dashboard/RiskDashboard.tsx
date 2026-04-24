@@ -80,9 +80,9 @@ export function RiskDashboard({
     onChoroplethData?.(choroplethData);
   }, [choroplethData, onChoroplethData]);
 
-  // Clean up choropleth when leaving spatial/ead view
+  // Clean up choropleth when leaving spatial/ead/population view
   useEffect(() => {
-    if (currentView !== 'spatial' && currentView !== 'ead') {
+    if (currentView !== 'spatial' && currentView !== 'ead' && currentView !== 'population') {
       onChoroplethData?.(null);
     }
   }, [currentView, onChoroplethData]);
@@ -167,8 +167,6 @@ export function RiskDashboard({
               <Calculator className="w-3.5 h-3.5 mr-1" />
               EAD
             </Button>
-            {/* Population Risk tab - temporarily hidden for debugging */}
-            {/*
             <Button
               variant={currentView === 'population' ? 'default' : 'ghost'}
               size="sm"
@@ -178,7 +176,6 @@ export function RiskDashboard({
               <Users className="w-3.5 h-3.5 mr-1" />
               Population
             </Button>
-            */}
           </div>
         </div>
       </div>

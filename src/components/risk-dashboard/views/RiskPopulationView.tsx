@@ -1,11 +1,11 @@
 /**
- * Population Risk (Casualty Estimation) View - Spatial Heatmap
+ * Population Risk (Casualty Estimation) View
  *
- * District-level choropleth map showing fatality risk with maintenance
- * and return period controls.
+ * Shows fatality/injury estimates by district with depth distribution charts,
+ * summary cards, and choropleth map integration.
  */
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -15,6 +15,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import usePopulationRisk from '@/hooks/usePopulationRisk';
 import type {
   PopulationRiskScenario,
@@ -26,16 +36,16 @@ import {
   RISK_LEVEL_LABELS,
   formatCasualtyRange,
   formatModerateEstimate,
-  getRiskLevelFromFatalities,
+  DEPTH_BINS,
+  type DepthBinRange,
 } from '@/types/casualty';
-import { POPULATION_RISK_DISTRICTS } from '@/types/casualty';
+import type { DistrictName } from '@/types/risk';
 
 interface RiskPopulationViewProps {
   climate: 'present' | 'future';
-  onChoroplethData?: (data: Record<string, { value: number; level: RiskLevel }>) => void;
+  onChoroplethData?: (data: Record<DistrictName, number> | null) => void;
 }
 
-// Return period options
 const RETURN_PERIODS = [
   { value: '2.3', label: '2.3 years' },
   { value: '5', label: '5 years' },
@@ -46,83 +56,138 @@ const RETURN_PERIODS = [
   { value: '500', label: '500 years' },
 ];
 
-// Maintenance options
 const MAINTENANCE_LEVELS = [
   { value: 'perfect', label: 'Perfect' },
   { value: 'breaches', label: 'Breaches' },
   { value: 'redcapacity', label: 'Reduced Capacity' },
 ];
 
+const DEPTH_BIN_COLORS: Record<DepthBinRange, string> = {
+  '15-100cm': '#93c5fd',
+  '1-2m': '#60a5fa',
+  '2-3m': '#f59e0b',
+  '3-4m': '#f97316',
+  '4-5m': '#ef4444',
+  'above5m': '#7f1d1d',
+};
+
+function DepthTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+      <p className="font-medium text-slate-800 mb-1">{payload[0]?.payload?.range}</p>
+      <div className="flex items-center gap-2">
+        <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: payload[0]?.payload?.fill }} />
+        <span className="text-slate-600">Population:</span>
+        <span className="font-medium">{Math.round(payload[0]?.value ?? 0).toLocaleString()}</span>
+      </div>
+    </div>
+  );
+}
+
+function DistrictTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  const data = payload[0]?.payload;
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm max-w-xs">
+      <p className="font-semibold text-slate-800 mb-1">{label}</p>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-slate-600">Affected Population:</span>
+          <span className="font-medium">{Math.round(data?.affected ?? 0).toLocaleString()}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-slate-600">Est. Fatalities:</span>
+          <span className="font-medium text-red-600">{data?.fatalityRange ?? '0'}</span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-slate-600">Est. Injuries:</span>
+          <span className="font-medium text-orange-600">{data?.injuryRange ?? '0'}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulationViewProps) {
-  // Filters
   const [selectedReturnPeriod, setSelectedReturnPeriod] = useState<string>('25');
   const [selectedMaintenance, setSelectedMaintenance] = useState<string>('breaches');
 
-  // Fetch population risk data
   const { data: scenarios, loading, error } = usePopulationRisk({
     climate,
     maintenance: selectedMaintenance as any,
     returnPeriod: selectedReturnPeriod as any,
   });
 
-  // Find the selected scenario
   const selectedScenario = useMemo(() => {
     if (!scenarios || scenarios.length === 0) return null;
-    return scenarios[0]; // API returns single scenario when filtered
+    return scenarios[0];
   }, [scenarios]);
 
-  // Build choropleth data for map
-  const choroplethData = useMemo(() => {
-    if (!selectedScenario) return null;
-
-    const result: Record<string, { value: number; level: RiskLevel }> = {};
-    selectedScenario.districtBreakdown.forEach((district) => {
-      result[district.district] = {
-        value: Math.round(district.estimatedFatalities.moderate),
-        level: district.fatalityRiskLevel,
-      };
-    });
-    return result;
-  }, [selectedScenario]);
-
-  // Push choropleth data to parent (for map display)
+  // Push district fatality counts as choropleth data
   useEffect(() => {
-    if (onChoroplethData && choroplethData) {
-      onChoroplethData(choroplethData);
-    }
-  }, [choroplethData, onChoroplethData]);
+    if (!selectedScenario || !onChoroplethData) return;
 
-  // Clean up when unmounting
+    const result = {} as Record<DistrictName, number>;
+    selectedScenario.districtBreakdown.forEach((d) => {
+      result[d.district as DistrictName] = Math.round(d.estimatedFatalities.moderate);
+    });
+    onChoroplethData(result);
+  }, [selectedScenario, onChoroplethData]);
+
+  // Clean up choropleth on unmount
   useEffect(() => {
     return () => {
       onChoroplethData?.(null);
     };
   }, [onChoroplethData]);
 
-  // Calculate total casualties for the scenario
-  const totalCasualties = useMemo(() => {
-    if (!selectedScenario) return null;
-    return {
-      fatalities: selectedScenario.casualtyEstimate.fatalities,
-      injuries: selectedScenario.casualtyEstimate.injuries,
-      affectedPopulation: selectedScenario.totalAffectedPopulation,
-      fatalityRiskLevel: selectedScenario.casualtyEstimate.fatalityRiskLevel,
-      injuryRiskLevel: selectedScenario.casualtyEstimate.injuryRiskLevel,
-    };
+  // Depth distribution chart data
+  const depthChartData = useMemo(() => {
+    if (!selectedScenario) return [];
+    return DEPTH_BINS.map((bin) => ({
+      range: bin,
+      population: selectedScenario.depthBins[bin] ?? 0,
+      fill: DEPTH_BIN_COLORS[bin],
+    }));
   }, [selectedScenario]);
 
-  // Get sorted districts for the list
-  const sortedDistricts = useMemo(() => {
+  // District bar chart data (sorted by fatalities descending)
+  const districtChartData = useMemo(() => {
     if (!selectedScenario) return [];
-    return [...selectedScenario.districtBreakdown].sort(
-      (a, b) => b.estimatedFatalities.moderate - a.estimatedFatalities.moderate
-    );
+    return [...selectedScenario.districtBreakdown]
+      .sort((a, b) => b.estimatedFatalities.moderate - a.estimatedFatalities.moderate)
+      .map((d) => ({
+        district: d.district,
+        fatalities: Math.round(d.estimatedFatalities.moderate),
+        affected: d.affectedPopulation,
+        riskLevel: d.fatalityRiskLevel,
+        fatalityRange: formatCasualtyRange(d.estimatedFatalities),
+        injuryRange: formatCasualtyRange(d.estimatedInjuries),
+      }));
+  }, [selectedScenario]);
+
+  // Summary totals
+  const summary = useMemo(() => {
+    if (!selectedScenario) return null;
+    const ce = selectedScenario.casualtyEstimate;
+    return {
+      affected: selectedScenario.totalAffectedPopulation,
+      fatalities: ce.fatalities,
+      injuries: ce.injuries,
+      fatalityRiskLevel: ce.fatalityRiskLevel,
+      injuryRiskLevel: ce.injuryRiskLevel,
+      keyDrivers: ce.keyDrivers,
+    };
   }, [selectedScenario]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading population risk data...</div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-slate-600">Loading population risk data...</p>
+        </div>
       </div>
     );
   }
@@ -130,7 +195,10 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-destructive">Error: {error}</div>
+        <div className="text-center">
+          <p className="text-red-600 font-medium mb-1">Error Loading Data</p>
+          <p className="text-sm text-slate-600">{error}</p>
+        </div>
       </div>
     );
   }
@@ -138,28 +206,32 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
   if (!selectedScenario) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">No data available for selected scenario</div>
+        <div className="text-center">
+          <p className="text-slate-500">No data available for selected scenario</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {selectedReturnPeriod}yr {selectedMaintenance} ({climate})
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Controls Card */}
+    <div className="space-y-4 p-1">
+      {/* Controls */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Population Risk (Casualty Estimation)</CardTitle>
+          <CardTitle className="text-lg">Casualty Estimation</CardTitle>
           <CardDescription>
-            Semi-quantitative fatality estimation based on depth × velocity mortality factors
+            Semi-quantitative fatality estimation using depth &times; velocity mortality factors
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6 items-end">
-            {/* Return Period Selector */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Return Period</label>
               <Select value={selectedReturnPeriod} onValueChange={setSelectedReturnPeriod}>
-                <SelectTrigger className="w-40">
+                <SelectTrigger className="w-36">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -171,12 +243,10 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Maintenance Selector */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-medium">Maintenance</label>
               <Select value={selectedMaintenance} onValueChange={setSelectedMaintenance}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-44">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -188,94 +258,203 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 </SelectContent>
               </Select>
             </div>
-
-            {/* Scenario Summary */}
-            {totalCasualties && (
-              <div className="ml-auto flex gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Affected Population:</span>{' '}
-                  <span className="font-medium">{Math.round(totalCasualties.affectedPopulation).toLocaleString()}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Fatalities:</span>{' '}
-                  <span className="font-medium text-red-600">
-                    {formatCasualtyRange(totalCasualties.fatalities)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Risk Level:</span>{' '}
-                  <Badge
-                    style={{ backgroundColor: RISK_LEVEL_COLORS[totalCasualties.fatalityRiskLevel] }}
-                  >
-                    {RISK_LEVEL_LABELS[totalCasualties.fatalityRiskLevel]}
-                  </Badge>
-                </div>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* District Details - Bar Chart */}
+      {/* Summary Cards */}
+      {summary && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Affected Population */}
+          <Card>
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground mb-1">Affected Population</p>
+              <p className="text-xl font-bold text-slate-900">
+                {Math.round(summary.affected).toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                people in flood zone
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Fatalities */}
+          <Card>
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground mb-1">Estimated Fatalities</p>
+              <p className="text-xl font-bold text-red-600">
+                {formatCasualtyRange(summary.fatalities)}
+              </p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <Badge
+                  className="text-[10px] px-1.5 py-0"
+                  style={{ backgroundColor: RISK_LEVEL_COLORS[summary.fatalityRiskLevel], color: '#fff' }}
+                >
+                  {RISK_LEVEL_LABELS[summary.fatalityRiskLevel]}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Injuries */}
+          <Card>
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground mb-1">Estimated Injuries</p>
+              <p className="text-xl font-bold text-orange-600">
+                {formatCasualtyRange(summary.injuries)}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                approx. 3&times; fatalities
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Risk Level */}
+          <Card>
+            <CardContent className="pt-4 pb-3">
+              <p className="text-xs text-muted-foreground mb-1">Overall Risk Level</p>
+              <Badge
+                className="text-sm px-3 py-1 mt-1"
+                style={{ backgroundColor: RISK_LEVEL_COLORS[summary.fatalityRiskLevel], color: '#fff' }}
+              >
+                {RISK_LEVEL_LABELS[summary.fatalityRiskLevel]}
+              </Badge>
+              {summary.keyDrivers.length > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
+                  {summary.keyDrivers.join('. ')}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Depth Distribution Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">District Breakdown</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Population by Flood Depth</CardTitle>
+          <CardDescription>
+            Distribution of affected population across depth zones
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={depthChartData} margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis
+                dataKey="range"
+                tick={{ fontSize: 11 }}
+                interval={0}
+              />
+              <YAxis
+                type="number"
+                tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip content={<DepthTooltip />} />
+              <Bar dataKey="population" radius={[4, 4, 0, 0]}>
+                {depthChartData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="flex items-center justify-center gap-3 mt-2 text-xs">
+            {DEPTH_BINS.map((bin) => (
+              <div key={bin} className="flex items-center gap-1">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: DEPTH_BIN_COLORS[bin] }} />
+                <span className="text-slate-500">{bin}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* District Breakdown */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">District Fatalities</CardTitle>
           <CardDescription>
             Estimated fatalities by district ({selectedReturnPeriod}yr, {selectedMaintenance})
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {sortedDistricts.map((district) => {
-              const fatalities = district.estimatedFatalities.moderate;
-              const maxFatalities = sortedDistricts[0]?.estimatedFatalities.moderate || 1;
-              const barWidth = (fatalities / maxFatalities) * 100;
-              const riskColor = RISK_LEVEL_COLORS[district.fatalityRiskLevel];
+          <ResponsiveContainer width="100%" height={Math.max(250, districtChartData.length * 45)}>
+            <BarChart
+              data={districtChartData}
+              layout="vertical"
+              margin={{ left: 20, right: 30, top: 5, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+              <XAxis type="number" tick={{ fontSize: 11 }} />
+              <YAxis
+                type="category"
+                dataKey="district"
+                width={120}
+                tick={{ fontSize: 11 }}
+              />
+              <Tooltip content={<DistrictTooltip />} />
+              <Bar dataKey="fatalities" radius={[0, 4, 4, 0]}>
+                {districtChartData.map((entry, idx) => (
+                  <Cell
+                    key={idx}
+                    fill={RISK_LEVEL_COLORS[entry.riskLevel]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
 
-              return (
-                <div key={district.district} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="font-medium w-28">{district.district}</span>
-                      <div className="flex-1 bg-muted rounded-full h-7 overflow-hidden relative">
-                        <div
-                          className="h-full transition-all duration-300"
-                          style={{ width: `${barWidth}%`, backgroundColor: riskColor }}
-                        />
-                        <span className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-white drop-shadow-sm">
-                          {formatModerateEstimate(district.estimatedFatalities)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 ml-4 text-xs">
+          {/* District table */}
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 text-left">
+                  <th className="pb-2 pr-3 font-medium text-slate-600">District</th>
+                  <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Affected</th>
+                  <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Fatalities</th>
+                  <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Injuries</th>
+                  <th className="pb-2 font-medium text-slate-600 text-center">Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                {districtChartData.map((d) => (
+                  <tr key={d.district} className="border-b border-slate-100">
+                    <td className="py-2 pr-3 font-medium">{d.district}</td>
+                    <td className="py-2 pr-3 text-right text-slate-600">
+                      {Math.round(d.affected).toLocaleString()}
+                    </td>
+                    <td className="py-2 pr-3 text-right text-red-600 font-medium">
+                      {d.fatalityRange}
+                    </td>
+                    <td className="py-2 pr-3 text-right text-orange-600 font-medium">
+                      {d.injuryRange}
+                    </td>
+                    <td className="py-2 text-center">
                       <Badge
-                        variant="outline"
-                        className="text-xs"
-                        style={{ backgroundColor: riskColor }}
+                        className="text-[10px] px-1.5 py-0"
+                        style={{ backgroundColor: RISK_LEVEL_COLORS[d.riskLevel], color: '#fff' }}
                       >
-                        {RISK_LEVEL_LABELS[district.fatalityRiskLevel]}
+                        {RISK_LEVEL_LABELS[d.riskLevel]}
                       </Badge>
-                      <span className="text-muted-foreground">
-                        {Math.round(district.affectedPopulation).toLocaleString()} affected
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {/* Legend */}
-          <div className="mt-6 pt-4 border-t">
-            <div className="flex items-center gap-3 text-sm">
-              <span className="font-medium">Risk Level:</span>
-              {Object.entries(RISK_LEVEL_LABELS).map(([key, label]) => (
+          <div className="mt-4 pt-3 border-t border-slate-200">
+            <div className="flex items-center gap-3 text-xs flex-wrap">
+              <span className="font-medium text-slate-600">Risk Level:</span>
+              {(Object.entries(RISK_LEVEL_LABELS) as [RiskLevel, string][]).map(([key, label]) => (
                 <div key={key} className="flex items-center gap-1">
                   <div
-                    className="w-4 h-4 border rounded-sm"
-                    style={{ backgroundColor: RISK_LEVEL_COLORS[key as RiskLevel] }}
+                    className="w-3 h-3 rounded-sm"
+                    style={{ backgroundColor: RISK_LEVEL_COLORS[key] }}
                   />
-                  <span>{label}</span>
+                  <span className="text-slate-600">{label}</span>
                 </div>
               ))}
             </div>
@@ -283,15 +462,15 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
         </CardContent>
       </Card>
 
-      {/* Methodology Note */}
+      {/* Methodology */}
       <Card>
         <CardContent className="pt-4">
-          <p className="text-xs text-muted-foreground">
-            <strong>Methodology:</strong> Casualty estimates use depth × velocity mortality factors from
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            <strong>Methodology:</strong> Casualty estimates use depth &times; velocity mortality factors from
             Jonkman et al. (2008), USBR RCEM, and Defra FD2321. Low, moderate, and high estimates
             reflect uncertainty in flood warning effectiveness and evacuation. Injuries estimated as
-            3× fatalities (international convention). V×h &gt; 1.5 m²/s threshold indicates hazardous
-            conditions for stability.
+            3&times; fatalities (international convention). V&times;h &gt; 1.5 m&sup2;/s threshold indicates
+            hazardous conditions for stability. Map choropleth shows moderate fatality estimate per district.
           </p>
         </CardContent>
       </Card>

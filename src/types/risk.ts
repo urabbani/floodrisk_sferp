@@ -4,7 +4,7 @@
 /**
  * Risk analysis mode: Exposure → Vulnerability → Damage
  */
-export type RiskMode = 'Exp' | 'Vul' | 'Dmg';
+export type RiskMode = 'Exp' | 'Vul' | 'Dmg' | 'Pop';
 
 /**
  * Asset types from the xlsx columns
@@ -50,6 +50,7 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
   Exp: 'Exposure',
   Vul: 'Vulnerability',
   Dmg: 'Economic Damage',
+  Pop: 'Population',
 };
 
 /**
@@ -155,7 +156,7 @@ export function formatRiskValue(value: number, mode: RiskMode): string {
     return `$${value.toFixed(0)}`;
   }
 
-  // Area/count values
+  // Area/count/population values
   if (value >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
   if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
@@ -175,6 +176,10 @@ export function formatRiskValueFull(value: number, mode: RiskMode): string {
     return `$${value.toFixed(0)}`;
   }
 
+  if (mode === 'Pop') {
+    return Math.round(value).toLocaleString();
+  }
+
   if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
   if (value >= 1e6) return `${(value / 1e6).toFixed(1)}M`;
   if (value >= 1e3) return `${(value / 1e3).toFixed(0)}K`;
@@ -189,6 +194,7 @@ export function getRiskUnitLabel(mode: RiskMode): string {
     case 'Exp': return 'Area (ha / sqm)';
     case 'Vul': return 'Vulnerable Area (ha / sqm)';
     case 'Dmg': return 'Economic Damage (USD)';
+    case 'Pop': return 'Estimated Fatalities';
   }
 }
 
