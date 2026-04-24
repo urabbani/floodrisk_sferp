@@ -286,7 +286,7 @@ export function RiskDashboard({
 
         {/* Population Risk View */}
         {currentView === 'population' && !isLoading && !error && (
-          <RiskPopulationView climate={selectedClimate} />
+          <RiskPopulationView climate={selectedClimate} onChoroplethData={onChoroplethData} />
         )}
       </div>
 

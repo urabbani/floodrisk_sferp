@@ -1,15 +1,13 @@
 /**
- * Population Risk (Casualty Estimation) View
+ * Population Risk (Casualty Estimation) View - Spatial Heatmap
  *
- * Provides semi-quantitative fatality and injury estimation for flood scenarios
- * based on depth × velocity mortality factors from established research.
+ * District-level choropleth map showing fatality risk with maintenance
+ * and return period controls.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -20,322 +18,106 @@ import {
 import usePopulationRisk from '@/hooks/usePopulationRisk';
 import type {
   PopulationRiskScenario,
+  PopulationRiskDistrict,
   RiskLevel,
-  CasualtyRange,
 } from '@/types/casualty';
 import {
   RISK_LEVEL_COLORS,
   RISK_LEVEL_LABELS,
   formatCasualtyRange,
   formatModerateEstimate,
-  DEPTH_BINS,
-  VELOCITY_CLASSES,
-  VELOCITY_CLASS_LABELS,
-  POPULATION_RISK_DISTRICTS,
+  getRiskLevelFromFatalities,
 } from '@/types/casualty';
+import { POPULATION_RISK_DISTRICTS } from '@/types/casualty';
 
 interface RiskPopulationViewProps {
   climate: 'present' | 'future';
+  onChoroplethData?: (data: Record<string, { value: number; level: RiskLevel }>) => void;
 }
 
-interface ViewModeProps {
-  scenarios: PopulationRiskScenario[];
-  climate: 'present' | 'future';
-  selectedScenario: PopulationRiskScenario | null;
-  onScenarioSelect: (scenario: PopulationRiskScenario) => void;
-}
+// Return period options
+const RETURN_PERIODS = [
+  { value: '2.3', label: '2.3 years' },
+  { value: '5', label: '5 years' },
+  { value: '10', label: '10 years' },
+  { value: '25', label: '25 years' },
+  { value: '50', label: '50 years' },
+  { value: '100', label: '100 years' },
+  { value: '500', label: '500 years' },
+];
 
-// ============================================================================
-// VIEW 1: Casualty Summary Matrix (Heatmap)
-// ============================================================================
+// Maintenance options
+const MAINTENANCE_LEVELS = [
+  { value: 'perfect', label: 'Perfect' },
+  { value: 'breaches', label: 'Breaches' },
+  { value: 'redcapacity', label: 'Reduced Capacity' },
+];
 
-function CasualtySummaryMatrix({ scenarios, climate, onScenarioSelect }: ViewModeProps) {
-  // Group scenarios by return period and maintenance
-  const matrixData = useMemo(() => {
-    const returnPeriods = ['2.3', '5', '10', '25', '50', '100', '500'];
-    const maintenanceLevels = ['perfect', 'breaches', 'redcapacity'] as const;
+export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulationViewProps) {
+  // Filters
+  const [selectedReturnPeriod, setSelectedReturnPeriod] = useState<string>('25');
+  const [selectedMaintenance, setSelectedMaintenance] = useState<string>('breaches');
 
-    return returnPeriods.map((rp) => ({
-      returnPeriod: rp,
-      maintenanceData: maintenanceLevels.map((maintenance) => {
-        const scenario = scenarios.find(
-          (s) => s.returnPeriod === rp && s.maintenance === maintenance
-        );
-        return {
-          maintenance,
-          scenario,
-        };
-      }),
-    }));
+  // Fetch population risk data
+  const { data: scenarios, loading, error } = usePopulationRisk({
+    climate,
+    maintenance: selectedMaintenance as any,
+    returnPeriod: selectedReturnPeriod as any,
+  });
+
+  // Find the selected scenario
+  const selectedScenario = useMemo(() => {
+    if (!scenarios || scenarios.length === 0) return null;
+    return scenarios[0]; // API returns single scenario when filtered
   }, [scenarios]);
 
-  const getRiskColor = (level: RiskLevel) => RISK_LEVEL_COLORS[level];
+  // Build choropleth data for map
+  const choroplethData = useMemo(() => {
+    if (!selectedScenario) return null;
 
-  return (
-    <div className="space-y-4">
-      <div className="text-sm text-muted-foreground">
-        Click any cell to view detailed scenario breakdown
-      </div>
+    const result: Record<string, { value: number; level: RiskLevel }> = {};
+    selectedScenario.districtBreakdown.forEach((district) => {
+      result[district.district] = {
+        value: district.estimatedFatalities.moderate,
+        level: district.fatalityRiskLevel,
+      };
+    });
+    return result;
+  }, [selectedScenario]);
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border p-2 text-left bg-muted">Return Period</th>
-              <th className="border p-2 text-center bg-muted">Perfect</th>
-              <th className="border p-2 text-center bg-muted">Breaches</th>
-              <th className="border p-2 text-center bg-muted">Reduced Capacity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {matrixData.map((row) => (
-              <tr key={row.returnPeriod}>
-                <td className="border p-2 font-medium">{row.returnPeriod} yrs</td>
-                {row.maintenanceData.map((cell) => {
-                  const scenario = cell.scenario;
-                  const riskLevel = scenario?.casualtyEstimate.fatalityRiskLevel || 'very_low';
-                  const fatalities = scenario?.casualtyEstimate.fatalities;
-                  const bgColor = getRiskColor(riskLevel);
+  // Push choropleth data to parent (for map display)
+  useEffect(() => {
+    if (onChoroplethData && choroplethData) {
+      onChoroplethData(choroplethData);
+    }
+  }, [choroplethData, onChoroplethData]);
 
-                  return (
-                    <td
-                      key={cell.maintenance}
-                      className="border p-2 text-center cursor-pointer hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: scenario ? bgColor : undefined }}
-                      onClick={() => scenario && onScenarioSelect(scenario)}
-                    >
-                      {scenario ? (
-                        <div>
-                          <div className="font-bold text-lg">
-                            {formatModerateEstimate(fatalities)}
-                          </div>
-                          <div className="text-xs uppercase">
-                            {RISK_LEVEL_LABELS[riskLevel]}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+  // Clean up when unmounting
+  useEffect(() => {
+    return () => {
+      onChoroplethData?.(null);
+    };
+  }, [onChoroplethData]);
 
-      {/* Legend */}
-      <div className="flex items-center gap-2 text-sm flex-wrap">
-        <span>Risk Level:</span>
-        {Object.entries(RISK_LEVEL_LABELS).map(([key, label]) => (
-          <div key={key} className="flex items-center gap-1">
-            <div
-              className="w-4 h-4 border"
-              style={{ backgroundColor: RISK_LEVEL_COLORS[key as RiskLevel] }}
-            />
-            <span>{label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+  // Calculate total casualties for the scenario
+  const totalCasualties = useMemo(() => {
+    if (!selectedScenario) return null;
+    return {
+      fatalities: selectedScenario.casualtyEstimate.fatalities,
+      injuries: selectedScenario.casualtyEstimate.injuries,
+      affectedPopulation: selectedScenario.totalAffectedPopulation,
+      fatalityRiskLevel: selectedScenario.casualtyEstimate.fatalityRiskLevel,
+      injuryRiskLevel: selectedScenario.casualtyEstimate.injuryRiskLevel,
+    };
+  }, [selectedScenario]);
 
-// ============================================================================
-// VIEW 2: Depth-Velocity Fatality Chart
-// ============================================================================
-
-function DepthVelocityChart({ scenarios, selectedScenario }: ViewModeProps) {
-  const scenario = selectedScenario || scenarios[0];
-
-  if (!scenario) {
-    return <div className="text-muted-foreground">No scenario selected</div>;
-  }
-
-  // For simplicity, showing a text-based representation
-  // In production, use Recharts or similar for proper stacked bar chart
-  const depthVelocityData = useMemo(() => {
-    // Reconstruct depth × velocity data from casualty estimates
-    // This is a simplified representation
-    return DEPTH_BINS.map((depthBin) => ({
-      depthBin,
-      fatalities: scenario.casualtyEstimate.fatalities.moderate / 6, // Rough distribution
-    }));
-  }, [scenario]);
-
-  return (
-    <div className="space-y-4">
-      <div className="text-sm text-muted-foreground">
-        Fatalities by depth bin for {scenario.returnPeriod}yr {scenario.maintenance} scenario
-      </div>
-
-      <div className="space-y-2">
-        {depthVelocityData.map((item) => (
-          <div key={item.depthBin} className="flex items-center gap-4">
-            <div className="w-24 text-sm">{item.depthBin}</div>
-            <div className="flex-1 bg-muted rounded-full h-8 overflow-hidden">
-              <div
-                className="h-full bg-red-500 flex items-center justify-end px-2 text-xs text-white font-medium"
-                style={{
-                  width: `${Math.min(
-                    (item.fatalities / (scenario.casualtyEstimate.fatalities.moderate || 1)) * 100,
-                    100
-                  )}%`,
-                }}
-              >
-                {item.fatalities > 0 && Math.round(item.fatalities)}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="text-xs text-muted-foreground">
-        Moderate estimate: {formatCasualtyRange(scenario.casualtyEstimate.fatalities)} fatalities
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// VIEW 3: District Comparison
-// ============================================================================
-
-function DistrictComparison({ scenarios, selectedScenario }: ViewModeProps) {
-  const scenario = selectedScenario || scenarios[0];
-
-  if (!scenario) {
-    return <div className="text-muted-foreground">No scenario selected</div>;
-  }
-
+  // Get sorted districts for the list
   const sortedDistricts = useMemo(() => {
-    return [...scenario.districtBreakdown].sort(
+    if (!selectedScenario) return [];
+    return [...selectedScenario.districtBreakdown].sort(
       (a, b) => b.estimatedFatalities.moderate - a.estimatedFatalities.moderate
     );
-  }, [scenario]);
-
-  const maxFatalities = sortedDistricts[0]?.estimatedFatalities.moderate || 1;
-
-  return (
-    <div className="space-y-4">
-      <div className="text-sm text-muted-foreground">
-        Estimated fatalities by district for {scenario.returnPeriod}yr {scenario.maintenance}
-      </div>
-
-      <div className="space-y-3">
-        {sortedDistricts.map((district) => {
-          const fatalities = district.estimatedFatalities.moderate;
-          const width = (fatalities / maxFatalities) * 100;
-          const bgColor = RISK_LEVEL_COLORS[district.fatalityRiskLevel];
-
-          return (
-            <div key={district.district} className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">{district.district}</span>
-                <span>{formatModerateEstimate(district.estimatedFatalities)} fatalities</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 bg-muted rounded-full h-6 overflow-hidden">
-                  <div
-                    className="h-full transition-all"
-                    style={{ width: `${width}%`, backgroundColor: bgColor }}
-                  />
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  {RISK_LEVEL_LABELS[district.fatalityRiskLevel]}
-                </Badge>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// VIEW 4: Fatality Estimates Table
-// ============================================================================
-
-function FatalityEstimatesTable({ scenarios, climate, onScenarioSelect }: ViewModeProps) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-muted">
-            <th className="border p-2 text-left">RP</th>
-            <th className="border p-2 text-left">Maintenance</th>
-            <th className="border p-2 text-right">Affected Pop.</th>
-            <th className="border p-2 text-right">Fatalities</th>
-            <th className="border p-2 text-right">Injuries</th>
-            <th className="border p-2 text-center">Risk Level</th>
-            <th className="border p-2 text-left">Key Drivers</th>
-          </tr>
-        </thead>
-        <tbody>
-          {scenarios.map((scenario) => (
-            <tr
-              key={scenario.scenarioName}
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => onScenarioSelect(scenario)}
-            >
-              <td className="border p-2">{scenario.returnPeriod} yrs</td>
-              <td className="border p-2 capitalize">{scenario.maintenance}</td>
-              <td className="border p-2 text-right">
-                {scenario.totalAffectedPopulation.toLocaleString()}
-              </td>
-              <td className="border p-2 text-right">
-                {formatCasualtyRange(scenario.casualtyEstimate.fatalities)}
-              </td>
-              <td className="border p-2 text-right">
-                {formatCasualtyRange(scenario.casualtyEstimate.injuries)}
-              </td>
-              <td className="border p-2 text-center">
-                <Badge
-                  style={{
-                    backgroundColor: RISK_LEVEL_COLORS[scenario.casualtyEstimate.fatalityRiskLevel],
-                  }}
-                >
-                  {RISK_LEVEL_LABELS[scenario.casualtyEstimate.fatalityRiskLevel]}
-                </Badge>
-              </td>
-              <td className="border p-2">
-                <div className="flex flex-wrap gap-1">
-                  {scenario.casualtyEstimate.keyDrivers.slice(0, 2).map((driver, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {driver}
-                    </Badge>
-                  ))}
-                </div>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
-export function RiskPopulationView({ climate }: RiskPopulationViewProps) {
-  const { data: scenarios, loading, error } = usePopulationRisk({ climate });
-  const [selectedScenario, setSelectedScenario] = useState<PopulationRiskScenario | null>(null);
-  const [selectedMaintenance, setSelectedMaintenance] = useState<string>('all');
-  const [selectedReturnPeriod, setSelectedReturnPeriod] = useState<string>('all');
-
-  // Filter scenarios based on selection
-  const filteredScenarios = useMemo(() => {
-    if (!scenarios) return [];
-    return scenarios.filter((s) => {
-      if (selectedMaintenance !== 'all' && s.maintenance !== selectedMaintenance) return false;
-      if (selectedReturnPeriod !== 'all' && s.returnPeriod !== selectedReturnPeriod) return false;
-      return true;
-    });
-  }, [scenarios, selectedMaintenance, selectedReturnPeriod]);
+  }, [selectedScenario]);
 
   if (loading) {
     return (
@@ -353,151 +135,160 @@ export function RiskPopulationView({ climate }: RiskPopulationViewProps) {
     );
   }
 
-  if (!scenarios || scenarios.length === 0) {
+  if (!selectedScenario) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">No population risk data available</div>
+        <div className="text-muted-foreground">No data available for selected scenario</div>
       </div>
     );
   }
 
-  const viewProps: ViewModeProps = {
-    scenarios: filteredScenarios,
-    climate,
-    selectedScenario,
-    onScenarioSelect: setSelectedScenario,
-  };
-
   return (
     <div className="space-y-4">
-      {/* Header with methodology */}
+      {/* Controls Card */}
       <Card>
-        <CardHeader>
-          <CardTitle>Population Risk (Casualty Estimation)</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Population Risk (Casualty Estimation)</CardTitle>
           <CardDescription>
-            Semi-quantitative fatality and injury estimation based on depth × velocity mortality
-            factors from Jonkman et al. (2008), USBR RCEM, and Defra FD2321.
+            Semi-quantitative fatality estimation based on depth × velocity mortality factors
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Maintenance:</label>
-              <Select value={selectedMaintenance} onValueChange={setSelectedMaintenance}>
+          <div className="flex flex-wrap gap-6 items-end">
+            {/* Return Period Selector */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Return Period</label>
+              <Select value={selectedReturnPeriod} onValueChange={setSelectedReturnPeriod}>
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="perfect">Perfect</SelectItem>
-                  <SelectItem value="breaches">Breaches</SelectItem>
-                  <SelectItem value="redcapacity">Reduced Capacity</SelectItem>
+                  {RETURN_PERIODS.map((rp) => (
+                    <SelectItem key={rp.value} value={rp.value}>
+                      {rp.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="flex items-center gap-2">
-              <label className="text-sm font-medium">Return Period:</label>
-              <Select value={selectedReturnPeriod} onValueChange={setSelectedReturnPeriod}>
-                <SelectTrigger className="w-32">
+            {/* Maintenance Selector */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium">Maintenance</label>
+              <Select value={selectedMaintenance} onValueChange={setSelectedMaintenance}>
+                <SelectTrigger className="w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="2.3">2.3 yrs</SelectItem>
-                  <SelectItem value="5">5 yrs</SelectItem>
-                  <SelectItem value="10">10 yrs</SelectItem>
-                  <SelectItem value="25">25 yrs</SelectItem>
-                  <SelectItem value="50">50 yrs</SelectItem>
-                  <SelectItem value="100">100 yrs</SelectItem>
-                  <SelectItem value="500">500 yrs</SelectItem>
+                  {MAINTENANCE_LEVELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>
+                      {m.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {selectedScenario && (
-              <div className="ml-auto text-sm">
-                <span className="font-medium">Selected:</span>{' '}
-                {selectedScenario.returnPeriod}yr {selectedScenario.maintenance}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="ml-2"
-                  onClick={() => setSelectedScenario(null)}
-                >
-                  Clear
-                </Button>
+            {/* Scenario Summary */}
+            {totalCasualties && (
+              <div className="ml-auto flex gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Affected Population:</span>{' '}
+                  <span className="font-medium">{totalCasualties.affectedPopulation.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Fatalities:</span>{' '}
+                  <span className="font-medium text-red-600">
+                    {formatCasualtyRange(totalCasualties.fatalities)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Risk Level:</span>{' '}
+                  <Badge
+                    style={{ backgroundColor: RISK_LEVEL_COLORS[totalCasualties.fatalityRiskLevel] }}
+                  >
+                    {RISK_LEVEL_LABELS[totalCasualties.fatalityRiskLevel]}
+                  </Badge>
+                </div>
               </div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Main content tabs */}
-      <Tabs defaultValue="matrix">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="matrix">Summary Matrix</TabsTrigger>
-          <TabsTrigger value="chart">Depth-Velocity</TabsTrigger>
-          <TabsTrigger value="district">Districts</TabsTrigger>
-          <TabsTrigger value="table">Table</TabsTrigger>
-        </TabsList>
+      {/* District Details */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">District Breakdown</CardTitle>
+          <CardDescription>
+            Estimated fatalities by district ({selectedReturnPeriod}yr, {selectedMaintenance})
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sortedDistricts.map((district) => (
+              <div
+                key={district.district}
+                className="border rounded-lg p-4 space-y-2"
+                style={{ borderColor: RISK_LEVEL_COLORS[district.fatalityRiskLevel] }}
+              >
+                <div className="flex justify-between items-start">
+                  <h4 className="font-medium">{district.district}</h4>
+                  <Badge
+                    variant="outline"
+                    style={{ backgroundColor: RISK_LEVEL_COLORS[district.fatalityRiskLevel] }}
+                  >
+                    {RISK_LEVEL_LABELS[district.fatalityRiskLevel]}
+                  </Badge>
+                </div>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Affected:</span>
+                    <span>{district.affectedPopulation.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Fatalities:</span>
+                    <span className="font-medium text-red-600">
+                      {formatModerateEstimate(district.estimatedFatalities)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-        <TabsContent value="matrix">
-          <Card>
-            <CardHeader>
-              <CardTitle>Casualty Summary Matrix</CardTitle>
-              <CardDescription>
-                Fatality risk level by return period and maintenance level
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CasualtySummaryMatrix {...viewProps} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Legend */}
+          <div className="mt-6 pt-4 border-t">
+            <div className="flex items-center gap-2 text-sm flex-wrap">
+              <span className="font-medium">Risk Level:</span>
+              {Object.entries(RISK_LEVEL_LABELS).map(([key, label]) => (
+                <div key={key} className="flex items-center gap-1">
+                  <div
+                    className="w-4 h-4 border"
+                    style={{ backgroundColor: RISK_LEVEL_COLORS[key as RiskLevel] }}
+                  />
+                  <span>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="chart">
-          <Card>
-            <CardHeader>
-              <CardTitle>Depth-Velocity Fatality Distribution</CardTitle>
-              <CardDescription>
-                Fatalities broken down by depth bin (velocity-weighted)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DepthVelocityChart {...viewProps} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="district">
-          <Card>
-            <CardHeader>
-              <CardTitle>District Comparison</CardTitle>
-              <CardDescription>
-                Estimated fatalities by district for selected scenario
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <DistrictComparison {...viewProps} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="table">
-          <Card>
-            <CardHeader>
-              <CardTitle>Fatality Estimates Table</CardTitle>
-              <CardDescription>
-                Detailed casualty estimates with key drivers for all scenarios
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FatalityEstimatesTable {...viewProps} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Methodology Note */}
+      <Card>
+        <CardContent className="pt-4">
+          <p className="text-xs text-muted-foreground">
+            <strong>Methodology:</strong> Casualty estimates use depth × velocity mortality factors from
+            Jonkman et al. (2008), USBR RCEM, and Defra FD2321. Low, moderate, and high estimates
+            reflect uncertainty in flood warning effectiveness and evacuation. Injuries estimated as
+            3× fatalities (international convention). V×h &gt; 1.5 m²/s threshold indicates hazardous
+            conditions for stability.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
+
+export default RiskPopulationView;
