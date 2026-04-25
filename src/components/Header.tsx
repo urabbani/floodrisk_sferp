@@ -112,20 +112,41 @@ export function Header({
             </DialogHeader>
             <div className="space-y-4 text-sm text-slate-700">
               <p>
-                This web application provides interactive visualization of flood scenario simulation results
-                for the Right Bank of the Indus River. The project analyzes flood risks under various
-                climate and infrastructure maintenance scenarios.
+                This web-based GIS application provides interactive visualization of flood risk assessment
+                for the Right Bank of the Indus River in Sindh Province, Pakistan. It combines OpenLayers mapping
+                with GeoServer WMS services to display flood scenarios across different climate conditions,
+                infrastructure maintenance levels, and return periods.
               </p>
 
               <div>
-                <h3 className="font-semibold text-slate-800 mb-2">Available Data Layers</h3>
+                <h3 className="font-semibold text-slate-800 mb-2">Key Features</h3>
                 <ul className="list-disc list-inside space-y-1 text-slate-600">
-                  <li><strong>Survey Data:</strong> DGPS survey points collected during field campaigns</li>
-                  <li><strong>Structures:</strong> Drains and canal network in the study area</li>
-                  <li><strong>Supporting Layers:</strong> AOI, Sindh Province boundaries, sub-catchments</li>
-                  <li><strong>Present Climate Scenarios:</strong> 3 maintenance levels × 4 parameters × 7 return periods</li>
-                  <li><strong>Future Climate Scenarios:</strong> Climate change projections</li>
-                  <li><strong>Flood 2022:</strong> Actual event simulation results</li>
+                  <li><strong>Risk Dashboard:</strong> Summary Heatmap, District Breakdown, Spatial Choropleth, EAD, and Population Risk</li>
+                  <li><strong>Impact Matrix:</strong> 42 scenarios with exposure analysis for 9 asset types</li>
+                  <li><strong>Scenario Explorer:</strong> Side-by-side comparison of flood scenarios</li>
+                  <li><strong>Interventions:</strong> Collaborative drawing and annotation tool (login required)</li>
+                  <li><strong>Layer Control:</strong> Interactive layer tree with 100+ map layers</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2">Data Layers</h3>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li><strong>Hazard Layers:</strong> Depth, Velocity, Duration, V×h for 42 scenarios</li>
+                  <li><strong>Exposure Layers:</strong> 9 types (buildings, agriculture, infrastructure, facilities)</li>
+                  <li><strong>Structures:</strong> Canal network, drains, stream network</li>
+                  <li><strong>Supporting:</strong> AOI, 7 district boundaries, sub-catchments</li>
+                  <li><strong>Flood 2022:</strong> Actual event data for validation</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-slate-800 mb-2">Scenarios</h3>
+                <ul className="list-disc list-inside space-y-1 text-slate-600">
+                  <li><strong>Return Periods:</strong> 2.3, 5, 10, 25, 50, 100, 500 years</li>
+                  <li><strong>Climate:</strong> Present and Future (climate change projections)</li>
+                  <li><strong>Maintenance:</strong> Perfect, Breaches, Reduced Capacity</li>
+                  <li><strong>Districts:</strong> 7 districts in Sindh Province (excluded: Naushahro Feroze, Shaheed Benazirabad)</li>
                 </ul>
               </div>
 
@@ -135,21 +156,20 @@ export function Header({
                   <li><strong>Depth:</strong> Maximum flood depth (meters)</li>
                   <li><strong>Velocity:</strong> Maximum flow velocity (m/s)</li>
                   <li><strong>Duration:</strong> Flood duration (hours)</li>
-                  <li><strong>V × h:</strong> Velocity-depth product (m²/s)</li>
+                  <li><strong>V × h:</strong> Hazard threshold (m²/s) for stability analysis</li>
                 </ul>
               </div>
 
               <div>
                 <h3 className="font-semibold text-slate-800 mb-2">Coordinate System</h3>
                 <p className="text-slate-600">
-                  WGS 84 / UTM zone 42N (EPSG:32642)
+                  WGS 84 / UTM Zone 42N (EPSG:32642)
                 </p>
               </div>
 
               <div className="pt-4 border-t border-slate-200">
                 <p className="text-xs text-slate-500 text-center">
-                  Designed and structured using Kimi-K2.5<br />
-                  Built, maintained and deployed using Claude Code with Z.AI's GLM series of models<br />
+                  Built, maintained and deployed using Claude Code<br />
                   Orchestrated by Dr. Umair Rabbani
                 </p>
               </div>
