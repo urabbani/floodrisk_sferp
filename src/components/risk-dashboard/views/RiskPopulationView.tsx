@@ -466,11 +466,11 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
       <Card>
         <CardContent className="pt-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Methodology:</strong> Casualty estimates use depth &times; velocity mortality factors from
-            Jonkman et al. (2008), USBR RCEM, and Defra FD2321. Low, moderate, and high estimates
-            reflect uncertainty in flood warning effectiveness and evacuation. Injuries estimated as
-            3&times; fatalities (international convention). V&times;h &gt; 1.5 m&sup2;/s threshold indicates
-            hazardous conditions for stability. Map choropleth shows moderate fatality estimate per district.
+            <strong>Methodology:</strong> Casualty use Flood 2002 - Adjusted. Calibrated against
+            25yr Breaches Present scenario. Low, moderate, and high estimates reflect uncertainty in
+            flood warning effectiveness and evacuation. Injuries estimated as 3&times; fatalities
+            (international convention). V&times;h &gt; 1.5 m&sup2;/s threshold indicates hazardous conditions
+            for stability. Map choropleth shows moderate fatality estimate per district.
           </p>
         </CardContent>
       </Card>
