@@ -190,7 +190,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
             <span className="w-24 text-right font-medium text-slate-600 flex-shrink-0">Total EAD</span>
             <div className="hidden md:flex gap-1">
               {DISPLAY_ASSET_KEYS.map((k) => (
-                <span key={k} className="w-16 text-right font-medium text-slate-500 flex-shrink-0 text-[10px]">
+                <span key={k} className="w-16 text-right font-medium text-slate-500 flex-shrink-0">
                   {ASSET_SUB_KEY_LABELS[k]}
                 </span>
               ))}
@@ -218,7 +218,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
               {ead && (
                 <div className="hidden md:flex gap-1 text-slate-500">
                   {DISPLAY_ASSET_KEYS.map((k) => (
-                    <span key={k} className="w-16 text-right flex-shrink-0 text-[10px]">
+                    <span key={k} className="w-16 text-right flex-shrink-0">
                       {formatRiskValueFull(ead[k], 'Dmg')}
                     </span>
                   ))}
