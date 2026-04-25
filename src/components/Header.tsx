@@ -166,13 +166,6 @@ export function Header({
                   WGS 84 / UTM Zone 42N (EPSG:32642)
                 </p>
               </div>
-
-              <div className="pt-4 border-t border-slate-200">
-                <p className="text-xs text-slate-500 text-center">
-                  Built, maintained and deployed using Claude Code<br />
-                  Orchestrated by Dr. Umair Rabbani
-                </p>
-              </div>
             </div>
           </DialogContent>
         </Dialog>
