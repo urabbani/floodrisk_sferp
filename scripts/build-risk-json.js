@@ -113,6 +113,19 @@ if (fs.existsSync(shpPath)) {
     );
     console.log(`\nGenerated ${GEOJSON_OUTPUT} (no reprojection)`);
   }
+
+  // Filter out excluded districts (Naushahro Feroze, Shaheed Benazirabad)
+  const geojson = JSON.parse(fs.readFileSync(GEOJSON_OUTPUT, 'utf8'));
+  const originalCount = geojson.features.length;
+  const excludedDistricts = ['Naushahro Feroze', 'Shaheed Benazirabad'];
+
+  geojson.features = geojson.features.filter(f => {
+    const district = f.properties?.district || f.properties?.District_N || f.properties?.name || '';
+    return !excludedDistricts.some(excluded => district.includes(excluded));
+  });
+
+  fs.writeFileSync(GEOJSON_OUTPUT, JSON.stringify(geojson));
+  console.log(`Filtered GeoJSON: ${originalCount} → ${geojson.features.length} districts (removed: ${excludedDistricts.join(', ')})`);
 } else {
   console.error(`\nWarning: ${shpPath} not found, skipping GeoJSON generation`);
 }
