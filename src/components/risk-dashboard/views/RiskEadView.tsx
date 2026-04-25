@@ -7,7 +7,7 @@ import {
   MAINTENANCE_LEVELS,
   MAINTENANCE_LABELS,
   DISTRICTS,
-  ASSET_SUB_KEYS,
+  DISPLAY_ASSET_KEYS,
   ASSET_SUB_KEY_LABELS,
   formatRiskValueFull,
   getRiskColor,
@@ -45,7 +45,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
       );
       const ead = result?.ead;
       const rawData: Record<string, number> = {};
-      for (const asset of ASSET_SUB_KEYS) {
+      for (const asset of DISPLAY_ASSET_KEYS) {
         rawData[asset] = ead?.[asset] ?? 0;
       }
       return {
@@ -109,7 +109,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
             <thead>
               <tr className="border-b border-slate-200">
                 <th className="text-left py-1.5 px-2 font-medium text-slate-600 sticky left-0 bg-slate-50">Maintenance</th>
-                {ASSET_SUB_KEYS.map((k) => (
+                {DISPLAY_ASSET_KEYS.map((k) => (
                   <th key={k} className="text-right py-1.5 px-2 font-medium text-slate-600 whitespace-nowrap">
                     <span className="inline-block w-2 h-2 rounded-sm mr-1" style={{ backgroundColor: RISK_ASSET_COLORS[k] }} />
                     {ASSET_SUB_KEY_LABELS[k]}
@@ -124,7 +124,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
                   <td className="py-1.5 px-2 font-medium text-slate-700 sticky left-0 bg-slate-50">
                     {MAINTENANCE_LABELS[maintenance]}
                   </td>
-                  {ASSET_SUB_KEYS.map((k) => (
+                  {DISPLAY_ASSET_KEYS.map((k) => (
                     <td key={k} className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
                       {formatRiskValueFull(result?.ead[k] ?? 0, 'Dmg')}
                     </td>
@@ -189,7 +189,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
             <span className="flex-1 min-w-[50px]" />
             <span className="w-24 text-right font-medium text-slate-600 flex-shrink-0">Total EAD</span>
             <div className="hidden md:flex gap-1">
-              {ASSET_SUB_KEYS.map((k) => (
+              {DISPLAY_ASSET_KEYS.map((k) => (
                 <span key={k} className="w-16 text-right font-medium text-slate-500 flex-shrink-0 text-[10px]">
                   {ASSET_SUB_KEY_LABELS[k]}
                 </span>
@@ -217,7 +217,7 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
               </span>
               {ead && (
                 <div className="hidden md:flex gap-1 text-slate-500">
-                  {ASSET_SUB_KEYS.map((k) => (
+                  {DISPLAY_ASSET_KEYS.map((k) => (
                     <span key={k} className="w-16 text-right flex-shrink-0 text-[10px]">
                       {formatRiskValueFull(ead[k], 'Dmg')}
                     </span>

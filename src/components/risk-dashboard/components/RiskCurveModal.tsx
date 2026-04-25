@@ -8,7 +8,7 @@ import {
   MAINTENANCE_LEVELS,
   MAINTENANCE_LABELS,
   DISTRICTS,
-  ASSET_SUB_KEYS,
+  DISPLAY_ASSET_KEYS,
   ASSET_SUB_KEY_LABELS,
   type RiskMode,
   type AssetSubKey,
@@ -31,13 +31,13 @@ export function RiskCurveModal({
   const [maintenance, setMaintenance] = useState<'breaches' | 'redcapacity' | 'perfect'>('breaches');
   const [region, setRegion] = useState<'TOTAL' | typeof DISTRICTS[number]>('TOTAL');
   const [logScale, setLogScale] = useState(false);
-  const [selectedAssets, setSelectedAssets] = useState<AssetSubKey[]>(ASSET_SUB_KEYS);
+  const [selectedAssets, setSelectedAssets] = useState<AssetSubKey[]>(DISPLAY_ASSET_KEYS);
 
   // Fixed to Economic Damage mode
   const mode: RiskMode = 'Dmg';
 
   // Generate asset options dynamically from all 11 assets
-  const assetOptions: { value: AssetSubKey; label: string; color: string }[] = ASSET_SUB_KEYS.map((asset) => ({
+  const assetOptions: { value: AssetSubKey; label: string; color: string }[] = DISPLAY_ASSET_KEYS.map((asset) => ({
     value: asset,
     label: ASSET_SUB_KEY_LABELS[asset],
     color: RISK_ASSET_COLORS[asset],

@@ -11,7 +11,7 @@ import {
   RISK_MODE_LABELS,
   calculateTotalRisk,
   RISK_ASSET_COLORS,
-  ASSET_SUB_KEYS,
+  DISPLAY_ASSET_KEYS,
   ASSET_SUB_KEY_LABELS,
 } from '@/types/risk';
 import { DistrictBarChart } from '../components/DistrictBarChart';
@@ -134,7 +134,7 @@ export function RiskDistrictBreakdown({
                 <th className="text-left py-1.5 px-1 font-medium text-slate-600">#</th>
                 <th className="text-left py-1.5 px-1 font-medium text-slate-600">District</th>
                 <th className="text-right py-1.5 px-1 font-medium text-slate-600">Total</th>
-                {ASSET_SUB_KEYS.map((k) => (
+                {DISPLAY_ASSET_KEYS.map((k) => (
                   <th key={k} className="text-right py-1.5 px-1 font-medium text-slate-600 whitespace-nowrap">
                     <span className="inline-block w-2 h-2 rounded-sm mr-1" style={{ backgroundColor: RISK_ASSET_COLORS[k] }} />
                     {ASSET_SUB_KEY_LABELS[k]}
@@ -150,7 +150,7 @@ export function RiskDistrictBreakdown({
                   <td className="py-1.5 px-1 text-right font-semibold text-slate-900">
                     {formatRiskValueFull(total, mode)}
                   </td>
-                  {ASSET_SUB_KEYS.map((k) => (
+                  {DISPLAY_ASSET_KEYS.map((k) => (
                     <td key={k} className="py-1.5 px-1 text-right text-slate-600 whitespace-nowrap">
                       {rd ? formatRiskValueFull(rd[k] ?? 0, mode) : '0'}
                     </td>
