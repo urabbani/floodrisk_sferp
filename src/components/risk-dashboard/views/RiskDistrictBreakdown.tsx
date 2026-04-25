@@ -2,16 +2,17 @@ import { useMemo } from 'react';
 import { ArrowLeft, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { RiskJsonData, RiskMode, ScenarioKey, RiskAssetType, RegionRiskData } from '@/types/risk';
+import type { RiskJsonData, RiskMode, ScenarioKey, RegionRiskData } from '@/types/risk';
 import {
   DISTRICTS,
-  RISK_ASSET_SHORT_LABELS,
   totalRiskValue,
-  buildingsTotal,
   formatRiskValueFull,
   MAINTENANCE_LABELS,
   RISK_MODE_LABELS,
   calculateTotalRisk,
+  RISK_ASSET_COLORS,
+  ASSET_SUB_KEYS,
+  ASSET_SUB_KEY_LABELS,
 } from '@/types/risk';
 import { DistrictBarChart } from '../components/DistrictBarChart';
 
@@ -40,12 +41,25 @@ export function RiskDistrictBreakdown({
     return DISTRICTS.map((district) => {
       const regionData = scenarioData[district]?.[mode];
       if (!regionData) {
-        return { district, crop: 0, buildings: 0, rawData: { crop: 0, buildLow56: 0, buildLow44: 0, buildHigh: 0 } as RegionRiskData };
+        return {
+          district,
+          rawData: {
+            crop: 0,
+            buildLow56: 0,
+            buildLow44: 0,
+            buildHigh: 0,
+            telecom: 0,
+            electric: 0,
+            railways: 0,
+            hospitals: 0,
+            bhu: 0,
+            schools: 0,
+            roads: 0,
+          } as RegionRiskData,
+        };
       }
       return {
         district,
-        crop: regionData.crop,
-        buildings: buildingsTotal(regionData),
         rawData: regionData,
       };
     });
@@ -75,8 +89,6 @@ export function RiskDistrictBreakdown({
       </div>
     );
   }
-
-  const assetKeys: RiskAssetType[] = ['crop', 'buildings'];
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -122,9 +134,10 @@ export function RiskDistrictBreakdown({
                 <th className="text-left py-1.5 px-1 font-medium text-slate-600">#</th>
                 <th className="text-left py-1.5 px-1 font-medium text-slate-600">District</th>
                 <th className="text-right py-1.5 px-1 font-medium text-slate-600">Total</th>
-                {assetKeys.map((k) => (
-                  <th key={k} className="text-right py-1.5 px-1 font-medium text-slate-600">
-                    {RISK_ASSET_SHORT_LABELS[k]}
+                {ASSET_SUB_KEYS.map((k) => (
+                  <th key={k} className="text-right py-1.5 px-1 font-medium text-slate-600 whitespace-nowrap">
+                    <span className="inline-block w-2 h-2 rounded-sm mr-1" style={{ backgroundColor: RISK_ASSET_COLORS[k] }} />
+                    {ASSET_SUB_KEY_LABELS[k]}
                   </th>
                 ))}
               </tr>
@@ -137,9 +150,9 @@ export function RiskDistrictBreakdown({
                   <td className="py-1.5 px-1 text-right font-semibold text-slate-900">
                     {formatRiskValueFull(total, mode)}
                   </td>
-                  {assetKeys.map((k) => (
-                    <td key={k} className="py-1.5 px-1 text-right text-slate-600">
-                      {rd ? formatRiskValueFull(k === 'buildings' ? buildingsTotal(rd) : rd[k], mode) : '0'}
+                  {ASSET_SUB_KEYS.map((k) => (
+                    <td key={k} className="py-1.5 px-1 text-right text-slate-600 whitespace-nowrap">
+                      {rd ? formatRiskValueFull(rd[k] ?? 0, mode) : '0'}
                     </td>
                   ))}
                 </tr>

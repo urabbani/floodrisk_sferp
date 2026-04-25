@@ -7,10 +7,72 @@
 export type RiskMode = 'Exp' | 'Vul' | 'Dmg' | 'Pop';
 
 /**
- * Asset types from the xlsx columns
+ * All 11 asset keys from the xlsx columns B-L
  */
-export type RiskAssetType = 'crop' | 'buildings';
+export type RiskAssetKey =
+  | 'crop'           // Cropped Area (ha)
+  | 'buildLow56'     // Buildings <3m (56%) (sq.m)
+  | 'buildLow44'     // Buildings <3m (44%) (sq.m)
+  | 'buildHigh'      // Buildings >=3m (sq.m)
+  | 'telecom'        // Telecom Tower
+  | 'electric'       // Electric lines
+  | 'railways'       // Railways
+  | 'hospitals'      // Hospitals
+  | 'bhu'            // BHU
+  | 'schools'        // Schools
+  | 'roads';         // Roads
 
+export const RISK_ASSET_LABELS: Record<RiskAssetKey, string> = {
+  crop: 'Cropped Area (ha)',
+  buildLow56: 'Buildings <3m (56%)',
+  buildLow44: 'Buildings <3m (44%)',
+  buildHigh: 'Buildings ≥3m',
+  telecom: 'Telecom Tower',
+  electric: 'Electric Lines',
+  railways: 'Railways',
+  hospitals: 'Hospitals',
+  bhu: 'BHU',
+  schools: 'Schools',
+  roads: 'Roads',
+};
+
+export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetKey, string> = {
+  crop: 'Crops',
+  buildLow56: 'Kacha',
+  buildLow44: 'Pakka',
+  buildHigh: 'High-Rise',
+  telecom: 'Telecom',
+  electric: 'Electric',
+  railways: 'Railways',
+  hospitals: 'Hospitals',
+  bhu: 'BHU',
+  schools: 'Schools',
+  roads: 'Roads',
+};
+
+export const RISK_ASSET_COLORS: Record<RiskAssetKey, string> = {
+  crop: '#22c55e',
+  buildLow56: '#93c5fd',
+  buildLow44: '#3b82f6',
+  buildHigh: '#1e3a8a',
+  telecom: '#a855f7',
+  electric: '#f59e0b',
+  railways: '#ef4444',
+  hospitals: '#ec4899',
+  bhu: '#06b6d4',
+  schools: '#8b5cf6',
+  roads: '#64748b',
+};
+
+/** All 11 asset keys in order */
+export const RISK_ASSET_KEYS: RiskAssetKey[] = [
+  'crop', 'buildLow56', 'buildLow44', 'buildHigh',
+  'telecom', 'electric', 'railways',
+  'hospitals', 'bhu', 'schools', 'roads',
+];
+
+/** Legacy types for compatibility */
+export type RiskAssetType = 'crop' | 'buildings';
 export type BuildingSubKey = 'buildLow56' | 'buildLow44' | 'buildHigh';
 
 export const BUILDING_SUB_LABELS: Record<BuildingSubKey, string> = {
@@ -25,25 +87,23 @@ export const BUILDING_SUB_COLORS: Record<BuildingSubKey, string> = {
   buildHigh: '#1e3a8a',
 };
 
-export const RISK_ASSET_LABELS: Record<RiskAssetType, string> = {
-  crop: 'Agriculture Damage (ha)',
-  buildings: 'Buildings (sqm)',
-};
-
-export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetType, string> = {
-  crop: 'Agriculture',
-  buildings: 'Buildings',
-};
-
-export const RISK_ASSET_COLORS: Record<RiskAssetType, string> = {
-  crop: '#22c55e',
-  buildings: '#3b82f6',
-};
-
 export const BUILDING_KEYS: BuildingSubKey[] = ['buildLow56', 'buildLow44', 'buildHigh'];
+
+/** Legacy type for backward compatibility - use RiskAssetKey for new code */
+export type RiskAssetType = 'crop' | 'buildings';
 
 export function buildingsTotal(d: RegionRiskData): number {
   return d.buildLow56 + d.buildLow44 + d.buildHigh;
+}
+
+/** Sum of infrastructure assets (telecom, electric, railways, roads) */
+export function infrastructureTotal(d: RegionRiskData): number {
+  return d.telecom + d.electric + d.railways + d.roads;
+}
+
+/** Sum of critical facilities (hospitals, bhu, schools) */
+export function facilitiesTotal(d: RegionRiskData): number {
+  return d.hospitals + d.bhu + d.schools;
 }
 
 export const RISK_MODE_LABELS: Record<RiskMode, string> = {
@@ -55,16 +115,24 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
 
 /**
  * Data for one region in one scenario for one mode
+ * Contains all 11 asset types from the Excel files
  */
 export type RegionRiskData = {
   crop: number;
   buildLow56: number;
   buildLow44: number;
   buildHigh: number;
+  telecom: number;
+  electric: number;
+  railways: number;
+  hospitals: number;
+  bhu: number;
+  schools: number;
+  roads: number;
 };
 
 export function totalRiskValue(data: RegionRiskData): number {
-  return data.crop + data.buildLow56 + data.buildLow44 + data.buildHigh;
+  return Object.values(data).reduce((sum, val) => sum + val, 0);
 }
 
 /**
@@ -211,11 +279,15 @@ export function buildScenarioKey(
 
 // ---- EAD (Expected Annual Damage) ----
 
-/** Asset sub-keys for individual EAD computation */
-export type AssetSubKey = 'crop' | 'buildLow56' | 'buildLow44' | 'buildHigh';
+/** Asset keys for EAD computation - now includes all 11 assets */
+export type AssetSubKey = RiskAssetKey;
 
-/** All 4 asset sub-keys in display order */
-export const ASSET_SUB_KEYS: AssetSubKey[] = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
+/** All 11 asset keys in display order for EAD */
+export const ASSET_SUB_KEYS: AssetSubKey[] = [
+  'crop', 'buildLow56', 'buildLow44', 'buildHigh',
+  'telecom', 'electric', 'railways',
+  'hospitals', 'bhu', 'schools', 'roads',
+];
 
 /** Human-readable labels for each asset sub-key */
 export const ASSET_SUB_KEY_LABELS: Record<AssetSubKey, string> = {
@@ -223,6 +295,13 @@ export const ASSET_SUB_KEY_LABELS: Record<AssetSubKey, string> = {
   buildLow56: 'Kacha',
   buildLow44: 'Pakka',
   buildHigh: 'High-Rise',
+  telecom: 'Telecom',
+  electric: 'Electric',
+  railways: 'Railways',
+  hospitals: 'Hospitals',
+  bhu: 'BHU',
+  schools: 'Schools',
+  roads: 'Roads',
 };
 
 /** Result of EAD calculation for one climate × maintenance × region */
@@ -264,22 +343,36 @@ export function calculateTotalRisk(
   const scenarioData = data.data[scenarioKey];
   if (!scenarioData) return null;
 
-  // Sum all districts
+  // Sum all districts for all 11 assets
   const total: RegionRiskData = {
     crop: 0,
     buildLow56: 0,
     buildLow44: 0,
     buildHigh: 0,
+    telecom: 0,
+    electric: 0,
+    railways: 0,
+    hospitals: 0,
+    bhu: 0,
+    schools: 0,
+    roads: 0,
   };
 
   for (const district of DISTRICTS) {
     const districtData = scenarioData[district]?.[mode];
     if (!districtData) continue;
 
-    total.crop += districtData.crop;
-    total.buildLow56 += districtData.buildLow56;
-    total.buildLow44 += districtData.buildLow44;
-    total.buildHigh += districtData.buildHigh;
+    total.crop += districtData.crop ?? 0;
+    total.buildLow56 += districtData.buildLow56 ?? 0;
+    total.buildLow44 += districtData.buildLow44 ?? 0;
+    total.buildHigh += districtData.buildHigh ?? 0;
+    total.telecom += districtData.telecom ?? 0;
+    total.electric += districtData.electric ?? 0;
+    total.railways += districtData.railways ?? 0;
+    total.hospitals += districtData.hospitals ?? 0;
+    total.bhu += districtData.bhu ?? 0;
+    total.schools += districtData.schools ?? 0;
+    total.roads += districtData.roads ?? 0;
   }
 
   return total;

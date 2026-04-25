@@ -7,6 +7,8 @@ import {
   ASSET_SUB_KEYS,
   buildScenarioKey,
   totalRiskValue,
+  ASSET_SUB_KEY_LABELS,
+  RISK_ASSET_COLORS,
   type RiskJsonData,
   type RiskMode,
   type AssetSubKey,
@@ -15,7 +17,7 @@ import {
 export type CurveSeriesType =
   | 'climate'      // Compare Present vs Future
   | 'district'     // Compare districts
-  | 'asset';       // Compare Agriculture vs Buildings
+  | 'asset';       // Compare all 11 assets
 
 export type CurveRegion = 'TOTAL' | typeof DISTRICTS[number];
 
@@ -117,22 +119,9 @@ export function useRiskCurveData(options: RiskCurveOptions) {
       }
 
       case 'asset': {
-        // Compare asset types (Agriculture + 3 building types)
-        const assetLabels: Record<AssetSubKey, string> = {
-          crop: 'Agriculture',
-          buildLow56: 'Kacha',
-          buildLow44: 'Pakka',
-          buildHigh: 'High-Rise',
-        };
-        const assetColors: Record<AssetSubKey, string> = {
-          crop: '#22c55e',
-          buildLow56: '#93c5fd',
-          buildLow44: '#3b82f6',
-          buildHigh: '#1e3a8a',
-        };
-
+        // Compare all 11 asset types
         series = selectedAssets.map((asset, idx) => ({
-          label: assetLabels[asset],
+          label: ASSET_SUB_KEY_LABELS[asset],
           data: RETURN_PERIODS.map((rp) => {
             const key = buildScenarioKey(rp, climate, maintenance);
             const regionData = data.data[key]?.[region]?.[mode];
@@ -141,7 +130,7 @@ export function useRiskCurveData(options: RiskCurveOptions) {
               value: regionData?.[asset] || 0,
             };
           }),
-          color: assetColors[asset],
+          color: RISK_ASSET_COLORS[asset],
         }));
         break;
       }

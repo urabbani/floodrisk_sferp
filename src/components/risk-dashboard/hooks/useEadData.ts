@@ -25,12 +25,10 @@ export function useEadData() {
         const districtResults: EadResult[] = [];
 
         for (const region of DISTRICTS) {
-          const damagesByAsset: Record<AssetSubKey, { returnPeriod: number; damage: number }[]> = {
-            crop: [],
-            buildLow56: [],
-            buildLow44: [],
-            buildHigh: [],
-          };
+          // Initialize damages array for each of the 11 assets
+          const damagesByAsset = Object.fromEntries(
+            ASSET_SUB_KEYS.map(asset => [asset, [] as { returnPeriod: number; damage: number }[]])
+          ) as Record<AssetSubKey, { returnPeriod: number; damage: number }[]>;
 
           for (const rp of RETURN_PERIODS) {
             const key = buildScenarioKey(rp, climate, maintenance);
@@ -38,35 +36,32 @@ export function useEadData() {
             if (!regionData) continue;
 
             for (const asset of ASSET_SUB_KEYS) {
-              damagesByAsset[asset].push({ returnPeriod: rp, damage: regionData[asset] });
+              damagesByAsset[asset].push({ returnPeriod: rp, damage: regionData[asset] ?? 0 });
             }
           }
 
-          const ead: Record<AssetSubKey, number> = {
-            crop: calculateEad(damagesByAsset.crop),
-            buildLow56: calculateEad(damagesByAsset.buildLow56),
-            buildLow44: calculateEad(damagesByAsset.buildLow44),
-            buildHigh: calculateEad(damagesByAsset.buildHigh),
-          };
+          // Calculate EAD for each asset
+          const ead = Object.fromEntries(
+            ASSET_SUB_KEYS.map(asset => [asset, calculateEad(damagesByAsset[asset])])
+          ) as Record<AssetSubKey, number>;
+
+          const eadTotal = Object.values(ead).reduce((sum, val) => sum + val, 0);
 
           const result: EadResult = {
             climate,
             maintenance,
             region,
             ead,
-            eadTotal: ead.crop + ead.buildLow56 + ead.buildLow44 + ead.buildHigh,
+            eadTotal,
           };
           districtResults.push(result);
           results.push(result);
         }
 
         // Calculate TOTAL as sum of 7 districts
-        const totalEad: Record<AssetSubKey, number> = {
-          crop: 0,
-          buildLow56: 0,
-          buildLow44: 0,
-          buildHigh: 0,
-        };
+        const totalEad = Object.fromEntries(
+          ASSET_SUB_KEYS.map(asset => [asset, 0])
+        ) as Record<AssetSubKey, number>;
 
         for (const districtResult of districtResults) {
           for (const asset of ASSET_SUB_KEYS) {
@@ -74,12 +69,14 @@ export function useEadData() {
           }
         }
 
+        const totalSum = Object.values(totalEad).reduce((sum, val) => sum + val, 0);
+
         results.push({
           climate,
           maintenance,
           region: 'TOTAL',
           ead: totalEad,
-          eadTotal: totalEad.crop + totalEad.buildLow56 + totalEad.buildLow44 + totalEad.buildHigh,
+          eadTotal: totalSum,
         });
       }
     }

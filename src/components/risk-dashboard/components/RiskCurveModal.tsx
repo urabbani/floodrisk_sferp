@@ -12,6 +12,7 @@ import {
   ASSET_SUB_KEY_LABELS,
   type RiskMode,
   type AssetSubKey,
+  RISK_ASSET_COLORS,
 } from '@/types/risk';
 
 interface RiskCurveModalProps {
@@ -35,12 +36,12 @@ export function RiskCurveModal({
   // Fixed to Economic Damage mode
   const mode: RiskMode = 'Dmg';
 
-  const assetOptions: { value: AssetSubKey; label: string; color: string }[] = [
-    { value: 'crop', label: ASSET_SUB_KEY_LABELS.crop, color: '#22c55e' },
-    { value: 'buildLow56', label: ASSET_SUB_KEY_LABELS.buildLow56, color: '#93c5fd' },
-    { value: 'buildLow44', label: ASSET_SUB_KEY_LABELS.buildLow44, color: '#3b82f6' },
-    { value: 'buildHigh', label: ASSET_SUB_KEY_LABELS.buildHigh, color: '#1e3a8a' },
-  ];
+  // Generate asset options dynamically from all 11 assets
+  const assetOptions: { value: AssetSubKey; label: string; color: string }[] = ASSET_SUB_KEYS.map((asset) => ({
+    value: asset,
+    label: ASSET_SUB_KEY_LABELS[asset],
+    color: RISK_ASSET_COLORS[asset],
+  }));
 
   const toggleAsset = (asset: AssetSubKey) => {
     if (selectedAssets.includes(asset)) {

@@ -22,7 +22,21 @@ const REGIONS = [
 ];
 
 const MODES = ['Exp', 'Vul', 'Dmg'];
-const ASSET_KEYS = ['crop', 'buildLow56', 'buildLow44', 'buildHigh'];
+
+// All 11 asset types from columns B-L
+const ASSET_KEYS = [
+  'crop',           // Cropped Area (ha)
+  'buildLow56',     // Buildings <3m (56%) (sq.m)
+  'buildLow44',     // Buildings <3m (44%) (sq.m)
+  'buildHigh',      // Buildings >=3m (sq.m)
+  'telecom',        // Telecom Tower
+  'electric',       // Electric lines
+  'railways',       // Railways
+  'hospitals',      // Hospitals
+  'bhu',            // BHU
+  'schools',        // Schools
+  'roads',          // Roads
+];
 
 // Parse xlsx files
 const files = fs.readdirSync(RISK_DIR).filter(f => f.endsWith('.xlsx'));
@@ -56,10 +70,10 @@ for (const file of files) {
         if (!wb.Sheets[sheetName]) continue;
       }
 
-      // Compute SUM of rows 4-24 for columns B(1), C(2), D(3), E(4)
-      const sums = [0, 0, 0, 0];
+      // Compute SUM of rows 4-24 for columns B-L (11 asset columns)
+      const sums = new Array(11).fill(0);
       for (let r = 4; r <= 24; r++) {
-        for (let c = 0; c < 4; c++) {
+        for (let c = 0; c < 11; c++) {
           const cellRef = XLSX.utils.encode_cell({ r: r - 1, c: c + 1 });
           const cell = ws[cellRef];
           sums[c] += (cell && typeof cell.v === 'number') ? cell.v : 0;
@@ -108,8 +122,11 @@ const validationScenario = result.data['25_present_perfect'];
 if (validationScenario) {
   const totalDmg = validationScenario.TOTAL?.Dmg;
   if (totalDmg) {
-    const totalAll = totalDmg.crop + totalDmg.buildLow56 + totalDmg.buildLow44 + totalDmg.buildHigh;
-    console.log(`\nValidation (25yr Present Perfect, TOTAL Dmg): $${(totalAll / 1e9).toFixed(2)}B`);
-    console.log(`  Crop: ${totalDmg.crop}, Kacha: ${totalDmg.buildLow56}, Pakka: ${totalDmg.buildLow44}, High-Rise: ${totalDmg.buildHigh}`);
+    const totalAll = Object.values(totalDmg).reduce((a, b) => a + b, 0);
+    console.log(`\nValidation (25yr Present Perfect, TOTAL Dmg): Sum of all 11 assets`);
+    console.log(`  Total sum: ${totalAll.toFixed(2)}`);
+    console.log(`  Crop: ${totalDmg.crop?.toFixed(0) || 0}, Kacha: ${totalDmg.buildLow56?.toFixed(0) || 0}, Pakka: ${totalDmg.buildLow44?.toFixed(0) || 0}, High-Rise: ${totalDmg.buildHigh?.toFixed(0) || 0}`);
+    console.log(`  Telecom: ${totalDmg.telecom?.toFixed(0) || 0}, Electric: ${totalDmg.electric?.toFixed(0) || 0}, Railways: ${totalDmg.railways?.toFixed(0) || 0}`);
+    console.log(`  Hospitals: ${totalDmg.hospitals?.toFixed(0) || 0}, BHU: ${totalDmg.bhu?.toFixed(0) || 0}, Schools: ${totalDmg.schools?.toFixed(0) || 0}, Roads: ${totalDmg.roads?.toFixed(0) || 0}`);
   }
 }

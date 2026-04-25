@@ -11,6 +11,7 @@ import {
   ASSET_SUB_KEY_LABELS,
   formatRiskValueFull,
   getRiskColor,
+  RISK_ASSET_COLORS,
 } from '@/types/risk';
 import { EadBarChart } from '../components/EadBarChart';
 import type { EadBarChartData } from '../components/EadBarChart';
@@ -43,15 +44,13 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
         (r) => r.climate === climate && r.maintenance === selectedMaintenance && r.region === district
       );
       const ead = result?.ead;
+      const rawData: Record<string, number> = {};
+      for (const asset of ASSET_SUB_KEYS) {
+        rawData[asset] = ead?.[asset] ?? 0;
+      }
       return {
         district,
-        crop: ead?.crop ?? 0,
-        buildings: (ead?.buildLow56 ?? 0) + (ead?.buildLow44 ?? 0) + (ead?.buildHigh ?? 0),
-        rawData: {
-          buildLow56: ead?.buildLow56 ?? 0,
-          buildLow44: ead?.buildLow44 ?? 0,
-          buildHigh: ead?.buildHigh ?? 0,
-        },
+        rawData,
         eadTotal: result?.eadTotal ?? 0,
       };
     }).sort((a, b) => b.eadTotal - a.eadTotal);
@@ -109,27 +108,28 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-slate-200">
-                <th className="text-left py-1.5 px-2 font-medium text-slate-600">Maintenance</th>
+                <th className="text-left py-1.5 px-2 font-medium text-slate-600 sticky left-0 bg-slate-50">Maintenance</th>
                 {ASSET_SUB_KEYS.map((k) => (
-                  <th key={k} className="text-right py-1.5 px-2 font-medium text-slate-600">
+                  <th key={k} className="text-right py-1.5 px-2 font-medium text-slate-600 whitespace-nowrap">
+                    <span className="inline-block w-2 h-2 rounded-sm mr-1" style={{ backgroundColor: RISK_ASSET_COLORS[k] }} />
                     {ASSET_SUB_KEY_LABELS[k]}
                   </th>
                 ))}
-                <th className="text-right py-1.5 px-2 font-medium text-slate-600 border-l border-slate-200">Total</th>
+                <th className="text-right py-1.5 px-2 font-medium text-slate-600 border-l border-slate-200 whitespace-nowrap">Total</th>
               </tr>
             </thead>
             <tbody>
               {summaryData.map(({ maintenance, result }) => (
                 <tr key={maintenance} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="py-1.5 px-2 font-medium text-slate-700">
+                  <td className="py-1.5 px-2 font-medium text-slate-700 sticky left-0 bg-slate-50">
                     {MAINTENANCE_LABELS[maintenance]}
                   </td>
                   {ASSET_SUB_KEYS.map((k) => (
-                    <td key={k} className="py-1.5 px-2 text-right text-slate-600">
+                    <td key={k} className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
                       {formatRiskValueFull(result?.ead[k] ?? 0, 'Dmg')}
                     </td>
                   ))}
-                  <td className="py-1.5 px-2 text-right font-semibold text-slate-900 border-l border-slate-200">
+                  <td className="py-1.5 px-2 text-right font-semibold text-slate-900 border-l border-slate-200 whitespace-nowrap">
                     {formatRiskValueFull(result?.eadTotal ?? 0, 'Dmg')}
                   </td>
                 </tr>
@@ -183,14 +183,14 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
         <h4 className="text-sm font-semibold text-slate-700 mb-2">Ranked by Total EAD</h4>
         <div className="space-y-1">
           {/* Header row */}
-          <div className="flex items-center gap-2 text-xs px-1 pb-1 border-b border-slate-200">
-            <span className="w-4 text-right text-slate-500">#</span>
-            <span className="w-32 font-medium text-slate-600">District</span>
-            <span className="flex-1" />
-            <span className="w-20 text-right font-medium text-slate-600">Total EAD</span>
-            <div className="hidden sm:flex gap-2">
+          <div className="flex items-center gap-2 text-xs px-1 pb-1 border-b border-slate-200 overflow-x-auto">
+            <span className="w-4 text-right text-slate-500 flex-shrink-0">#</span>
+            <span className="w-32 font-medium text-slate-600 flex-shrink-0">District</span>
+            <span className="flex-1 min-w-[50px]" />
+            <span className="w-24 text-right font-medium text-slate-600 flex-shrink-0">Total EAD</span>
+            <div className="hidden md:flex gap-1">
               {ASSET_SUB_KEYS.map((k) => (
-                <span key={k} className="w-16 text-right font-medium text-slate-500">
+                <span key={k} className="w-16 text-right font-medium text-slate-500 flex-shrink-0 text-[10px]">
                   {ASSET_SUB_KEY_LABELS[k]}
                 </span>
               ))}
@@ -201,9 +201,9 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
               key={district}
               className="flex items-center gap-2 text-xs py-1 px-1 rounded hover:bg-slate-50"
             >
-              <span className="w-4 text-slate-400 text-right">{i + 1}</span>
-              <span className="w-32 font-medium text-slate-700 truncate">{district}</span>
-              <div className="flex-1 h-4 bg-slate-100 rounded-sm overflow-hidden">
+              <span className="w-4 text-slate-400 text-right flex-shrink-0">{i + 1}</span>
+              <span className="w-32 font-medium text-slate-700 truncate flex-shrink-0">{district}</span>
+              <div className="flex-1 h-4 bg-slate-100 rounded-sm overflow-hidden min-w-[50px]">
                 <div
                   className="h-full rounded-sm"
                   style={{
@@ -212,13 +212,13 @@ export function RiskEadView({ eadResults, climate, onChoroplethData, className }
                   }}
                 />
               </div>
-              <span className="w-20 text-right font-semibold text-slate-900">
+              <span className="w-24 text-right font-semibold text-slate-900 flex-shrink-0">
                 {formatRiskValueFull(eadTotal, 'Dmg')}
               </span>
               {ead && (
-                <div className="hidden sm:flex gap-2 text-slate-500">
+                <div className="hidden md:flex gap-1 text-slate-500">
                   {ASSET_SUB_KEYS.map((k) => (
-                    <span key={k} className="w-16 text-right">
+                    <span key={k} className="w-16 text-right flex-shrink-0 text-[10px]">
                       {formatRiskValueFull(ead[k], 'Dmg')}
                     </span>
                   ))}
