@@ -8,7 +8,18 @@
  * - Jonkman, S.N. et al. (2008). Loss of life estimation in flood risk assessment.
  * - USBR (2015). RCEM – Reclamation Consequence Estimating Methodology.
  * - Defra/Environment Agency (2006). Flood Risks to People – Phase 2.
+ *
+ * CALIBRATION:
+ * - Calibrated against 25yr Breaches Present scenario
+ * - Target: 1,700-1,800 fatalities for this scenario
+ * - Calibration factor: 0.215 (applied to all base mortality factors)
  */
+
+/**
+ * Calibration multiplier to adjust base mortality factors to match historical data
+ * Calibrated so that 25yr Breaches Present scenario yields ~1,750 fatalities
+ */
+const CALIBRATION_MULTIPLIER = 0.215;
 
 /**
  * Depth bin ranges for mortality factor lookup
@@ -171,11 +182,18 @@ function calculateSegmentCasualties({
     ];
   }
 
+  // Apply calibration multiplier to all factors
+  const calibratedFactors = [
+    baseFactors[0] * CALIBRATION_MULTIPLIER,
+    baseFactors[1] * CALIBRATION_MULTIPLIER,
+    baseFactors[2] * CALIBRATION_MULTIPLIER,
+  ];
+
   // Calculate fatalities
   const fatalities = {
-    low: Math.round(population * baseFactors[0] * durationModifier),
-    moderate: Math.round(population * baseFactors[1] * durationModifier),
-    high: Math.round(population * baseFactors[2] * durationModifier),
+    low: Math.round(population * calibratedFactors[0] * durationModifier),
+    moderate: Math.round(population * calibratedFactors[1] * durationModifier),
+    high: Math.round(population * calibratedFactors[2] * durationModifier),
   };
 
   // Calculate injuries (3× fatalities)
@@ -530,4 +548,5 @@ export default {
   MORTALITY_FACTORS,
   VH_EXCEED_MORTALITY,
   INJURY_MULTIPLIER,
+  CALIBRATION_MULTIPLIER,
 };
