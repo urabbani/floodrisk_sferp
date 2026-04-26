@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp, Users } from 'lucide-react';
+import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp, Users, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
@@ -11,6 +11,7 @@ import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
 import { RiskEadView } from './views/RiskEadView';
 import { RiskPopulationView } from './views/RiskPopulationView';
+import { RiskHotspotView } from './views/RiskHotspotView';
 import { RiskCurveModal } from './components/RiskCurveModal';
 
 const MODE = 'Dmg' as const;
@@ -80,9 +81,9 @@ export function RiskDashboard({
     onChoroplethData?.(choroplethData);
   }, [choroplethData, onChoroplethData]);
 
-  // Clean up choropleth when leaving spatial/ead/population view
+  // Clean up choropleth when leaving spatial/ead/population/hotspots view
   useEffect(() => {
-    if (currentView !== 'spatial' && currentView !== 'ead' && currentView !== 'population') {
+    if (currentView !== 'spatial' && currentView !== 'ead' && currentView !== 'population' && currentView !== 'hotspots') {
       onChoroplethData?.(null);
     }
   }, [currentView, onChoroplethData]);
@@ -175,6 +176,15 @@ export function RiskDashboard({
             >
               <Users className="w-3.5 h-3.5 mr-1" />
               Population
+            </Button>
+            <Button
+              variant={currentView === 'hotspots' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('hotspots')}
+              className="text-sm h-8"
+            >
+              <Flame className="w-3.5 h-3.5 mr-1" />
+              Hotspots
             </Button>
           </div>
         </div>
@@ -287,6 +297,11 @@ export function RiskDashboard({
         {/* Population Risk View */}
         {currentView === 'population' && !isLoading && !error && (
           <RiskPopulationView climate={selectedClimate} onChoroplethData={onChoroplethData} />
+        )}
+
+        {/* Hotspots View */}
+        {currentView === 'hotspots' && !isLoading && !error && (
+          <RiskHotspotView climate={selectedClimate} onChoroplethData={onChoroplethData} />
         )}
       </div>
 

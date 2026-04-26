@@ -121,13 +121,13 @@ function App() {
   const choroplethValues = choroplethData ? Object.values(choroplethData).filter((v) => v > 0) : [];
   const choroplethMin = choroplethValues.length > 0 ? Math.min(...choroplethValues) : 0;
   const choroplethMax = choroplethValues.length > 0 ? Math.max(...choroplethValues) : 0;
-  const choroplethMode = currentRiskView === 'population' ? ('Pop' as RiskMode) : 'Dmg';
+  const choroplethMode = currentRiskView === 'population' ? ('Pop' as RiskMode) : 'Exp';
   useChoroplethLayer({
     map,
     data: choroplethData,
     min: choroplethMin,
     max: choroplethMax,
-    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'population'),
+    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'population' || currentRiskView === 'hotspots'),
     mode: choroplethMode,
   });
 
@@ -233,6 +233,23 @@ function App() {
       }
     },
   });
+
+  // Show/hide interventions based on sidebar view
+  useEffect(() => {
+    if (!vectorSource) return;
+
+    const features = vectorSource.getFeatures();
+    const shouldBeVisible = sidebarView === 'interventions';
+
+    features.forEach((feature: Feature) => {
+      const currentVisible = feature.get('visible');
+      if (currentVisible !== shouldBeVisible) {
+        feature.set('visible', shouldBeVisible);
+      }
+    });
+    vectorSource.changed();
+    vectorLayer?.changed();
+  }, [sidebarView, vectorSource, vectorLayer]);
 
   const { exportToGeoJSON } = useAnnotationExport();
 

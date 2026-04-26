@@ -1,0 +1,99 @@
+{
+  "source": "Pakistan Bureau of Statistics - Census 2017",
+  "sourceUrl": "https://www.pbs.gov.pk/content/district-wise-results-tables-census-2017",
+  "lastUpdated": "2017",
+  "description": "Demographic and housing indicators for 7 study districts in Sindh Province",
+  "data": {
+    "Dadu": {
+      "name": "Dadu",
+      "censusName": "DADU DISTRICT",
+      "totalPopulation": 1550390,
+      "male": 795700,
+      "female": 754480,
+      "sexRatio": 105.46,
+      "populationDensity": 197.1,
+      "urbanProportion": 24.73,
+      "avgHouseholdSize": 5.38,
+      "areaSqKm": 7866,
+      "annualGrowthRate": 1.79
+    },
+    "Jacobabad": {
+      "name": "Jacobabad",
+      "censusName": "JACOBABAD DISTRICT",
+      "totalPopulation": 1007009,
+      "male": 514786,
+      "female": 492061,
+      "sexRatio": 104.62,
+      "populationDensity": 373.24,
+      "urbanProportion": 29.51,
+      "avgHouseholdSize": 5.63,
+      "areaSqKm": 2698,
+      "annualGrowthRate": 1.72
+    },
+    "Jamshoro": {
+      "name": "Jamshoro",
+      "censusName": "JAMSHORO DISTRICT",
+      "totalPopulation": 993908,
+      "male": 523069,
+      "female": 470702,
+      "sexRatio": 111.13,
+      "populationDensity": 88.71,
+      "urbanProportion": 43.53,
+      "avgHouseholdSize": 5.37,
+      "areaSqKm": 11204,
+      "annualGrowthRate": 2.85
+    },
+    "Kashmore": {
+      "name": "Kashmore",
+      "censusName": "KASHMORE DISTRICT",
+      "totalPopulation": 1090336,
+      "male": 564663,
+      "female": 525558,
+      "sexRatio": 107.44,
+      "populationDensity": 422.61,
+      "urbanProportion": 23.26,
+      "avgHouseholdSize": 5.84,
+      "areaSqKm": 2580,
+      "annualGrowthRate": 2.53
+    },
+    "Larkana": {
+      "name": "Larkana",
+      "censusName": "LARKANA DISTRICT",
+      "totalPopulation": 1521786,
+      "male": 775934,
+      "female": 745530,
+      "sexRatio": 104.08,
+      "populationDensity": 781.2,
+      "urbanProportion": 45.93,
+      "avgHouseholdSize": 5.78,
+      "areaSqKm": 1948,
+      "annualGrowthRate": 2.22
+    },
+    "Qambar Shahdadkot": {
+      "name": "Qambar Shahdadkot",
+      "censusName": "KAMBAR SHAHDAD KOT DISTRICT",
+      "totalPopulation": 1338035,
+      "male": 680567,
+      "female": 657290,
+      "sexRatio": 103.54,
+      "populationDensity": 244.39,
+      "urbanProportion": 29.66,
+      "avgHouseholdSize": 6.05,
+      "areaSqKm": 5475,
+      "annualGrowthRate": 1.96
+    },
+    "Shikarpur": {
+      "name": "Shikarpur",
+      "censusName": "SHIKARPUR DISTRICT",
+      "totalPopulation": 1233760,
+      "male": 635558,
+      "female": 598130,
+      "sexRatio": 106.26,
+      "populationDensity": 491.15,
+      "urbanProportion": 24.68,
+      "avgHouseholdSize": 5.94,
+      "areaSqKm": 2512,
+      "annualGrowthRate": 1.79
+    }
+  }
+}

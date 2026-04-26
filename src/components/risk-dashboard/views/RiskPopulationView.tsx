@@ -29,12 +29,11 @@ import usePopulationRisk from '@/hooks/usePopulationRisk';
 import type {
   PopulationRiskScenario,
   PopulationRiskDistrict,
-  RiskLevel,
 } from '@/types/casualty';
 import {
-  RISK_LEVEL_COLORS,
-  RISK_LEVEL_LABELS,
   formatCasualtyRange,
+  formatCasualtyWithSigma,
+  calculateCasualtySigma,
   formatModerateEstimate,
   DEPTH_BINS,
   type DepthBinRange,
@@ -98,11 +97,11 @@ function DistrictTooltip({ active, payload, label }: any) {
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-600">Est. Fatalities:</span>
-          <span className="font-medium text-red-600">{data?.fatalityRange ?? '0'}</span>
+          <span className="font-medium text-red-600">{data?.fatalityWithSigma ?? '0'}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-600">Est. Injuries:</span>
-          <span className="font-medium text-orange-600">{data?.injuryRange ?? '0'}</span>
+          <span className="font-medium text-orange-600">{data?.injuryWithSigma ?? '0'}</span>
         </div>
       </div>
     </div>
@@ -161,9 +160,8 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
         district: d.district,
         fatalities: Math.round(d.estimatedFatalities.moderate),
         affected: d.affectedPopulation,
-        riskLevel: d.fatalityRiskLevel,
-        fatalityRange: formatCasualtyRange(d.estimatedFatalities),
-        injuryRange: formatCasualtyRange(d.estimatedInjuries),
+        fatalityWithSigma: formatCasualtyWithSigma(d.estimatedFatalities),
+        injuryWithSigma: formatCasualtyWithSigma(d.estimatedInjuries),
       }));
   }, [selectedScenario]);
 
@@ -175,9 +173,6 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
       affected: selectedScenario.totalAffectedPopulation,
       fatalities: ce.fatalities,
       injuries: ce.injuries,
-      fatalityRiskLevel: ce.fatalityRiskLevel,
-      injuryRiskLevel: ce.injuryRiskLevel,
-      keyDrivers: ce.keyDrivers,
     };
   }, [selectedScenario]);
 
@@ -264,7 +259,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
 
       {/* Summary Cards */}
       {summary && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Affected Population */}
           <Card>
             <CardContent className="pt-4 pb-3">
@@ -283,16 +278,8 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
             <CardContent className="pt-4 pb-3">
               <p className="text-xs text-muted-foreground mb-1">Estimated Fatalities</p>
               <p className="text-xl font-bold text-red-600">
-                {formatCasualtyRange(summary.fatalities)}
+                {formatCasualtyWithSigma(summary.fatalities)}
               </p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Badge
-                  className="text-[10px] px-1.5 py-0"
-                  style={{ backgroundColor: RISK_LEVEL_COLORS[summary.fatalityRiskLevel], color: '#fff' }}
-                >
-                  {RISK_LEVEL_LABELS[summary.fatalityRiskLevel]}
-                </Badge>
-              </div>
             </CardContent>
           </Card>
 
@@ -301,29 +288,11 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
             <CardContent className="pt-4 pb-3">
               <p className="text-xs text-muted-foreground mb-1">Estimated Injuries</p>
               <p className="text-xl font-bold text-orange-600">
-                {formatCasualtyRange(summary.injuries)}
+                {formatCasualtyWithSigma(summary.injuries)}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 approx. 3&times; fatalities
               </p>
-            </CardContent>
-          </Card>
-
-          {/* Risk Level */}
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground mb-1">Overall Risk Level</p>
-              <Badge
-                className="text-sm px-3 py-1 mt-1"
-                style={{ backgroundColor: RISK_LEVEL_COLORS[summary.fatalityRiskLevel], color: '#fff' }}
-              >
-                {RISK_LEVEL_LABELS[summary.fatalityRiskLevel]}
-              </Badge>
-              {summary.keyDrivers.length > 0 && (
-                <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
-                  {summary.keyDrivers.join('. ')}
-                </p>
-              )}
             </CardContent>
           </Card>
         </div>
@@ -394,14 +363,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 tick={{ fontSize: 11 }}
               />
               <Tooltip content={<DistrictTooltip />} />
-              <Bar dataKey="fatalities" radius={[0, 4, 4, 0]}>
-                {districtChartData.map((entry, idx) => (
-                  <Cell
-                    key={idx}
-                    fill={RISK_LEVEL_COLORS[entry.riskLevel]}
-                  />
-                ))}
-              </Bar>
+              <Bar dataKey="fatalities" fill="#dc2626" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
 
@@ -414,7 +376,6 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Affected</th>
                   <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Fatalities</th>
                   <th className="pb-2 pr-3 font-medium text-slate-600 text-right">Injuries</th>
-                  <th className="pb-2 font-medium text-slate-600 text-center">Risk</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,39 +386,15 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                       {Math.round(d.affected).toLocaleString()}
                     </td>
                     <td className="py-2 pr-3 text-right text-red-600 font-medium">
-                      {d.fatalityRange}
+                      {d.fatalityWithSigma}
                     </td>
                     <td className="py-2 pr-3 text-right text-orange-600 font-medium">
-                      {d.injuryRange}
-                    </td>
-                    <td className="py-2 text-center">
-                      <Badge
-                        className="text-[10px] px-1.5 py-0"
-                        style={{ backgroundColor: RISK_LEVEL_COLORS[d.riskLevel], color: '#fff' }}
-                      >
-                        {RISK_LEVEL_LABELS[d.riskLevel]}
-                      </Badge>
+                      {d.injuryWithSigma}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          {/* Legend */}
-          <div className="mt-4 pt-3 border-t border-slate-200">
-            <div className="flex items-center gap-3 text-xs flex-wrap">
-              <span className="font-medium text-slate-600">Risk Level:</span>
-              {(Object.entries(RISK_LEVEL_LABELS) as [RiskLevel, string][]).map(([key, label]) => (
-                <div key={key} className="flex items-center gap-1">
-                  <div
-                    className="w-3 h-3 rounded-sm"
-                    style={{ backgroundColor: RISK_LEVEL_COLORS[key] }}
-                  />
-                  <span className="text-slate-600">{label}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -466,11 +403,11 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
       <Card>
         <CardContent className="pt-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Methodology:</strong> Casualty estimates use depth &times; velocity mortality factors from
-            Jonkman et al. (2008), USBR RCEM, and Defra FD2321, with Flood 2022 adjustment. Low, moderate, and high estimates
-            reflect uncertainty in flood warning effectiveness and evacuation. Injuries estimated as
-            3&times; fatalities (international convention). V&times;h &gt; 1.5 m&sup2;/s threshold indicates
-            hazardous conditions for stability. Map choropleth shows moderate fatality estimate per district.
+            <strong>Methodology:</strong> Casualty estimates use depth × velocity mortality factors from
+            Jonkman et al. (2008), USBR RCEM, and Defra FD2321, calibrated to Flood 2022 event.
+            Values shown as <strong>estimate ± σ</strong> (moderate ± standard deviation). The σ represents uncertainty
+            due to flood warning effectiveness and evacuation. Injuries estimated as 3× fatalities (international convention).
+            V×h &gt; 1.5 m²/s threshold indicates hazardous conditions for stability. Map choropleth shows moderate fatality estimate per district.
           </p>
         </CardContent>
       </Card>

@@ -10,16 +10,21 @@
  * - Defra/Environment Agency (2006). Flood Risks to People – Phase 2.
  *
  * CALIBRATION:
- * - Calibrated against 25yr Breaches Present scenario
- * - Target: 1,700-1,800 fatalities for this scenario
- * - Calibration factor: 0.215 (applied to all base mortality factors)
+ * - Calibrated against Flood 2022 actual event data (Sindh Province)
+ * - Government reported: 14.5M affected, 1,739 fatalities (0.012% fatality rate)
+ * - MODERATE estimate calibrated to 0.012% fatality rate
+ * - Calibration factor: 0.0482 (applied to all base mortality factors)
  */
 
 /**
  * Calibration multiplier to adjust base mortality factors to match historical data
- * Calibrated so that 25yr Breaches Present scenario yields ~1,750 fatalities
+ *
+ * Based on Flood 2022 actual event:
+ * - MODERATE estimate calibrated to 0.012% fatality rate (observed in Sindh 2022)
+ * - For 2.18M inundated population: 261 fatalities (MODERATE)
+ * - Range: LOW 106 (0.005%) to HIGH 549 (0.025%)
  */
-const CALIBRATION_MULTIPLIER = 0.215;
+const CALIBRATION_MULTIPLIER = 0.05;
 
 /**
  * Depth bin ranges for mortality factor lookup

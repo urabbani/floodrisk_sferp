@@ -1,0 +1,64 @@
+{
+  "source": "PSLM 2019-20 / World Bank",
+  "sourceUrl": "Poverty_Data_District_level.xlsx",
+  "lastUpdated": "2019-2020",
+  "description": "District-level poverty data for Sindh province from Pakistan Social and Living Standards Measurement (PSLM) survey",
+  "data": {
+    "Dadu": {
+      "povertyRate": 29.41,
+      "povertyHeadcount": 487586,
+      "meanMonthlyConsumption": 4900.38,
+      "poorConsumption": 3175.19,
+      "povertyGap": 0.045,
+      "populationPSLM": 1657789
+    },
+    "Jamshoro": {
+      "povertyRate": 25.81,
+      "povertyHeadcount": 147417,
+      "meanMonthlyConsumption": 5449.08,
+      "poorConsumption": 3120.01,
+      "povertyGap": 0.0437,
+      "populationPSLM": 571161
+    },
+    "Jacobabad": {
+      "povertyRate": 27.67,
+      "povertyHeadcount": 190286,
+      "meanMonthlyConsumption": 5224.3,
+      "poorConsumption": 3068.63,
+      "povertyGap": 0.0503,
+      "populationPSLM": 687729
+    },
+    "Qambar Shahdadkot": {
+      "povertyRate": 22.41,
+      "povertyHeadcount": 403524,
+      "meanMonthlyConsumption": 5413.57,
+      "poorConsumption": 3211.66,
+      "povertyGap": 0.0322,
+      "populationPSLM": 1800443
+    },
+    "Kashmore": {
+      "povertyRate": 25.21,
+      "povertyHeadcount": 273604,
+      "meanMonthlyConsumption": 5274.65,
+      "poorConsumption": 3161.54,
+      "povertyGap": 0.0393,
+      "populationPSLM": 1085137
+    },
+    "Larkana": {
+      "povertyRate": 21.92,
+      "povertyHeadcount": 303338,
+      "meanMonthlyConsumption": 5331.23,
+      "poorConsumption": 3229.34,
+      "povertyGap": 0.0306,
+      "populationPSLM": 1383609
+    },
+    "Shikarpur": {
+      "povertyRate": 24.47,
+      "povertyHeadcount": 308544,
+      "meanMonthlyConsumption": 5484.86,
+      "poorConsumption": 3197.39,
+      "povertyGap": 0.0359,
+      "populationPSLM": 1261055
+    }
+  }
+}

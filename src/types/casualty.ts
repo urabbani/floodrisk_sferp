@@ -195,12 +195,37 @@ export const CASUALTY_METHODOLOGY_SOURCES = [
 ];
 
 /**
- * Format casualty range for display
+ * Calculate standard deviation from casualty range
+ * Uses moderate as mean, and estimates sigma from low/high bounds
+ */
+export function calculateCasualtySigma(range: CasualtyRange): number {
+  if (range.high === 0 && range.low === 0) return 0;
+  // Estimate sigma as half the range / 2 (approximate 1-sigma from min-max)
+  // Low ≈ mean - 2*sigma, High ≈ mean + 2*sigma (95% confidence interval)
+  const mean = range.moderate;
+  const sigma = Math.max(
+    (mean - range.low) / 2,
+    (range.high - mean) / 2
+  );
+  return Math.round(sigma);
+}
+
+/**
+ * Format casualty with sigma (moderate ± sigma)
+ */
+export function formatCasualtyWithSigma(range: CasualtyRange): string {
+  if (range.high === 0 && range.low === 0) return '0';
+  const moderate = Math.round(range.moderate);
+  const sigma = calculateCasualtySigma(range);
+  if (sigma === 0) return moderate.toLocaleString();
+  return `${moderate.toLocaleString()} ±${sigma.toLocaleString()}`;
+}
+
+/**
+ * Format casualty range for display (legacy, for backward compatibility)
  */
 export function formatCasualtyRange(range: CasualtyRange): string {
-  if (range.high === 0) return '0';
-  if (range.low === range.high) return Math.round(range.low).toLocaleString();
-  return `${Math.round(range.low).toLocaleString()} - ${Math.round(range.high).toLocaleString()}`;
+  return formatCasualtyWithSigma(range);
 }
 
 /**
