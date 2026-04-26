@@ -5,7 +5,7 @@ export type GeometryType = 'raster' | 'polygon' | 'line' | 'point';
 export interface LayerInfo {
   id: string;
   name: string;
-  type: 'raster' | 'vector' | 'wms';
+  type: 'raster' | 'vector' | 'wms' | 'xyz';
   geometryType?: GeometryType;
   visible: boolean;
   opacity: number;
@@ -14,6 +14,7 @@ export interface LayerInfo {
   style?: string;
   legendUrl?: string;
   zIndex?: number;
+  url?: string; // For XYZ tile layers
   /**
    * CQL filter for WMS layers (e.g., "depth_bin >= 1.5")
    * Used to filter features on the server side

@@ -226,6 +226,17 @@ export const layerTree: LayerGroup = {
     
     // HDTM (DEM workspace - hillshaded color-relief map)
     createRasterLayer('HDTM', 'HDTM_shaded_relief', false, 1.0, GEOSERVER_CONFIG.workspaces.dem),
+
+    // Hotspot Intensity (Spatially distributed hotspot based on population density)
+    {
+      id: 'hotspot_intensity',
+      name: 'Hotspot Intensity',
+      type: 'xyz',
+      url: '/tiles/hotspot/{z}/{x}/{y}.png',
+      visible: false,
+      opacity: 0.6,
+      zIndex: 15,
+    },
   ],
 };
 

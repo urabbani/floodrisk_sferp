@@ -192,31 +192,46 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
           return;
         }
 
-        const zIndex = getZIndexForGeometryType(layerInfo.geometryType);
+        const zIndex = layerInfo.zIndex ?? getZIndexForGeometryType(layerInfo.geometryType);
         const opacity = layerOpacities[layerId] ?? layerInfo.opacity;
         layerOpacitiesRef.current[layerId] = opacity;
 
-        const wmsLayer = new TileLayer({
-          source: new TileWMS({
-            url: `${GEOSERVER_CONFIG.baseUrl}/${layerInfo.workspace}/wms`,
-            params: {
-              LAYERS: `${layerInfo.workspace}:${layerInfo.geoserverName}`,
-              TILED: true,
-              VERSION: GEOSERVER_CONFIG.wmsVersion,
-              FORMAT: 'image/png',
-              TRANSPARENT: true,
-              ...(layerInfo.filter && { CQL_FILTER: layerInfo.filter }), // Add CQL filter if present
-            },
-            serverType: 'geoserver',
-            transition: 0,
-          }),
-          opacity,
-          zIndex,
-          visible: true,
-        });
+        let newLayer;
+        if (layerInfo.type === 'xyz' && layerInfo.url) {
+          // XYZ tile layer (e.g., hotspot intensity tiles)
+          newLayer = new TileLayer({
+            source: new XYZ({
+              url: layerInfo.url,
+              crossOrigin: 'anonymous',
+            }),
+            opacity,
+            zIndex,
+            visible: true,
+          });
+        } else {
+          // WMS layer (default)
+          newLayer = new TileLayer({
+            source: new TileWMS({
+              url: `${GEOSERVER_CONFIG.baseUrl}/${layerInfo.workspace}/wms`,
+              params: {
+                LAYERS: `${layerInfo.workspace}:${layerInfo.geoserverName}`,
+                TILED: true,
+                VERSION: GEOSERVER_CONFIG.wmsVersion,
+                FORMAT: 'image/png',
+                TRANSPARENT: true,
+                ...(layerInfo.filter && { CQL_FILTER: layerInfo.filter }),
+              },
+              serverType: 'geoserver',
+              transition: 0,
+            }),
+            opacity,
+            zIndex,
+            visible: true,
+          });
+        }
 
-        map.addLayer(wmsLayer);
-        layerRefs.current!.set(layerId, wmsLayer);
+        map.addLayer(newLayer);
+        layerRefs.current!.set(layerId, newLayer);
       }
     });
   }, [visibleLayerIds]);
