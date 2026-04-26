@@ -24,7 +24,6 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
   Legend,
-  Tooltip,
 } from 'recharts';
 import { Flame, Map, TrendingUp, AlertTriangle } from 'lucide-react';
 import useHotspotData from '../hooks/useHotspotData';
@@ -92,14 +91,6 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
     };
   }, [hotspotResults]);
 
-  // District lookup map for O(1) tooltip access
-  const districtLookup = useMemo(() => {
-    if (!hotspotResults) return {};
-    return Object.fromEntries(
-      hotspotResults.map((r) => [r.district, r])
-    );
-  }, [hotspotResults]);
-
   // Radar chart data: 3 axes × 7 districts
   const radarData = useMemo(() => {
     if (!hotspotResults) return [];
@@ -124,44 +115,6 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
       },
     ];
   }, [hotspotResults]);
-
-  // Custom tooltip with access to hotspotResults for full district data
-  function renderHotspotTooltip({ active, payload }: any) {
-    if (!active || !payload?.length || !districtLookup) return null;
-
-    const districtName = payload[0]?.name;
-    if (!districtName) return null;
-
-    // Direct lookup from district map for exact string matching
-    const districtData = districtLookup[districtName];
-    if (!districtData) return null;
-
-    const { dimensions, hotspotScore } = districtData;
-
-    return (
-      <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-        <p className="font-medium text-slate-800 mb-2">{districtName}</p>
-        <div className="space-y-1">
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">Physical Risk:</span>
-            <span className="font-medium">{dimensions.physicalRisk}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">Population Risk:</span>
-            <span className="font-medium">{dimensions.populationRisk}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <span className="text-slate-600">Socioeconomic:</span>
-            <span className="font-medium">{dimensions.socioeconomicVulnerability}</span>
-          </div>
-          <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-1 mt-1">
-            <span className="text-slate-700 font-medium">Hotspot Score:</span>
-            <span className="font-bold text-orange-600">{hotspotScore}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Max score for bar scaling
   const maxScore = 100;
@@ -347,7 +300,6 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
               <PolarGrid stroke="#e2e8f0" />
               <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 11 }} />
               <PolarRadiusAxis domain={[0, 100]} tick={{ fontSize: 10 }} />
-              <Tooltip content={renderHotspotTooltip} />
               <Legend />
               {DISTRICTS.map((district) => (
                 <Radar
