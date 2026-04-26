@@ -101,9 +101,11 @@ Where:
 Physical Risk (normalized) = (EAD - min_EAD) / (max_EAD - min_EAD) × 100
 ```
 
-### Dimension 2: Population Risk (Casualty Estimation)
+### Dimension 2: Population Risk (Expected Annual Fatalities)
 
 **Source:** Semi-quantitative fatality estimation using depth × velocity mortality factors
+
+**UPDATE (April 2026):** Now uses **Expected Annual Fatalities (EAF)** - integrated across all 7 return periods using trapezoidal integration. This provides consistent methodology with EAD.
 
 **Primary Method:** Depth × velocity (V×h) threshold approach
 
@@ -126,9 +128,16 @@ Fatalities = Σ (Population in depth zone × Mortality Factor × Calibration Fac
 
 **Uncertainty:** Estimates presented as moderate ± σ (standard deviation)
 
+**Expected Annual Fatalities Calculation:**
+```
+EAF = Σ 0.5 × (Fᵢ + Fᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|
+```
+
+Where Fᵢ = Moderate fatality estimate for return period RPᵢ
+
 **Normalization:**
 ```
-Population Risk (normalized) = (Fatalities - min_Fatalities) / (max_Fatalities - min_Fatalities) × 100
+Population Risk (normalized) = (EAF - min_EAF) / (max_EAF - min_EAF) × 100
 ```
 
 ### Dimension 3: Socioeconomic Vulnerability
@@ -167,16 +176,23 @@ Vulnerability = 0.4 × Demographic + 0.3 × Economic + 0.2 × Housing + 0.1 × S
 
 **Final Calculation:**
 ```
-Hotspot Score = 0.33 × Physical Risk (normalized) + 
-                0.33 × Population Risk (normalized) + 
+Hotspot Score = 0.33 × Physical Risk (normalized EAD) + 
+                0.33 × Population Risk (normalized EAF) + 
                 0.33 × Socioeconomic Vulnerability
 ```
+
+Where:
+- **EAD** = Expected Annual Damage (economic)
+- **EAF** = Expected Annual Fatalities (population)
 
 **Interpretation:**
 - **0-30**: Low priority hotspot
 - **30-50**: Moderate priority hotspot
 - **50-70**: High priority hotspot
 - **70-100**: Very high priority hotspot
+
+**Methodology Consistency:**
+Both EAD and EAF use trapezoidal integration across 7 return periods (2.3, 5, 10, 25, 50, 100, 500 years), providing a consistent probabilistic approach to risk quantification.
 
 ---
 
@@ -439,6 +455,11 @@ RiskHotspotView.useEffect()
    - Climate change impacts only via future climate scenarios
    - Development trajectories not modeled
 
+5. **EAF Assumptions**
+   - Assumes linear interpolation between return periods
+   - Uses same mortality factors for all return periods
+   - Does not account for potential scenario dependencies
+
 ### Technical Limitations
 
 1. **Performance**
@@ -582,6 +603,7 @@ interface HotspotDistrictResult {
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | 2026-04-26 | **EAF Integration**: Changed Population Risk to use Expected Annual Fatalities integrated across all return periods, matching EAD methodology. Removed return period selector. |
 | 1.0 | 2026-04-26 | Initial release with 3-dimension hotspot scoring |
 
 ---
