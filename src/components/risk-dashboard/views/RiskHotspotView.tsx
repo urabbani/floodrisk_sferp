@@ -55,26 +55,45 @@ const DISTRICT_COLORS: Record<string, string> = {
 
 function HotspotTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
-  const data = payload[0].payload;
+
+  // Radar chart tooltip structure:
+  // payload[0].payload = the row object (e.g., { dimension: "Physical Risk", Dadu: 78, Jacobabad: 62, ... })
+  // payload[0].name = the district name (series being hovered)
+  // payload[0].value = the value at this specific point
+
+  const rowData = payload[0]?.payload; // The entire row with all districts
+  const districtName = payload[0]?.name; // Which district radar is being hovered
+
+  if (!rowData || !districtName) return null;
+
+  // Extract all 3 dimension values for this district
+  const physicalRisk = rowData[districtName] ?? 0;
+  const populationRisk = rowData['Population Risk'] ?? 0;
+  const socioeconomic = rowData['Socioeconomic'] ?? 0;
+
+  // Find hotspot score by looking it up from the normalized values
+  // (For now, we'll compute it from the 3 dimensions)
+  const hotspotScore = Math.round((physicalRisk + populationRisk + socioeconomic) / 3);
+
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-medium text-slate-800 mb-1">{data.district}</p>
+      <p className="font-medium text-slate-800 mb-2">{districtName}</p>
       <div className="space-y-1">
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-600">Physical Risk:</span>
-          <span className="font-medium">{data.dimensions?.physicalRisk ?? 0}</span>
+          <span className="font-medium">{physicalRisk}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-600">Population Risk:</span>
-          <span className="font-medium">{data.dimensions?.populationRisk ?? 0}</span>
+          <span className="font-medium">{populationRisk}</span>
         </div>
         <div className="flex items-center justify-between gap-4">
           <span className="text-slate-600">Socioeconomic:</span>
-          <span className="font-medium">{data.dimensions?.socioeconomicVulnerability ?? 0}</span>
+          <span className="font-medium">{socioeconomic}</span>
         </div>
         <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-1 mt-1">
           <span className="text-slate-700 font-medium">Hotspot Score:</span>
-          <span className="font-bold text-orange-600">{data.hotspotScore ?? 0}</span>
+          <span className="font-bold text-orange-600">{hotspotScore}</span>
         </div>
       </div>
     </div>
