@@ -92,6 +92,14 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
     };
   }, [hotspotResults]);
 
+  // District lookup map for O(1) tooltip access
+  const districtLookup = useMemo(() => {
+    if (!hotspotResults) return {};
+    return Object.fromEntries(
+      hotspotResults.map((r) => [r.district, r])
+    );
+  }, [hotspotResults]);
+
   // Radar chart data: 3 axes × 7 districts
   const radarData = useMemo(() => {
     if (!hotspotResults) return [];
@@ -119,13 +127,13 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
 
   // Custom tooltip with access to hotspotResults for full district data
   function renderHotspotTooltip({ active, payload }: any) {
-    if (!active || !payload?.length || !hotspotResults) return null;
+    if (!active || !payload?.length || !districtLookup) return null;
 
     const districtName = payload[0]?.name;
     if (!districtName) return null;
 
-    // Find this district's full data from hotspotResults
-    const districtData = hotspotResults.find((r) => r.district === districtName);
+    // Direct lookup from district map for exact string matching
+    const districtData = districtLookup[districtName];
     if (!districtData) return null;
 
     const { dimensions, hotspotScore } = districtData;
