@@ -11,9 +11,35 @@ import type {
   HotspotDimensionScores,
   HotspotDistrictResult,
 } from '@/types/socioeconomic';
-import { DISTRICTS } from '@/types/risk';
+import { DISTRICTS, RETURN_PERIODS } from '@/types/risk';
 import type { EadResult } from '@/types/risk';
 import type { VulnerabilityIndex } from '@/types/socioeconomic';
+
+/**
+ * Calculate Expected Annual Fatalities (EAF) using trapezoidal integration
+ *
+ * Mirrors the EAD calculation methodology: integrates fatality estimates
+ * across all 7 return periods to get an annualized expected value.
+ *
+ * EAF = Σ 0.5 × (Fᵢ + Fᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|
+ *
+ * @param fatalitiesByRP - Array of { returnPeriod, fatalities } sorted by RP ascending
+ * @returns Expected annual fatalities (integrated across probability spectrum)
+ */
+export function calculateExpectedAnnualFatalities(
+  fatalitiesByRP: { returnPeriod: number; fatalities: number }[]
+): number {
+  if (fatalitiesByRP.length < 2) return 0;
+
+  let eaf = 0;
+  for (let i = 0; i < fatalitiesByRP.length - 1; i++) {
+    const freqLeft = 1 / fatalitiesByRP[i].returnPeriod;
+    const freqRight = 1 / fatalitiesByRP[i + 1].returnPeriod;
+    eaf += 0.5 * (fatalitiesByRP[i].fatalities + fatalitiesByRP[i + 1].fatalities)
+          * Math.abs(freqLeft - freqRight);
+  }
+  return eaf;
+}
 
 /**
  * Min-max normalize an array of values to 0-100 scale
@@ -35,7 +61,7 @@ function normalizeTo100(values: number[]): number[] {
  */
 export function computeHotspotScores(params: {
   eadResults: EadResult[];
-  fatalityMap: Record<DistrictName, number>;
+  expectedAnnualFatalities: Record<DistrictName, number>; // Integrated across all RPs
   vulnerabilityIndices: VulnerabilityIndex[];
   climate: 'present' | 'future';
   maintenance: 'breaches' | 'redcapacity' | 'perfect';
@@ -43,7 +69,7 @@ export function computeHotspotScores(params: {
 }): HotspotDistrictResult[] {
   const {
     eadResults,
-    fatalityMap,
+    expectedAnnualFatalities,
     vulnerabilityIndices,
     climate,
     maintenance,
@@ -68,8 +94,8 @@ export function computeHotspotScores(params: {
     );
     rawPhysical.push(ead?.eadTotal ?? 0);
 
-    // Population Risk: moderate fatality estimate
-    rawPopulation.push(fatalityMap[district] ?? 0);
+    // Population Risk: Expected Annual Fatalities (integrated across all return periods)
+    rawPopulation.push(expectedAnnualFatalities[district] ?? 0);
 
     // Socioeconomic Vulnerability: composite vulnerability index
     rawSocioeconomic.push(vulnMap[district]?.overallScore ?? 50);

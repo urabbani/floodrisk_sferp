@@ -3,19 +3,19 @@
  *
  * Combines physical risk, population risk, and socioeconomic vulnerability
  * into composite hotspot scores for prioritized intervention.
+ *
+ * METHODOLOGY UPDATE (April 2026):
+ * - Physical Risk: Uses Expected Annual Damage (EAD) - integrated across ALL 7 return periods
+ * - Population Risk: Uses Expected Annual Fatalities (EAF) - integrated across ALL 7 return periods
+ * - Socioeconomic Vulnerability: Static census + poverty composite index
+ *
+ * This ensures consistent methodology across both risk dimensions.
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Radar,
   RadarChart,
@@ -41,16 +41,6 @@ interface RiskHotspotViewProps {
   climate: 'present' | 'future';
   onChoroplethData?: (data: Record<DistrictName, number> | null) => void;
 }
-
-const RETURN_PERIODS = [
-  { value: '2.3', label: '2.3 years' },
-  { value: '5', label: '5 years' },
-  { value: '10', label: '10 years' },
-  { value: '25', label: '25 years' },
-  { value: '50', label: '50 years' },
-  { value: '100', label: '100 years' },
-  { value: '500', label: '500 years' },
-];
 
 // District colors for radar chart (7 distinct colors)
 const DISTRICT_COLORS: Record<string, string> = {
@@ -98,9 +88,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
     hotspotResults,
     loading,
     error,
-    returnPeriod,
     maintenance,
-    setReturnPeriod,
     setMaintenance,
   } = useHotspotData(climate);
 
@@ -200,7 +188,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
             <CardTitle className="text-lg">Flood Risk Hotspots</CardTitle>
           </div>
           <CardDescription>
-            Composite risk analysis: Physical damage potential + Population risk + Socioeconomic vulnerability
+            Composite risk analysis: EAD + EAF + Socioeconomic vulnerability (integrated across all return periods)
           </CardDescription>
         </CardHeader>
       </Card>
@@ -210,22 +198,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         <CardContent className="pt-4">
           <div className="flex flex-wrap gap-4 items-end">
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Return Period</label>
-              <Select value={returnPeriod} onValueChange={setReturnPeriod}>
-                <SelectTrigger className="w-36">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {RETURN_PERIODS.map((rp) => (
-                    <SelectItem key={rp.value} value={rp.value}>
-                      {rp.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium">Maintenance</label>
+              <label className="text-sm font-medium">Maintenance Level</label>
               <div className="flex gap-1">
                 {MAINTENANCE_LEVELS.map((m) => (
                   <Button
@@ -304,7 +277,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         <CardHeader className="pb-2">
           <CardTitle className="text-base">District Hotspot Rankings</CardTitle>
           <CardDescription>
-            Composite scores (Physical + Population + Socioeconomic), equal weights
+            Integrated scores (EAD + EAF + Vulnerability), equal weights, all return periods
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -378,10 +351,11 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         <CardContent className="pt-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
             <strong>Methodology:</strong> Hotspot scores combine three normalized dimensions (0-100 each):
-            <br />• <strong>Physical Risk:</strong> Expected Annual Damage (EAD) across 7 return periods
-            <br />• <strong>Population Risk:</strong> Moderate fatality estimate for selected scenario
+            <br />• <strong>Physical Risk:</strong> Expected Annual Damage (EAD) integrated across 7 return periods (2.3yr–500yr)
+            <br />• <strong>Population Risk:</strong> Expected Annual Fatalities (EAF) integrated across 7 return periods using trapezoidal integration
             <br />• <strong>Socioeconomic Vulnerability:</strong> Composite index from census 2017 + poverty 2019
-            <br />Each dimension is min-max normalized across districts, then weighted equally (1/3 each).
+            <br />Both EAD and EAF use consistent methodology, integrating across the full probability spectrum.
+            Each dimension is min-max normalized across districts, then weighted equally (1/3 each).
             Higher scores indicate greater overall flood risk and intervention priority.
           </p>
         </CardContent>
