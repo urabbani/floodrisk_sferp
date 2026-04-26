@@ -188,7 +188,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
             <CardTitle className="text-lg">Flood Risk Hotspots</CardTitle>
           </div>
           <CardDescription>
-            Composite risk analysis: EAD + EAF + Socioeconomic vulnerability (integrated across all return periods)
+            Multi-Criteria Analysis (MCA) using EAD, EAF, and Socioeconomic vulnerability — integrated across all 7 return periods for stable, comparable hotspot scores
           </CardDescription>
         </CardHeader>
       </Card>
@@ -277,7 +277,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         <CardHeader className="pb-2">
           <CardTitle className="text-base">District Hotspot Rankings</CardTitle>
           <CardDescription>
-            Integrated scores (EAD + EAF + Vulnerability), equal weights, all return periods
+            MCA-based composite scores integrating EAD, EAF, and Vulnerability across all return periods
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -350,11 +350,12 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
       <Card>
         <CardContent className="pt-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Methodology:</strong> Hotspot scores combine three normalized dimensions (0-100 each):
-            <br />• <strong>Physical Risk:</strong> Expected Annual Damage (EAD) integrated across 7 return periods (2.3yr–500yr)
-            <br />• <strong>Population Risk:</strong> Expected Annual Fatalities (EAF) integrated across 7 return periods using trapezoidal integration
+            <strong>Methodology:</strong> Multi-Criteria Analysis combining EAD, EAF, and Socioeconomic vulnerability (equal weights).
+            <br />• <strong>Physical Risk (EAD):</strong> Expected Annual Damage integrated across 7 return periods (2.3yr–500yr) using trapezoidal integration
+            <br />• <strong>Population Risk (EAF):</strong> Expected Annual Fatalities integrated across 7 return periods using trapezoidal integration
             <br />• <strong>Socioeconomic Vulnerability:</strong> Composite index from census 2017 + poverty 2019
-            <br />Both EAD and EAF use consistent methodology, integrating across the full probability spectrum.
+            <br />Both EAD and EAF use identical probabilistic methodology, integrating across the full probability spectrum.
+            <br /><strong className="text-green-700">✓ Stable Rankings:</strong> Hotspot scores remain consistent regardless of single return period selection, as they capture the complete risk distribution rather than one specific scenario.
             Each dimension is min-max normalized across districts, then weighted equally (1/3 each).
             Higher scores indicate greater overall flood risk and intervention priority.
           </p>
