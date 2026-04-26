@@ -78,7 +78,8 @@ Hazard
 - **FeaturePopup** (`src/components/popups/FeaturePopup.tsx`): Displays feature attributes from WMS GetFeatureInfo
 - **SwipeCompare** (`src/components/swipe/SwipeCompare.tsx`): Side-by-side comparison of two flood scenarios
 - **ImpactMatrix** (`src/components/impact-matrix/`): Real-time flood impact analysis with depth distribution charts
-- **RiskDashboard** (`src/components/risk-dashboard/`): Risk analysis with 4 views — Summary Heatmap, District Breakdown, Spatial choropleth, and EAD (Expected Annual Damage)
+- **RiskDashboard** (`src/components/risk-dashboard/`): Risk analysis with 6 views — Summary Heatmap, District Breakdown, Spatial choropleth, EAD (Expected Annual Damage), Population Risk (Casualty Estimation), and Flood Risk Hotspots
+  - **Hotspots Documentation:** See `docs/FLOOD_RISK_HOTSPOTS.md` for detailed methodology, data sources, and improvement opportunities
 - **Interventions** (`src/components/annotations/`): Collaborative drawing and annotation on the map (points, lines, polygons with categories and export)
   - **LoginDialog** (`src/components/annotations/LoginDialog.tsx`): Login form for authentication
   - **useAuth** (`src/hooks/useAuth.tsx`): Auth context providing user state, login/logout functions
