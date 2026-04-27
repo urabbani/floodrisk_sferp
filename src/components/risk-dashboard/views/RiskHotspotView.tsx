@@ -159,7 +159,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
             <CardTitle className="text-lg">Flood Risk Hotspots</CardTitle>
           </div>
           <CardDescription>
-            Multi-Criteria Analysis (MCA) using EAD, EAF, and Socioeconomic vulnerability — integrated across all 7 return periods for stable, comparable hotspot scores
+            Multi-Criteria Analysis (MCA) using Expected Annual Damage, Expected Annual Fatalities, and Socioeconomic vulnerability integrated across all return periods for comparable hotspot scores
           </CardDescription>
         </CardHeader>
       </Card>
