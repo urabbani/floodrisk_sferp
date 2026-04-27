@@ -11,6 +11,7 @@ import { ImpactMatrix } from '@/components/impact-matrix';
 import { RiskDashboard } from '@/components/risk-dashboard';
 import type { RiskView, DistrictName, RiskMode } from '@/types/risk';
 import { useChoroplethLayer } from '@/components/risk-dashboard/hooks/useChoroplethLayer';
+import { useHotspotWmsLayer } from '@/components/risk-dashboard/hooks/useHotspotWmsLayer';
 import { InterventionPanel } from '@/components/annotations/InterventionPanel';
 import { InterventionDialog } from '@/components/annotations/InterventionDialog';
 import { LoginDialog } from '@/components/annotations/LoginDialog';
@@ -129,6 +130,13 @@ function App() {
     max: choroplethMax,
     visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'population' || currentRiskView === 'hotspots'),
     mode: choroplethMode,
+  });
+
+  // Hotspot Intensity WMS layer for Hotspots view
+  useHotspotWmsLayer({
+    map,
+    visible: sidebarView === 'risk' && currentRiskView === 'hotspots',
+    opacity: 0.7,
   });
 
   // Handle login dialog events from header
