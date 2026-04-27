@@ -25,12 +25,11 @@ interface EadBarChartProps {
 }
 
 // Group assets into categories for better visualization
-// Note: schools excluded - unreliable data
 const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
   infrastructure: ['telecom', 'electric', 'railways', 'roads'],
-  facilities: ['hospitals', 'bhu'],
+  facilities: ['hospitals', 'bhu', 'schools'],
 } as const;
 
 const GROUP_COLORS: Record<string, string> = {
