@@ -47,7 +47,7 @@ export function useHotspotWmsLayer({
       source,
       visible: false,
       opacity,
-      zIndex: 12, // Above choropleth (11), below some other layers
+      zIndex: 180, // Above choropleth (175), so raster shows on top of district polygons
     });
 
     map.addLayer(layer);
