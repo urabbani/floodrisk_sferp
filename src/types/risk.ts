@@ -289,11 +289,11 @@ export const ASSET_SUB_KEYS: AssetSubKey[] = [
   'hospitals', 'bhu', 'schools', 'roads',
 ];
 
-/** Assets to display in UI (excludes schools and hospitals until data is available) */
+/** Assets to display in UI (schools excluded - unreliable data) */
 export const DISPLAY_ASSET_KEYS: AssetSubKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'bhu', 'roads',
+  'hospitals', 'bhu', 'roads',
 ];
 
 /** Human-readable labels for each asset sub-key */
