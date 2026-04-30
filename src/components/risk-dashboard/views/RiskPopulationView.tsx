@@ -440,7 +440,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
+            <ResponsiveContainer width="100%" height={240}>
               <ComposedChart
                 data={(() => {
                   const present = allEapaData.filter(d => d.climate === 'present');
@@ -468,18 +468,17 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                     },
                   ];
                 })()}
-                margin={{ left: 10, right: 10, top: 20, bottom: 5 }}
+                margin={{ left: 10, right: 10, top: 5, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
                   dataKey="climate"
                   tick={{ fontSize: 12 }}
-                  tickFormatter={(c: string) => c === 'Present' ? 'Present Climate' : 'Future Climate'}
+                  tickFormatter={(c: string) => c === 'Present' ? 'Present' : 'Future'}
                 />
                 <YAxis
                   tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
                   tick={{ fontSize: 11 }}
-                  label={{ value: 'Population Affected', angle: -90, position: 'insideLeft', fontSize: 10, style: { textAnchor: 'middle' } }}
                 />
                 <Tooltip
                   cursor={{ pointer: 'pointer' }}
@@ -506,12 +505,6 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                       </div>
                     );
                   }}
-                />
-                <Legend
-                  verticalAlign="top"
-                  align="right"
-                  iconType="circle"
-                  wrapperStyle={{ fontSize: '11px' }}
                 />
 
                 {/* Perfect baseline bar */}
@@ -593,22 +586,6 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 })}
               </ComposedChart>
             </ResponsiveContainer>
-            <div className="flex items-center justify-center gap-6 mt-3 text-xs">
-              <div className="flex items-center gap-1">
-                <div className="w-6 h-3 rounded-sm bg-green-500" />
-                <span className="text-slate-600">Perfect (baseline)</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-orange-500" />
-                <div className="w-0.5 h-3 bg-orange-500" />
-                <span className="text-slate-600">Reduced Capacity</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full bg-red-600" />
-                <div className="w-0.5 h-3 bg-red-600" />
-                <span className="text-slate-600">Breaches</span>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
