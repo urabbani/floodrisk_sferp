@@ -440,7 +440,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={180}>
               <ComposedChart
                 data={(() => {
                   const present = allEapaData.filter(d => d.climate === 'present');
@@ -450,7 +450,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   return [
                     {
                       climate: 'Present',
-                      x: 0,
+                      y: 0,
                       perfect: getEapa(present, 'perfect'),
                       breaches: getEapa(present, 'breaches'),
                       reduced: getEapa(present, 'redcapacity'),
@@ -459,7 +459,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                     },
                     {
                       climate: 'Future',
-                      x: 1,
+                      y: 1,
                       perfect: getEapa(future, 'perfect'),
                       breaches: getEapa(future, 'breaches'),
                       reduced: getEapa(future, 'redcapacity'),
@@ -468,17 +468,21 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                     },
                   ];
                 })()}
+                layout="vertical"
                 margin={{ left: 10, right: 10, top: 5, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
+                  type="number"
+                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
+                  tick={{ fontSize: 11 }}
+                />
+                <YAxis
+                  type="category"
                   dataKey="climate"
                   tick={{ fontSize: 12 }}
                   tickFormatter={(c: string) => c === 'Present' ? 'Present' : 'Future'}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
-                  tick={{ fontSize: 11 }}
+                  width={80}
                 />
                 <Tooltip
                   cursor={{ pointer: 'pointer' }}
@@ -508,20 +512,20 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                 />
 
                 {/* Perfect baseline bar */}
-                <Bar dataKey="perfect" fill="#22c55e" name="Perfect (baseline)" radius={[4, 4, 0, 0]} barSize={60} />
+                <Bar dataKey="perfect" fill="#22c55e" name="Perfect (baseline)" radius={[0, 4, 4, 0]} barSize={40} />
 
-                {/* Reference line at top of Perfect bar */}
+                {/* Reference line at end of Perfect bar */}
                 {allEapaData.map((entry, idx) => {
                   const climate = entry.climate;
                   const climateData = allEapaData.filter(d => d.climate === climate);
                   const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
-                  const xPos = climate === 'present' ? 0 : 1;
+                  const yPos = climate === 'present' ? 0 : 1;
                   return (
                     <ReferenceLine
                       key={`perf-${climate}`}
                       segment={[
-                        { x: xPos - 0.3, y: perfect },
-                        { x: xPos + 0.3, y: perfect }
+                        { x: perfect, y: yPos - 0.4 },
+                        { x: perfect, y: yPos + 0.4 }
                       ]}
                       stroke="#22c55e"
                       strokeWidth={2}
@@ -535,20 +539,20 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   const climateData = allEapaData.filter(d => d.climate === climate);
                   const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
                   const reduced = entry.eapa;
-                  const xPos = climate === 'present' ? 0 : 1;
+                  const yPos = climate === 'present' ? 0 : 1;
                   return (
                     <g key={`reduced-${climate}`}>
                       <ReferenceLine
                         segment={[
-                          { x: xPos - 0.15, y: perfect },
-                          { x: xPos - 0.15, y: reduced }
+                          { x: perfect, y: yPos - 0.15 },
+                          { x: reduced, y: yPos - 0.15 }
                         ]}
                         stroke="#f97316"
                         strokeWidth={2}
                         strokeDasharray="4 2"
                       />
                       <Scatter
-                        data={[{ x: xPos - 0.15, y: reduced, climate }]}
+                        data={[{ x: reduced, y: yPos - 0.15, climate }]}
                         fill="#f97316"
                         shape="circle"
                         r={6}
@@ -563,20 +567,20 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   const climateData = allEapaData.filter(d => d.climate === climate);
                   const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
                   const breaches = entry.eapa;
-                  const xPos = climate === 'present' ? 0 : 1;
+                  const yPos = climate === 'present' ? 0 : 1;
                   return (
                     <g key={`breaches-${climate}`}>
                       <ReferenceLine
                         segment={[
-                          { x: xPos + 0.15, y: perfect },
-                          { x: xPos + 0.15, y: breaches }
+                          { x: perfect, y: yPos + 0.15 },
+                          { x: breaches, y: yPos + 0.15 }
                         ]}
                         stroke="#dc2626"
                         strokeWidth={2}
                         strokeDasharray="4 2"
                       />
                       <Scatter
-                        data={[{ x: xPos + 0.15, y: breaches, climate }]}
+                        data={[{ x: breaches, y: yPos + 0.15, climate }]}
                         fill="#dc2626"
                         shape="circle"
                         r={6}
