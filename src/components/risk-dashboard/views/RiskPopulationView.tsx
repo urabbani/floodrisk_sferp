@@ -33,6 +33,9 @@ import {
   ResponsiveContainer,
   Cell,
   Legend,
+  ComposedChart,
+  Line,
+  ErrorBar,
 } from 'recharts';
 import usePopulationRisk from '@/hooks/usePopulationRisk';
 import useEapa from '@/hooks/useEapa';
@@ -432,36 +435,45 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Expected Annual Population Affected</CardTitle>
             <CardDescription>
-              Comparison across all climates and maintenance levels (integrated across 7 return periods)
+              Perfect maintenance as baseline, with degradation from Breaches and Reduced Capacity
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={260}>
               <BarChart
-                data={allEapaData.map((d) => ({
-                  scenario: `${d.climate === 'present' ? 'Present' : 'Future'}\n${d.maintenance === 'breaches' ? 'Breaches' : d.maintenance === 'perfect' ? 'Perfect' : 'Reduced'}`,
-                  eapa: d.eapa,
-                  climate: d.climate,
-                  maintenance: d.maintenance,
-                }))}
-                margin={{ left: 10, right: 10, top: 5, bottom: 5 }}
+                data={(() => {
+                  // Group by climate and prepare stacked bar data
+                  const present = allEapaData.filter(d => d.climate === 'present');
+                  const future = allEapaData.filter(d => d.climate === 'future');
+                  const getEapa = (data: any, maint: string) => data.find((d: any) => d.maintenance === maint)?.eapa || 0;
+
+                  return [
+                    {
+                      climate: 'Present',
+                      perfect: getEapa(present, 'perfect'),
+                      breachesDelta: getEapa(present, 'breaches') - getEapa(present, 'perfect'),
+                      reducedDelta: getEapa(present, 'redcapacity') - getEapa(present, 'perfect'),
+                    },
+                    {
+                      climate: 'Future',
+                      perfect: getEapa(future, 'perfect'),
+                      breachesDelta: getEapa(future, 'breaches') - getEapa(future, 'perfect'),
+                      reducedDelta: getEapa(future, 'redcapacity') - getEapa(future, 'perfect'),
+                    },
+                  ];
+                })()}
+                layout="vertical"
+                margin={{ left: 10, right: 30, top: 5, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis
-                  dataKey="scenario"
-                  tick={{ fontSize: 10 }}
-                  interval={0}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
-                  tick={{ fontSize: 11 }}
-                />
+                <XAxis type="number" tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="climate" tick={{ fontSize: 12 }} width={80} />
                 <Tooltip
-                  formatter={(value: number, name: string, props: any) => [
-                    value.toLocaleString(),
-                    props.payload.maintenance === 'breaches' ? 'Breaches' : props.payload.maintenance === 'perfect' ? 'Perfect' : 'Reduced Capacity'
+                  formatter={(value: number, name: string) => [
+                    value > 0 ? `+${value.toLocaleString()}` : value.toLocaleString(),
+                    name === 'perfect' ? 'Perfect (baseline)' : name === 'breachesDelta' ? 'Breaches degradation' : 'Reduced Cap. degradation'
                   ]}
-                  labelFormatter={(label: string) => label.replace('\n', ' - ')}
+                  cursor={{ pointer: 'pointer' }}
                   labelStyle={{ color: '#1e293b' }}
                 />
                 <Legend
@@ -470,27 +482,23 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   iconType="circle"
                   wrapperStyle={{ fontSize: '11px' }}
                 />
-                <Bar
-                  dataKey="eapa"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {allEapaData.map((entry, idx) => (
-                    <Cell
-                      key={`cell-${idx}`}
-                      fill={entry.climate === 'present' ? '#3b82f6' : '#f59e0b'}
-                    />
-                  ))}
-                </Bar>
+                <Bar dataKey="perfect" stackId="eapa" fill="#22c55e" name="Perfect" radius={[0, 0, 0, 4]} />
+                <Bar dataKey="reducedDelta" stackId="eapa" fill="#f97316" name="Reduced Capacity" />
+                <Bar dataKey="breachesDelta" stackId="eapa" fill="#dc2626" name="Breaches" radius={[4, 0, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-center gap-6 mt-3 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-sm bg-blue-500" />
-                <span className="text-slate-600">Present Climate</span>
+                <div className="w-3 h-3 rounded-sm bg-green-500" />
+                <span className="text-slate-600">Perfect (baseline)</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-sm bg-amber-500" />
-                <span className="text-slate-600">Future Climate</span>
+                <div className="w-3 h-3 rounded-sm bg-orange-500" />
+                <span className="text-slate-600">Reduced Capacity</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-sm bg-red-600" />
+                <span className="text-slate-600">Breaches</span>
               </div>
             </div>
           </CardContent>
