@@ -8,6 +8,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -15,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   BarChart,
   Bar,
@@ -26,6 +34,7 @@ import {
   Cell,
 } from 'recharts';
 import usePopulationRisk from '@/hooks/usePopulationRisk';
+import useEapa from '@/hooks/useEapa';
 import type {
   PopulationRiskScenario,
   PopulationRiskDistrict,
@@ -111,12 +120,15 @@ function DistrictTooltip({ active, payload, label }: any) {
 export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulationViewProps) {
   const [selectedReturnPeriod, setSelectedReturnPeriod] = useState<string>('25');
   const [selectedMaintenance, setSelectedMaintenance] = useState<string>('breaches');
+  const [eapaDialogOpen, setEapaDialogOpen] = useState(false);
 
   const { data: scenarios, loading, error } = usePopulationRisk({
     climate,
     maintenance: selectedMaintenance as any,
     returnPeriod: selectedReturnPeriod as any,
   });
+
+  const { data: eapaData, loading: eapaLoading } = useEapa(climate, selectedMaintenance as any);
 
   const selectedScenario = useMemo(() => {
     if (!scenarios || scenarios.length === 0) return null;
@@ -216,10 +228,22 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
       {/* Controls */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Casualty Estimation</CardTitle>
-          <CardDescription>
-            Semi-quantitative fatality estimation using depth &times; velocity mortality factors
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Casualty Estimation</CardTitle>
+              <CardDescription>
+                Semi-quantitative fatality estimation using depth &times; velocity mortality factors
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEapaDialogOpen(true)}
+              disabled={eapaLoading || !eapaData}
+            >
+              {eapaLoading ? 'Loading...' : `EAPA: ${eapaData?.eapa?.toLocaleString() ?? '—'}`}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-6 items-end">
@@ -411,6 +435,52 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
           </p>
         </CardContent>
       </Card>
+
+      {/* EAPA Dialog */}
+      <Dialog open={eapaDialogOpen} onOpenChange={setEapaDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Expected Annual Population Affected</DialogTitle>
+            <DialogDescription>
+              Annualized population affected integrated across all 7 return periods using trapezoidal integration.
+            </DialogDescription>
+          </DialogHeader>
+          {eapaData && (
+            <div className="space-y-4">
+              <div className="text-center py-4 bg-slate-50 rounded-lg">
+                <p className="text-sm text-muted-foreground mb-1">Total EAPA</p>
+                <p className="text-3xl font-bold text-blue-600">
+                  {eapaData.eapa.toLocaleString()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  people per year ({eapaData.climate} climate, {eapaData.maintenance})
+                </p>
+              </div>
+              {eapaData.byDistrict && (
+                <div>
+                  <p className="text-sm font-medium mb-2">By District</p>
+                  <div className="space-y-1">
+                    {Object.entries(eapaData.byDistrict)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([district, value]) => (
+                        <div key={district} className="flex items-center justify-between text-sm py-1 border-b border-slate-100">
+                          <span className="text-slate-600">{district}</span>
+                          <span className="font-medium">{value.toLocaleString()}</span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <strong>Note:</strong> EAPA represents the long-term average annual population affected,
+                accounting for the probability of different flood magnitudes. Small events (2–10 year)
+                contribute more frequently, while extreme events (100–500 year) contribute more population
+                when they occur.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

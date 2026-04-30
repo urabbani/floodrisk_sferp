@@ -42,6 +42,32 @@ export function calculateExpectedAnnualFatalities(
 }
 
 /**
+ * Calculate Expected Annual Population Affected (EAPA) using trapezoidal integration
+ *
+ * Mirrors the EAD and EAF methodology: integrates population affected across
+ * all 7 return periods to get an annualized expected value.
+ *
+ * EAPA = Σ 0.5 × (Pᵢ + Pᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|
+ *
+ * @param populationByRP - Array of { returnPeriod, population } sorted by RP ascending
+ * @returns Expected annual population affected (integrated across probability spectrum)
+ */
+export function calculateExpectedAnnualPopulationAffected(
+  populationByRP: { returnPeriod: number; population: number }[]
+): number {
+  if (populationByRP.length < 2) return 0;
+
+  let eapa = 0;
+  for (let i = 0; i < populationByRP.length - 1; i++) {
+    const freqLeft = 1 / populationByRP[i].returnPeriod;
+    const freqRight = 1 / populationByRP[i + 1].returnPeriod;
+    eapa += 0.5 * (populationByRP[i].population + populationByRP[i + 1].population)
+          * Math.abs(freqLeft - freqRight);
+  }
+  return eapa;
+}
+
+/**
  * Min-max normalize an array of values to 0-100 scale
  * Returns a new array with same length as input
  */

@@ -320,6 +320,15 @@ export type EadResult = {
   eadTotal: number;
 };
 
+/** Result of Expected Annual Population Affected (EAPA) calculation */
+export type EapaResult = {
+  climate: 'present' | 'future';
+  maintenance: 'breaches' | 'redcapacity' | 'perfect';
+  region: string;
+  eapa: number;
+  byDistrict?: Record<DistrictName, number>;
+};
+
 /**
  * Calculate Expected Annual Damage using trapezoidal integration.
  *
