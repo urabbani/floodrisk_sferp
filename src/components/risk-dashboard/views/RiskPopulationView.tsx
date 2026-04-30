@@ -33,6 +33,10 @@ import {
   ResponsiveContainer,
   Cell,
   Legend,
+  ComposedChart,
+  Line,
+  ReferenceLine,
+  Scatter,
 } from 'recharts';
 import usePopulationRisk from '@/hooks/usePopulationRisk';
 import useEapa from '@/hooks/useEapa';
@@ -432,37 +436,76 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Expected Annual Population Affected</CardTitle>
             <CardDescription>
-              Comparison across all climates and maintenance levels (integrated across 7 return periods)
+              Perfect maintenance as baseline, with degradation from Breaches and Reduced Capacity shown as delta
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart
-                data={allEapaData.map((d) => ({
-                  scenario: `${d.climate === 'present' ? 'Present' : 'Future'}\n${d.maintenance === 'breaches' ? 'Breaches' : d.maintenance === 'perfect' ? 'Perfect' : 'Reduced'}`,
-                  eapa: d.eapa,
-                  climate: d.climate,
-                  maintenance: d.maintenance,
-                }))}
-                margin={{ left: 10, right: 10, top: 5, bottom: 5 }}
+            <ResponsiveContainer width="100%" height={260}>
+              <ComposedChart
+                data={(() => {
+                  const present = allEapaData.filter(d => d.climate === 'present');
+                  const future = allEapaData.filter(d => d.climate === 'future');
+                  const getEapa = (data: any, maint: string) => data.find((d: any) => d.maintenance === maint)?.eapa || 0;
+
+                  return [
+                    {
+                      climate: 'Present',
+                      x: 0,
+                      perfect: getEapa(present, 'perfect'),
+                      breaches: getEapa(present, 'breaches'),
+                      reduced: getEapa(present, 'redcapacity'),
+                      breachesDelta: getEapa(present, 'breaches') - getEapa(present, 'perfect'),
+                      reducedDelta: getEapa(present, 'redcapacity') - getEapa(present, 'perfect'),
+                    },
+                    {
+                      climate: 'Future',
+                      x: 1,
+                      perfect: getEapa(future, 'perfect'),
+                      breaches: getEapa(future, 'breaches'),
+                      reduced: getEapa(future, 'redcapacity'),
+                      breachesDelta: getEapa(future, 'breaches') - getEapa(future, 'perfect'),
+                      reducedDelta: getEapa(future, 'redcapacity') - getEapa(future, 'perfect'),
+                    },
+                  ];
+                })()}
+                margin={{ left: 10, right: 10, top: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis
-                  dataKey="scenario"
-                  tick={{ fontSize: 10 }}
-                  interval={0}
+                  dataKey="climate"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(c: string) => c === 'Present' ? 'Present Climate' : 'Future Climate'}
                 />
                 <YAxis
                   tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
                   tick={{ fontSize: 11 }}
+                  label={{ value: 'Population Affected', angle: -90, position: 'insideLeft', fontSize: 10, style: { textAnchor: 'middle' } }}
                 />
                 <Tooltip
-                  formatter={(value: number, name: string, props: any) => [
-                    value.toLocaleString(),
-                    props.payload.maintenance === 'breaches' ? 'Breaches' : props.payload.maintenance === 'perfect' ? 'Perfect' : 'Reduced Capacity'
-                  ]}
-                  labelFormatter={(label: string) => label.replace('\n', ' - ')}
-                  labelStyle={{ color: '#1e293b' }}
+                  cursor={{ pointer: 'pointer' }}
+                  content={({ active, payload }: any) => {
+                    if (!active || !payload?.length) return null;
+                    const data = payload[0]?.payload;
+                    return (
+                      <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-sm">
+                        <p className="font-semibold text-slate-800 mb-2">{data.climate} Climate</p>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-slate-600">Perfect:</span>
+                            <span className="font-medium text-green-600">{data.perfect.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-slate-600">Reduced Cap:</span>
+                            <span className="font-medium text-orange-600">{data.reduced.toLocaleString()} <span className="text-xs">(+{data.reducedDelta.toLocaleString()})</span></span>
+                          </div>
+                          <div className="flex items-center justify-between gap-4">
+                            <span className="text-slate-600">Breaches:</span>
+                            <span className="font-medium text-red-600">{data.breaches.toLocaleString()} <span className="text-xs">(+{data.breachesDelta.toLocaleString()})</span></span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }}
                 />
                 <Legend
                   verticalAlign="top"
@@ -470,27 +513,100 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   iconType="circle"
                   wrapperStyle={{ fontSize: '11px' }}
                 />
-                <Bar
-                  dataKey="eapa"
-                  radius={[4, 4, 0, 0]}
-                >
-                  {allEapaData.map((entry, idx) => (
-                    <Cell
-                      key={`cell-${idx}`}
-                      fill={entry.climate === 'present' ? '#3b82f6' : '#f59e0b'}
+
+                {/* Perfect baseline bar */}
+                <Bar dataKey="perfect" fill="#22c55e" name="Perfect (baseline)" radius={[4, 4, 0, 0]} barSize={60} />
+
+                {/* Reference line at top of Perfect bar */}
+                {allEapaData.map((entry, idx) => {
+                  const climate = entry.climate;
+                  const climateData = allEapaData.filter(d => d.climate === climate);
+                  const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
+                  const xPos = climate === 'present' ? 0 : 1;
+                  return (
+                    <ReferenceLine
+                      key={`perf-${climate}`}
+                      segment={[
+                        { x: xPos - 0.3, y: perfect },
+                        { x: xPos + 0.3, y: perfect }
+                      ]}
+                      stroke="#22c55e"
+                      strokeWidth={2}
                     />
-                  ))}
-                </Bar>
-              </BarChart>
+                  );
+                })}
+
+                {/* Delta lines and markers for Reduced Capacity */}
+                {allEapaData.filter(d => d.maintenance === 'redcapacity').map((entry) => {
+                  const climate = entry.climate;
+                  const climateData = allEapaData.filter(d => d.climate === climate);
+                  const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
+                  const reduced = entry.eapa;
+                  const xPos = climate === 'present' ? 0 : 1;
+                  return (
+                    <g key={`reduced-${climate}`}>
+                      <ReferenceLine
+                        segment={[
+                          { x: xPos - 0.15, y: perfect },
+                          { x: xPos - 0.15, y: reduced }
+                        ]}
+                        stroke="#f97316"
+                        strokeWidth={2}
+                        strokeDasharray="4 2"
+                      />
+                      <Scatter
+                        data={[{ x: xPos - 0.15, y: reduced, climate }]}
+                        fill="#f97316"
+                        shape="circle"
+                        r={6}
+                      />
+                    </g>
+                  );
+                })}
+
+                {/* Delta lines and markers for Breaches */}
+                {allEapaData.filter(d => d.maintenance === 'breaches').map((entry) => {
+                  const climate = entry.climate;
+                  const climateData = allEapaData.filter(d => d.climate === climate);
+                  const perfect = climateData.find((d: any) => d.maintenance === 'perfect')?.eapa || 0;
+                  const breaches = entry.eapa;
+                  const xPos = climate === 'present' ? 0 : 1;
+                  return (
+                    <g key={`breaches-${climate}`}>
+                      <ReferenceLine
+                        segment={[
+                          { x: xPos + 0.15, y: perfect },
+                          { x: xPos + 0.15, y: breaches }
+                        ]}
+                        stroke="#dc2626"
+                        strokeWidth={2}
+                        strokeDasharray="4 2"
+                      />
+                      <Scatter
+                        data={[{ x: xPos + 0.15, y: breaches, climate }]}
+                        fill="#dc2626"
+                        shape="circle"
+                        r={6}
+                      />
+                    </g>
+                  );
+                })}
+              </ComposedChart>
             </ResponsiveContainer>
             <div className="flex items-center justify-center gap-6 mt-3 text-xs">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-sm bg-blue-500" />
-                <span className="text-slate-600">Present Climate</span>
+                <div className="w-6 h-3 rounded-sm bg-green-500" />
+                <span className="text-slate-600">Perfect (baseline)</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-sm bg-amber-500" />
-                <span className="text-slate-600">Future Climate</span>
+                <div className="w-3 h-3 rounded-full bg-orange-500" />
+                <div className="w-0.5 h-3 bg-orange-500" />
+                <span className="text-slate-600">Reduced Capacity</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded-full bg-red-600" />
+                <div className="w-0.5 h-3 bg-red-600" />
+                <span className="text-slate-600">Breaches</span>
               </div>
             </div>
           </CardContent>
