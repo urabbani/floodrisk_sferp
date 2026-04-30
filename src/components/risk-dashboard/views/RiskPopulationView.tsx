@@ -32,9 +32,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
+  Legend,
 } from 'recharts';
 import usePopulationRisk from '@/hooks/usePopulationRisk';
 import useEapa from '@/hooks/useEapa';
+import useAllEapa from '@/hooks/useAllEapa';
 import type {
   PopulationRiskScenario,
   PopulationRiskDistrict,
@@ -129,6 +131,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
   });
 
   const { data: eapaData, loading: eapaLoading } = useEapa(climate, selectedMaintenance as any);
+  const { data: allEapaData, loading: allEapaLoading } = useAllEapa();
 
   const selectedScenario = useMemo(() => {
     if (!scenarios || scenarios.length === 0) return null;
@@ -438,7 +441,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
 
       {/* EAPA Dialog */}
       <Dialog open={eapaDialogOpen} onOpenChange={setEapaDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Expected Annual Population Affected</DialogTitle>
             <DialogDescription>
@@ -447,6 +450,7 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
           </DialogHeader>
           {eapaData && (
             <div className="space-y-4">
+              {/* Current Selection */}
               <div className="text-center py-4 bg-slate-50 rounded-lg">
                 <p className="text-sm text-muted-foreground mb-1">Total EAPA</p>
                 <p className="text-3xl font-bold text-blue-600">
@@ -456,6 +460,64 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   people per year ({eapaData.climate} climate, {eapaData.maintenance})
                 </p>
               </div>
+
+              {/* Comparison Chart */}
+              {allEapaData && (
+                <div>
+                  <p className="text-sm font-medium mb-3">Comparison: All Scenarios</p>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart
+                      data={allEapaData.map((d) => ({
+                        scenario: `${d.climate === 'present' ? 'Present' : 'Future'} - ${d.maintenance === 'breaches' ? 'Breaches' : d.maintenance === 'perfect' ? 'Perfect' : 'Reduced'}`,
+                        eapa: d.eapa,
+                        climate: d.climate,
+                      }))}
+                      margin={{ left: 10, right: 10, top: 5, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis
+                        dataKey="scenario"
+                        tick={{ fontSize: 10 }}
+                        angle={-45}
+                        textAnchor="end"
+                        height={50}
+                      />
+                      <YAxis
+                        tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}K` : String(v)}
+                        tick={{ fontSize: 10 }}
+                      />
+                      <Tooltip
+                        formatter={(value: number) => value.toLocaleString()}
+                        labelStyle={{ color: '#1e293b' }}
+                      />
+                      <Bar
+                        dataKey="eapa"
+                        radius={[4, 4, 0, 0]}
+                        fill="#3b82f6"
+                      >
+                        {allEapaData.map((entry, idx) => (
+                          <Cell
+                            key={`cell-${idx}`}
+                            fill={entry.climate === 'present' ? '#3b82f6' : '#f59e0b'}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="flex items-center justify-center gap-6 mt-2 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm bg-blue-500" />
+                      <span className="text-slate-600">Present Climate</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm bg-amber-500" />
+                      <span className="text-slate-600">Future Climate</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* District Breakdown */}
               {eapaData.byDistrict && (
                 <div>
                   <p className="text-sm font-medium mb-2">By District</p>
@@ -471,6 +533,8 @@ export function RiskPopulationView({ climate, onChoroplethData }: RiskPopulation
                   </div>
                 </div>
               )}
+
+              {/* Methodology Note */}
               <p className="text-xs text-muted-foreground leading-relaxed">
                 <strong>Note:</strong> EAPA represents the long-term average annual population affected,
                 accounting for the probability of different flood magnitudes. Small events (2–10 year)
