@@ -25,7 +25,7 @@ export function useEadData() {
         const districtResults: EadResult[] = [];
 
         for (const region of DISTRICTS) {
-          // Initialize damages array for each of the 11 assets
+          // Initialize damages array for each of the 12 assets
           const damagesByAsset = Object.fromEntries(
             ASSET_SUB_KEYS.map(asset => [asset, [] as { returnPeriod: number; damage: number }[]])
           ) as Record<AssetSubKey, { returnPeriod: number; damage: number }[]>;

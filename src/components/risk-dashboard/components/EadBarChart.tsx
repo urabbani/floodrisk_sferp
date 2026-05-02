@@ -28,7 +28,7 @@ interface EadBarChartProps {
 const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
-  infrastructure: ['telecom', 'electric', 'railways', 'roads'],
+  infrastructure: ['telecom', 'electric', 'railways', 'roads', 'hydraulic'],
   facilities: ['hospitals', 'bhu', 'schools'],
 } as const;
 

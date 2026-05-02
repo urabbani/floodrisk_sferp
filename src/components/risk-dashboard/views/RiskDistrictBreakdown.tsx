@@ -55,6 +55,7 @@ export function RiskDistrictBreakdown({
             bhu: 0,
             schools: 0,
             roads: 0,
+            hydraulic: 0,
           } as RegionRiskData,
         };
       }

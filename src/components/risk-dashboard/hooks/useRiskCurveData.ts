@@ -17,7 +17,7 @@ import {
 export type CurveSeriesType =
   | 'climate'      // Compare Present vs Future
   | 'district'     // Compare districts
-  | 'asset';       // Compare all 11 assets
+  | 'asset';       // Compare all 12 assets
 
 export type CurveRegion = 'TOTAL' | typeof DISTRICTS[number];
 
@@ -119,7 +119,7 @@ export function useRiskCurveData(options: RiskCurveOptions) {
       }
 
       case 'asset': {
-        // Compare all 11 asset types
+        // Compare all 12 asset types
         series = selectedAssets.map((asset, idx) => ({
           label: ASSET_SUB_KEY_LABELS[asset],
           data: RETURN_PERIODS.map((rp) => {

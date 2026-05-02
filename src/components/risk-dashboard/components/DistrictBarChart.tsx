@@ -30,11 +30,10 @@ interface DistrictBarChartProps {
 }
 
 // Group assets into categories for better visualization
-// Note: schools and hospitals excluded until data is available
 const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
-  infrastructure: ['telecom', 'electric', 'railways', 'roads'],
+  infrastructure: ['telecom', 'electric', 'railways', 'roads', 'hydraulic'],
   facilities: ['bhu'],
 } as const;
 

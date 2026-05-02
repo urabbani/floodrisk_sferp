@@ -23,7 +23,7 @@ const REGIONS = [
 
 const MODES = ['Exp', 'Vul', 'Dmg'];
 
-// All 11 asset types from columns B-L
+// All 12 asset types from columns B-M
 const ASSET_KEYS = [
   'crop',           // Cropped Area (ha)
   'buildLow56',     // Buildings <3m (56%) (sq.m)
@@ -36,6 +36,7 @@ const ASSET_KEYS = [
   'bhu',            // BHU
   'schools',        // Schools
   'roads',          // Roads
+  'hydraulic',      // Hydraulic Structures
 ];
 
 // Parse xlsx files
@@ -70,10 +71,10 @@ for (const file of files) {
         if (!wb.Sheets[sheetName]) continue;
       }
 
-      // Compute SUM of rows 4-24 for columns B-L (11 asset columns)
-      const sums = new Array(11).fill(0);
+      // Compute SUM of rows 4-24 for columns B-M (12 asset columns)
+      const sums = new Array(12).fill(0);
       for (let r = 4; r <= 24; r++) {
-        for (let c = 0; c < 11; c++) {
+        for (let c = 0; c < 12; c++) {
           const cellRef = XLSX.utils.encode_cell({ r: r - 1, c: c + 1 });
           const cell = ws[cellRef];
           sums[c] += (cell && typeof cell.v === 'number') ? cell.v : 0;
@@ -136,10 +137,11 @@ if (validationScenario) {
   const totalDmg = validationScenario.TOTAL?.Dmg;
   if (totalDmg) {
     const totalAll = Object.values(totalDmg).reduce((a, b) => a + b, 0);
-    console.log(`\nValidation (25yr Present Perfect, TOTAL Dmg): Sum of all 11 assets`);
+    console.log(`\nValidation (25yr Present Perfect, TOTAL Dmg): Sum of all 12 assets`);
     console.log(`  Total sum: ${totalAll.toFixed(2)}`);
     console.log(`  Crop: ${totalDmg.crop?.toFixed(0) || 0}, Kacha: ${totalDmg.buildLow56?.toFixed(0) || 0}, Pakka: ${totalDmg.buildLow44?.toFixed(0) || 0}, High-Rise: ${totalDmg.buildHigh?.toFixed(0) || 0}`);
     console.log(`  Telecom: ${totalDmg.telecom?.toFixed(0) || 0}, Electric: ${totalDmg.electric?.toFixed(0) || 0}, Railways: ${totalDmg.railways?.toFixed(0) || 0}`);
     console.log(`  Hospitals: ${totalDmg.hospitals?.toFixed(0) || 0}, BHU: ${totalDmg.bhu?.toFixed(0) || 0}, Schools: ${totalDmg.schools?.toFixed(0) || 0}, Roads: ${totalDmg.roads?.toFixed(0) || 0}`);
+    console.log(`  Hydraulic: ${totalDmg.hydraulic?.toFixed(0) || 0}`);
   }
 }

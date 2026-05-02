@@ -7,7 +7,7 @@
 export type RiskMode = 'Exp' | 'Vul' | 'Dmg' | 'Pop';
 
 /**
- * All 11 asset keys from the xlsx columns B-L
+ * All 12 asset keys from the xlsx columns B-M
  */
 export type RiskAssetKey =
   | 'crop'           // Cropped Area (ha)
@@ -20,7 +20,8 @@ export type RiskAssetKey =
   | 'hospitals'      // Hospitals
   | 'bhu'            // BHU
   | 'schools'        // Schools
-  | 'roads';         // Roads
+  | 'roads'          // Roads
+  | 'hydraulic';     // Hydraulic Structures
 
 export const RISK_ASSET_LABELS: Record<RiskAssetKey, string> = {
   crop: 'Cropped Area (ha)',
@@ -34,6 +35,7 @@ export const RISK_ASSET_LABELS: Record<RiskAssetKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
+  hydraulic: 'Hydraulic Structures',
 };
 
 export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetKey, string> = {
@@ -48,6 +50,7 @@ export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
+  hydraulic: 'Hydraulic',
 };
 
 export const RISK_ASSET_COLORS: Record<RiskAssetKey, string> = {
@@ -62,13 +65,14 @@ export const RISK_ASSET_COLORS: Record<RiskAssetKey, string> = {
   bhu: '#06b6d4',
   schools: '#8b5cf6',
   roads: '#64748b',
+  hydraulic: '#14b8a6',
 };
 
-/** All 11 asset keys in order */
+/** All 12 asset keys in order */
 export const RISK_ASSET_KEYS: RiskAssetKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads',
+  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
 ];
 
 /** Legacy types for compatibility */
@@ -115,7 +119,7 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
 
 /**
  * Data for one region in one scenario for one mode
- * Contains all 11 asset types from the Excel files
+ * Contains all 12 asset types from the Excel files
  */
 export type RegionRiskData = {
   crop: number;
@@ -129,6 +133,7 @@ export type RegionRiskData = {
   bhu: number;
   schools: number;
   roads: number;
+  hydraulic: number;
 };
 
 export function totalRiskValue(data: RegionRiskData): number {
@@ -282,18 +287,18 @@ export function buildScenarioKey(
 /** Asset keys for EAD computation - now includes all 11 assets */
 export type AssetSubKey = RiskAssetKey;
 
-/** All 11 asset keys in display order for EAD */
+/** All 12 asset keys in display order for EAD */
 export const ASSET_SUB_KEYS: AssetSubKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads',
+  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
 ];
 
 /** Assets to display in UI */
 export const DISPLAY_ASSET_KEYS: AssetSubKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads',
+  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
 ];
 
 /** Human-readable labels for each asset sub-key */
@@ -309,6 +314,7 @@ export const ASSET_SUB_KEY_LABELS: Record<AssetSubKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
+  hydraulic: 'Hydraulic',
 };
 
 /** Result of EAD calculation for one climate × maintenance × region */
@@ -359,7 +365,7 @@ export function calculateTotalRisk(
   const scenarioData = data.data[scenarioKey];
   if (!scenarioData) return null;
 
-  // Sum all districts for all 11 assets
+  // Sum all districts for all 12 assets
   const total: RegionRiskData = {
     crop: 0,
     buildLow56: 0,
@@ -372,6 +378,7 @@ export function calculateTotalRisk(
     bhu: 0,
     schools: 0,
     roads: 0,
+    hydraulic: 0,
   };
 
   for (const district of DISTRICTS) {
@@ -389,6 +396,7 @@ export function calculateTotalRisk(
     total.bhu += districtData.bhu ?? 0;
     total.schools += districtData.schools ?? 0;
     total.roads += districtData.roads ?? 0;
+    total.hydraulic += districtData.hydraulic ?? 0;
   }
 
   return total;
