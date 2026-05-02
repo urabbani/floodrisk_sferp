@@ -34,7 +34,7 @@ const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
   infrastructure: ['telecom', 'electric', 'railways', 'roads', 'hydraulic'],
-  facilities: ['bhu'],
+  facilities: ['hospitals', 'bhu', 'schools'],
 } as const;
 
 const GROUP_COLORS: Record<string, string> = {
