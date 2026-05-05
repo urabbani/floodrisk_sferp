@@ -9,7 +9,6 @@ import {
   formatRiskValueFull,
   MAINTENANCE_LABELS,
   RISK_MODE_LABELS,
-  calculateTotalRisk,
   RISK_ASSET_COLORS,
   DISPLAY_ASSET_KEYS,
   ASSET_SUB_KEY_LABELS,
@@ -78,8 +77,8 @@ export function RiskDistrictBreakdown({
       .sort((a, b) => b.total - a.total);
   }, [scenarioData, mode]);
 
-  // TOTAL region data (sum of 7 districts)
-  const totalData = calculateTotalRisk(data, scenarioKey, mode);
+  // TOTAL region data (use TOTAL from risk.json directly, same as Risk Curves)
+  const totalData = scenarioData?.TOTAL?.[mode];
   const grandTotal = totalData ? totalRiskValue(totalData) : 0;
 
   if (!meta) {
