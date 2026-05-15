@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Left Bank Survey - Live Progress</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .header h1 { font-size: 1.5rem; font-weight: 600; }
+        .header .subtitle { font-size: 0.875rem; opacity: 0.8; }
+
+        /* Status Bar */
+        .status-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0.75rem 2rem;
+            display: flex;
+            gap: 2rem;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+        .status-item { display: flex; align-items: center; gap: 0.5rem; }
+        .status-item .label { color: #64748b; font-weight: 500; }
+        .status-item .value { color: #0f172a; font-weight: 600; font-family: monospace; }
+        .status-indicator {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #22c55e;
+        }
+        .status-indicator.updating { background: #eab308; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Layout */
+        .container { display: flex; height: calc(100vh - 110px); }
+        .sidebar { width: 350px; background: #f8fafc; border-right: 1px solid #e2e8f0; overflow-y: auto; }
+        .map { flex: 1; position: relative; }
+
+        /* Sidebar Stats */
+        .stats-section { padding: 1.5rem; border-bottom: 1px solid #e2e8f0; }
+        .stats-section h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 1rem; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .stat-card {
+            background: white; border-radius: 8px; padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+        .stat-card .value { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
+        .stat-card .label { font-size: 0.75rem; color: #64748b; }
+
+        /* Survey Points List */
+        .points-list { padding: 1rem; }
+        .points-list h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin-bottom: 1rem; padding: 0 0.5rem; }
+        .point-item {
+            background: white; border-radius: 6px; padding: 0.75rem;
+            margin-bottom: 0.5rem; border: 1px solid #e2e8f0;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .point-item:hover { border-color: #3b82f6; box-shadow: 0 2px 8px rgba(59,130,246,0.15); }
+        .point-item .name { font-weight: 600; color: #0f172a; font-size: 0.875rem; }
+        .point-item .type { font-size: 0.75rem; color: #64748b; }
+        .point-item .date { font-size: 0.7rem; color: #94a3b8; margin-top: 0.25rem; }
+
+        /* Map */
+        #map { width: 100%; height: 100%; }
+
+        /* Popup */
+        .ol-popup {
+            position: absolute; background: white;
+            border-radius: 8px; padding: 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            min-width: 250px; max-width: 350px;
+            font-size: 0.875rem;
+        }
+        .ol-popup:after {
+            content: ''; position: absolute;
+            bottom: -10px; left: 50%; transform: translateX(-50%);
+            border-width: 10px 10px 0; border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+        .ol-popup-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white; padding: 0.75rem 1rem;
+            border-radius: 8px 8px 0 0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .ol-popup-header h3 { font-size: 0.875rem; font-weight: 600; }
+        .ol-popup-closer {
+            background: none; border: none; color: white;
+            font-size: 1.25rem; cursor: pointer; padding: 0;
+            width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+        }
+        .ol-popup-content { padding: 1rem; }
+        .popup-row { display: flex; margin-bottom: 0.5rem; }
+        .popup-row .label { color: #64748b; width: 80px; flex-shrink: 0; font-size: 0.75rem; }
+        .popup-row .value { color: #0f172a; font-size: 0.8rem; word-break: break-word; }
+        .popup-section { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e2e8f0; }
+        .popup-section h4 { font-size: 0.7rem; text-transform: uppercase; color: #64748b; margin-bottom: 0.5rem; }
+        .photo-thumbnails { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .photo-thumb {
+            width: 50px; height: 50px; border-radius: 4px;
+            background: #e2e8f0; cursor: pointer;
+            background-size: cover; background-position: center;
+        }
+
+        /* Legend */
+        .map-legend {
+            position: absolute; bottom: 20px; right: 20px;
+            background: white; border-radius: 8px;
+            padding: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 0.75rem;
+        }
+        .map-legend h4 { color: #64748b; margin-bottom: 0.5rem; font-size: 0.7rem; text-transform: uppercase; }
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 9999; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: all; }
+        .loading-spinner {
+            width: 40px; height: 40px; border: 3px solid #e2e8f0;
+            border-top-color: #3b82f6; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>Left Bank Survey</h1>
+            <span class="subtitle">Live Infrastructure Survey Progress</span>
+        </div>
+        <div style="text-align: right;">
+            <div style="font-size: 0.75rem; opacity: 0.7;">Last Update</div>
+            <div id="lastUpdate" style="font-family: monospace;">Loading...</div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span class="label">Status:</span>
+            <span class="value" id="statusValue">Checking...</span>
+        </div>
+        <div class="status-item">
+            <span class="label">Mergin Version:</span>
+            <span class="value" id="versionValue">v--</span>
+        </div>
+        <div class="status-item">
+            <span class="label">Auto-refresh:</span>
+            <span class="value">5 min</span>
+        </div>
+        <div style="margin-left: auto;">
+            <button onclick="refreshData()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8rem;">
+                Refresh Now
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="stats-section">
+                <h2>Survey Statistics</h2>
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <div class="value" id="totalPoints">0</div>
+                        <div class="label">Total Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="value" id="uniqueTypes">0</div>
+                        <div class="label">Asset Types</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="points-list">
+                <h2>Survey Points</h2>
+                <div id="pointsList"></div>
+            </div>
+        </div>
+
+        <div class="map">
+            <div id="map"></div>
+            <div class="map-legend">
+                <h4>Legend</h4>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ef4444;"></div>
+                    <span>Surveyed Point</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
+    <script>
+        let map, vectorLayer, vectorSource;
+        let currentVersion = null;
+        const REFRESH_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
+        // Initialize OpenLayers map
+        function initMap() {
+            vectorSource = new ol.source.Vector();
+
+            vectorLayer = new ol.layer.Vector({
+                source: vectorSource,
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 8,
+                        fill: new ol.style.Fill({ color: '#ef4444' }),
+                        stroke: new ol.style.Stroke({ color: '#ffffff', width: 2 })
+                    })
+                })
+            });
+
+            map = new ol.Map({
+                target: 'map',
+                layers: [
+                    new ol.layer.Tile({
+                        source: new ol.source.OSM()
+                    }),
+                    vectorLayer
+                ],
+                view: new ol.View({
+                    center: ol.proj.fromLonLat([74.3262, 31.488]),
+                    zoom: 16
+                })
+            });
+
+            // Add popup
+            const popup = new ol.Overlay({
+                element: document.getElementById('popup'),
+                positioning: 'bottom-center',
+                stopEvent: false
+            });
+            map.addOverlay(popup);
+
+            // Click handler
+            map.on('click', function(evt) {
+                const feature = map.forEachFeatureAtPixel(evt.pixel, function(f) { return f; });
+                if (feature) {
+                    const coords = feature.getGeometry().getCoordinates();
+                    popup.setPosition(coords);
+                    showPopup(feature.getProperties());
+                } else {
+                    popup.setPosition(undefined);
+                }
+            });
+
+            // Pointer cursor on hover
+            map.on('pointermove', function(e) {
+                const hit = map.hasFeatureAtPixel(e.pixel);
+                map.getTargetElement().style.cursor = hit ? 'pointer' : '';
+            });
+        }
+
+        // Show popup with feature data
+        function showPopup(props) {
+            const content = document.getElementById('popupContent');
+            content.innerHTML = `
+                <div class="popup-row">
+                    <span class="label">Name:</span>
+                    <span class="value">${escapeHtml(props.Name || 'N/A')}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">Type:</span>
+                    <span class="value">${escapeHtml(props.Type || 'N/A')}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">Surveyor:</span>
+                    <span class="value">${escapeHtml(props.Surveyor || 'N/A')}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">Date:</span>
+                    <span class="value">${formatDate(props.Date)}</span>
+                </div>
+                <div class="popup-row">
+                    <span class="label">Village:</span>
+                    <span class="value">${escapeHtml(props['Village Name'] || 'N/A')}</span>
+                </div>
+                ${props.Notes ? `
+                <div class="popup-section">
+                    <h4>Notes</h4>
+                    <div class="value">${escapeHtml(props.Notes)}</div>
+                </div>
+                ` : ''}
+                ${hasPhotos(props) ? `
+                <div class="popup-section">
+                    <h4>Photos (${countPhotos(props)})</h4>
+                    <div class="photo-thumbnails">
+                        ${getPhotoThumbs(props)}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('popup').style.display = 'block';
+        }
+
+        function hasPhotos(props) {
+            return props.Photo1 || props.Photo2 || props.Photo3 || props.Photo4;
+        }
+
+        function countPhotos(props) {
+            return [props.Photo1, props.Photo2, props.Photo3, props.Photo4].filter(p => p).length;
+        }
+
+        function getPhotoThumbs(props) {
+            let html = '';
+            for (let i = 1; i <= 4; i++) {
+                const photo = props['Photo' + i];
+                if (photo) {
+                    html += `<div class="photo-thumb" style="background-image: url('${escapeHtml(photo)}')" onclick="window.open('${escapeHtml(photo)}', '_blank')"></div>`;
+                }
+            }
+            return html || '<span style="color: #94a3b8; font-size: 0.75rem;">No photos</span>';
+        }
+
+        // Load GeoJSON data
+        async function loadData() {
+            try {
+                const [geojsonResp, metaResp] = await Promise.all([
+                    fetch('/leftbank/data.geojson?' + Date.now()),
+                    fetch('/leftbank/meta.json?' + Date.now())
+                ]);
+
+                if (!geojsonResp.ok) throw new Error('Failed to load data');
+
+                const geojson = await geojsonResp.json();
+                const meta = await metaResp.json().catch(() => ({ version: 'unknown', lastUpdated: new Date().toISOString() }));
+
+                // Update version info
+                document.getElementById('versionValue').textContent = 'v' + meta.version;
+                document.getElementById('lastUpdate').textContent = formatDateTime(meta.lastUpdated);
+
+                // Clear existing features
+                vectorSource.clear();
+
+                // Add new features
+                const features = new ol.format.GeoJSON().readFeatures(geojson, {
+                    featureProjection: 'EPSG:3857'
+                });
+                vectorSource.addFeatures(features);
+
+                // Update stats
+                updateStats(features);
+
+                // Update points list
+                updatePointsList(features);
+
+                // Fit to extent if first load
+                if (!currentVersion) {
+                    const extent = vectorSource.getExtent();
+                    if (!ol.extent.isEmpty(extent)) {
+                        map.getView().fit(extent, { padding: [50, 50, 50, 50], maxZoom: 18 });
+                    }
+                }
+
+                currentVersion = meta.version;
+                updateStatus('Live', false);
+                hideLoading();
+
+            } catch (error) {
+                console.error('Error loading data:', error);
+                updateStatus('Error', false);
+                hideLoading();
+            }
+        }
+
+        // Update statistics
+        function updateStats(features) {
+            document.getElementById('totalPoints').textContent = features.length;
+
+            const types = new Set();
+            features.forEach(f => {
+                const type = f.get('Type');
+                if (type) types.add(type);
+            });
+            document.getElementById('uniqueTypes').textContent = types.size;
+        }
+
+        // Update points list
+        function updatePointsList(features) {
+            const container = document.getElementById('pointsList');
+            if (features.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 2rem;">No survey points yet</p>';
+                return;
+            }
+
+            // Sort by date (newest first)
+            const sorted = [...features].sort((a, b) => {
+                const dateA = new Date(a.get('Date') || 0);
+                const dateB = new Date(b.get('Date') || 0);
+                return dateB - dateA;
+            });
+
+            container.innerHTML = sorted.map(f => {
+                const props = f.getProperties();
+                return `
+                    <div class="point-item" onclick="zoomToFeature(${f.get('fid')}, ${f.getGeometry().getCoordinates().join(',')})">
+                        <div class="name">${escapeHtml(props.Name || 'Unnamed')}</div>
+                        <div class="type">${escapeHtml(props.Type || 'Unknown type')}</div>
+                        <div class="date">${formatDate(props.Date)}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Zoom to feature
+        function zoomToFeature(fid, coords) {
+            map.getView().animate({ center: coords, zoom: 18, duration: 500 });
+        }
+
+        // Update status indicator
+        function updateStatus(status, isUpdating) {
+            document.getElementById('statusValue').textContent = status;
+            const indicator = document.getElementById('statusIndicator');
+            indicator.classList.toggle('updating', isUpdating);
+        }
+
+        // Show/hide loading overlay
+        function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+        // Manual refresh
+        function refreshData() {
+            updateStatus('Updating...', true);
+            showLoading();
+            loadData();
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return 'N/A';
+            return d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' });
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return 'N/A';
+            return d.toLocaleTimeString('en-PK', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            refreshData();
+
+            // Auto-refresh every 5 minutes
+            setInterval(refreshData, REFRESH_INTERVAL);
+        });
+    </script>
+
+    <!-- Popup element -->
+    <div id="popup" class="ol-popup" style="display: none;">
+        <div class="ol-popup-header">
+            <h3>Survey Point</h3>
+            <button class="ol-popup-closer" onclick="document.getElementById('popup').style.display='none'">&times;</button>
+        </div>
+        <div class="ol-popup-content" id="popupContent"></div>
+    </div>
+</body>
+</html>

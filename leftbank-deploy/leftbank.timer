@@ -1,0 +1,11 @@
+[Unit]
+Description=Leftbank Survey Data Auto-Build Timer (runs every 5 min)
+Requires=leftbank.service
+
+[Timer]
+OnCalendar=*:0/5
+OnBootSec=1min
+Unit=leftbank.service
+
+[Install]
+WantedBy=timers.target

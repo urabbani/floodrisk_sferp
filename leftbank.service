@@ -1,0 +1,12 @@
+[Unit]
+Description=Leftbank Survey Data Auto-Build Service
+After=network.target
+
+[Service]
+Type=oneshot
+User=umair
+Group=umair
+ExecStart=/home/umair/floodrisk_sferp/scripts/build-leftbank.sh
+
+[Install]
+WantedBy=multi-user.target
