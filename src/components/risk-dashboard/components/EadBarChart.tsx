@@ -28,8 +28,9 @@ interface EadBarChartProps {
 const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
-  infrastructure: ['telecom', 'electric', 'railways', 'roads', 'hydraulic'],
+  infrastructure: ['telecom', 'electric', 'railways', 'roads', 'embankments', 'mainCanals', 'branchCanals', 'drains'],
   facilities: ['hospitals', 'bhu', 'schools'],
+  livestock: ['livestock'],
 } as const;
 
 const GROUP_COLORS: Record<string, string> = {
@@ -37,6 +38,7 @@ const GROUP_COLORS: Record<string, string> = {
   buildings: RISK_ASSET_COLORS.buildLow44,
   infrastructure: '#f59e0b',
   facilities: '#a855f7',
+  livestock: '#f97316',
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -44,6 +46,7 @@ const GROUP_LABELS: Record<string, string> = {
   buildings: 'Buildings',
   infrastructure: 'Infrastructure',
   facilities: 'Facilities',
+  livestock: 'Livestock',
 };
 
 function CustomTooltip({ active, payload, label }: any) {

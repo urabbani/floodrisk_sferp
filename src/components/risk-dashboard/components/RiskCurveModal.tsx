@@ -36,7 +36,7 @@ export function RiskCurveModal({
   // Fixed to Economic Damage mode
   const mode: RiskMode = 'Dmg';
 
-  // Generate asset options dynamically from all 12 assets
+  // Generate asset options dynamically from all 16 assets
   const assetOptions: { value: AssetSubKey; label: string; color: string }[] = DISPLAY_ASSET_KEYS.map((asset) => ({
     value: asset,
     label: ASSET_SUB_KEY_LABELS[asset],

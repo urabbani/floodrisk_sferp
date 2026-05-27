@@ -7,7 +7,7 @@
 export type RiskMode = 'Exp' | 'Vul' | 'Dmg' | 'Pop';
 
 /**
- * All 12 asset keys from the xlsx columns B-M
+ * All 16 asset keys from the xlsx columns B-Q
  */
 export type RiskAssetKey =
   | 'crop'           // Cropped Area (ha)
@@ -21,7 +21,11 @@ export type RiskAssetKey =
   | 'bhu'            // BHU
   | 'schools'        // Schools
   | 'roads'          // Roads
-  | 'hydraulic';     // Hydraulic Structures
+  | 'embankments'    // Embankments
+  | 'mainCanals'     // Main Canals
+  | 'branchCanals'   // Branch Canals
+  | 'drains'         // Drains
+  | 'livestock';     // Livestock
 
 export const RISK_ASSET_LABELS: Record<RiskAssetKey, string> = {
   crop: 'Cropped Area (ha)',
@@ -35,7 +39,11 @@ export const RISK_ASSET_LABELS: Record<RiskAssetKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
-  hydraulic: 'Hydraulic Structures',
+  embankments: 'Embankments',
+  mainCanals: 'Main Canals',
+  branchCanals: 'Branch Canals',
+  drains: 'Drains',
+  livestock: 'Livestock',
 };
 
 export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetKey, string> = {
@@ -50,7 +58,11 @@ export const RISK_ASSET_SHORT_LABELS: Record<RiskAssetKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
-  hydraulic: 'Hydraulic',
+  embankments: 'Embankments',
+  mainCanals: 'Main Canals',
+  branchCanals: 'Branch Canals',
+  drains: 'Drains',
+  livestock: 'Livestock',
 };
 
 export const RISK_ASSET_COLORS: Record<RiskAssetKey, string> = {
@@ -65,14 +77,19 @@ export const RISK_ASSET_COLORS: Record<RiskAssetKey, string> = {
   bhu: '#06b6d4',
   schools: '#8b5cf6',
   roads: '#64748b',
-  hydraulic: '#14b8a6',
+  embankments: '#14b8a6',
+  mainCanals: '#0ea5e9',
+  branchCanals: '#38bdf8',
+  drains: '#0284c7',
+  livestock: '#f97316',
 };
 
-/** All 12 asset keys in order */
+/** All 16 asset keys in order */
 export const RISK_ASSET_KEYS: RiskAssetKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
+  'hospitals', 'bhu', 'schools', 'roads',
+  'embankments', 'mainCanals', 'branchCanals', 'drains', 'livestock',
 ];
 
 /** Legacy types for compatibility */
@@ -119,7 +136,7 @@ export const RISK_MODE_LABELS: Record<RiskMode, string> = {
 
 /**
  * Data for one region in one scenario for one mode
- * Contains all 12 asset types from the Excel files
+ * Contains all 16 asset types from the Excel files
  */
 export type RegionRiskData = {
   crop: number;
@@ -133,7 +150,11 @@ export type RegionRiskData = {
   bhu: number;
   schools: number;
   roads: number;
-  hydraulic: number;
+  embankments: number;
+  mainCanals: number;
+  branchCanals: number;
+  drains: number;
+  livestock: number;
 };
 
 export function totalRiskValue(data: RegionRiskData): number {
@@ -284,21 +305,23 @@ export function buildScenarioKey(
 
 // ---- EAD (Expected Annual Damage) ----
 
-/** Asset keys for EAD computation - now includes all 11 assets */
+/** Asset keys for EAD computation - now includes all 16 assets */
 export type AssetSubKey = RiskAssetKey;
 
-/** All 12 asset keys in display order for EAD */
+/** All 16 asset keys in display order for EAD */
 export const ASSET_SUB_KEYS: AssetSubKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
+  'hospitals', 'bhu', 'schools', 'roads',
+  'embankments', 'mainCanals', 'branchCanals', 'drains', 'livestock',
 ];
 
 /** Assets to display in UI */
 export const DISPLAY_ASSET_KEYS: AssetSubKey[] = [
   'crop', 'buildLow56', 'buildLow44', 'buildHigh',
   'telecom', 'electric', 'railways',
-  'hospitals', 'bhu', 'schools', 'roads', 'hydraulic',
+  'hospitals', 'bhu', 'schools', 'roads',
+  'embankments', 'mainCanals', 'branchCanals', 'drains', 'livestock',
 ];
 
 /** Human-readable labels for each asset sub-key */
@@ -314,7 +337,11 @@ export const ASSET_SUB_KEY_LABELS: Record<AssetSubKey, string> = {
   bhu: 'BHU',
   schools: 'Schools',
   roads: 'Roads',
-  hydraulic: 'Hydraulic',
+  embankments: 'Embankments',
+  mainCanals: 'Main Canals',
+  branchCanals: 'Branch Canals',
+  drains: 'Drains',
+  livestock: 'Livestock',
 };
 
 /** Result of EAD calculation for one climate × maintenance × region */
@@ -365,7 +392,7 @@ export function calculateTotalRisk(
   const scenarioData = data.data[scenarioKey];
   if (!scenarioData) return null;
 
-  // Sum all districts for all 12 assets
+  // Sum all districts for all 16 assets
   const total: RegionRiskData = {
     crop: 0,
     buildLow56: 0,
@@ -378,7 +405,11 @@ export function calculateTotalRisk(
     bhu: 0,
     schools: 0,
     roads: 0,
-    hydraulic: 0,
+    embankments: 0,
+    mainCanals: 0,
+    branchCanals: 0,
+    drains: 0,
+    livestock: 0,
   };
 
   for (const district of DISTRICTS) {
@@ -396,7 +427,11 @@ export function calculateTotalRisk(
     total.bhu += districtData.bhu ?? 0;
     total.schools += districtData.schools ?? 0;
     total.roads += districtData.roads ?? 0;
-    total.hydraulic += districtData.hydraulic ?? 0;
+    total.embankments += districtData.embankments ?? 0;
+    total.mainCanals += districtData.mainCanals ?? 0;
+    total.branchCanals += districtData.branchCanals ?? 0;
+    total.drains += districtData.drains ?? 0;
+    total.livestock += districtData.livestock ?? 0;
   }
 
   return total;

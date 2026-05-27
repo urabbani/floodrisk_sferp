@@ -54,7 +54,11 @@ export function RiskDistrictBreakdown({
             bhu: 0,
             schools: 0,
             roads: 0,
-            hydraulic: 0,
+            embankments: 0,
+            mainCanals: 0,
+            branchCanals: 0,
+            drains: 0,
+            livestock: 0,
           } as RegionRiskData,
         };
       }
