@@ -33,7 +33,8 @@ interface DistrictBarChartProps {
 const ASSET_GROUPS = {
   agriculture: ['crop'],
   buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
-  infrastructure: ['telecom', 'electric', 'railways', 'roads', 'embankments', 'mainCanals', 'branchCanals', 'drains'],
+  infrastructure: ['telecom', 'electric', 'railways', 'roads'],
+  hydraulicStructures: ['embankments', 'mainCanals', 'branchCanals', 'drains'],
   facilities: ['hospitals', 'bhu', 'schools'],
   livestock: ['livestock'],
 } as const;
@@ -42,6 +43,7 @@ const GROUP_COLORS: Record<string, string> = {
   agriculture: RISK_ASSET_COLORS.crop,
   buildings: RISK_ASSET_COLORS.buildLow44,
   infrastructure: '#f59e0b',
+  hydraulicStructures: '#06b6d4',
   facilities: '#a855f7',
   livestock: '#f97316',
 };
@@ -50,6 +52,7 @@ const GROUP_LABELS: Record<string, string> = {
   agriculture: 'Agriculture',
   buildings: 'Buildings',
   infrastructure: 'Infrastructure',
+  hydraulicStructures: 'Hydraulic Structures',
   facilities: 'Facilities',
   livestock: 'Livestock',
 };

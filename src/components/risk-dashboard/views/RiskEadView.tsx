@@ -20,7 +20,8 @@ import type { EadBarChartData } from '../components/EadBarChart';
 const ASSET_GROUPS = {
   agriculture: { label: 'Agriculture', assets: ['crop' as AssetSubKey], icon: '🌾', color: RISK_ASSET_COLORS.crop },
   buildings: { label: 'Buildings', assets: ['buildLow56' as AssetSubKey, 'buildLow44' as AssetSubKey, 'buildHigh' as AssetSubKey], icon: '🏗️', color: RISK_ASSET_COLORS.buildLow44 },
-  infrastructure: { label: 'Infrastructure', assets: ['telecom' as AssetSubKey, 'electric' as AssetSubKey, 'railways' as AssetSubKey, 'roads' as AssetSubKey, 'embankments' as AssetSubKey, 'mainCanals' as AssetSubKey, 'branchCanals' as AssetSubKey, 'drains' as AssetSubKey], icon: '🛣️', color: '#f59e0b' },
+  infrastructure: { label: 'Infrastructure', assets: ['telecom' as AssetSubKey, 'electric' as AssetSubKey, 'railways' as AssetSubKey, 'roads' as AssetSubKey], icon: '🛣️', color: '#f59e0b' },
+  hydraulicStructures: { label: 'Hydraulic Structures', assets: ['embankments' as AssetSubKey, 'mainCanals' as AssetSubKey, 'branchCanals' as AssetSubKey, 'drains' as AssetSubKey], icon: '🌊', color: '#06b6d4' },
   facilities: { label: 'Facilities', assets: ['hospitals' as AssetSubKey, 'bhu' as AssetSubKey, 'schools' as AssetSubKey], icon: '🏥', color: '#a855f7' },
   livestock: { label: 'Livestock', assets: ['livestock' as AssetSubKey], icon: '🐄', color: '#f97316' },
 } as const;
