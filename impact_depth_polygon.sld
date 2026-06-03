@@ -9,7 +9,7 @@
           <Name>above5m</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>above5m</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
@@ -29,7 +29,7 @@
           <Name>4-5m</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>4-5m</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
@@ -49,7 +49,7 @@
           <Name>3-4m</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>3-4m</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
@@ -69,7 +69,7 @@
           <Name>2-3m</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>2-3m</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
@@ -89,7 +89,7 @@
           <Name>1-2m</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>1-2m</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
@@ -109,7 +109,7 @@
           <Name>15-100cm</Name>
           <ogc:Filter>
             <ogc:PropertyIsEqualTo>
-              <ogc:PropertyName>depth_bin</ogc:PropertyName>
+              <ogc:PropertyName>depth_category</ogc:PropertyName>
               <ogc:Literal>15-100cm</ogc:Literal>
             </ogc:PropertyIsEqualTo>
           </ogc:Filter>
