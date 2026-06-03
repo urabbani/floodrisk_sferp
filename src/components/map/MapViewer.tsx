@@ -215,6 +215,7 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
               url: `${GEOSERVER_CONFIG.baseUrl}/${layerInfo.workspace}/wms`,
               params: {
                 LAYERS: `${layerInfo.workspace}:${layerInfo.geoserverName}`,
+                STYLES: layerInfo.style,
                 TILED: true,
                 VERSION: GEOSERVER_CONFIG.wmsVersion,
                 FORMAT: 'image/png',

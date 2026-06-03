@@ -200,12 +200,19 @@ export function ImpactMatrix({
       .filter(([, impact]) => impact !== null)
       .map(
       ([exposureType, impact]) => {
-        // Map geometry type to LayerInfo geometry type
+        // Map geometry type to LayerInfo geometry type and style
         const geometryType = EXPOSURE_LAYER_GEOMETRY[exposureType as ExposureLayerType] === 'point'
           ? ('point' as const)
           : EXPOSURE_LAYER_GEOMETRY[exposureType as ExposureLayerType] === 'line'
             ? ('line' as const)
             : ('polygon' as const);
+
+        // Map geometry type to correct SLD style
+        const style = geometryType === 'point'
+          ? 'impact_depth_point'
+          : geometryType === 'line'
+            ? 'impact_depth_line'
+            : 'impact_depth_polygon';
 
         return {
           id: impact!.geoserverLayer,
@@ -216,7 +223,7 @@ export function ImpactMatrix({
           opacity: 0.7,
           geoserverName: impact!.geoserverLayer,
           workspace: impact!.workspace || 'exposures',
-          style: undefined,
+          style,
           legendUrl: undefined,
           zIndex: geometryType === 'point' ? 150 : geometryType === 'line' ? 100 : 50,
           filter: cqlFilter, // Apply CQL filter based on depth threshold
