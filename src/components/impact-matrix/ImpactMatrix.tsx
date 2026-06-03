@@ -200,7 +200,7 @@ export function ImpactMatrix({
       .filter(([, impact]) => impact !== null)
       .map(
       ([exposureType, impact]) => {
-        // Map geometry type to LayerInfo geometry type and style
+        // Map geometry type to LayerInfo geometry type
         const geometryType = EXPOSURE_LAYER_GEOMETRY[exposureType as ExposureLayerType] === 'point'
           ? ('point' as const)
           : EXPOSURE_LAYER_GEOMETRY[exposureType as ExposureLayerType] === 'line'
@@ -222,7 +222,7 @@ export function ImpactMatrix({
           visible: false,
           opacity: 0.7,
           geoserverName: impact!.geoserverLayer,
-          workspace: impact!.workspace || 'exposures',
+          workspace: impact!.workspace || 'exp_revised',
           style,
           legendUrl: undefined,
           zIndex: geometryType === 'point' ? 150 : geometryType === 'line' ? 100 : 50,

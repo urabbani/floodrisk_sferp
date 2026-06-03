@@ -229,7 +229,7 @@ export const SEVERITY_COLORS: Record<SeverityLevel, string> = {
 /**
  * GeoServer workspace for impact layers
  */
-export const IMPACT_LAYER_WORKSPACE = 'exposures';
+export const IMPACT_LAYER_WORKSPACE = 'exp_revised';
 
 /**
  * Build database schema name for an impact scenario
