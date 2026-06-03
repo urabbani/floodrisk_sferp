@@ -164,11 +164,11 @@ async function getTotalFeatureCounts(pool) {
     totals['Cropped_Area'] = 0;
   }
 
-  // Line features: Get total length
+  // Line features: Get total length (use original table name from Exposure_InputData)
   try {
     const query = `
       SELECT COALESCE(ROUND(SUM(ST_Length(geom))), 0) as total_length
-      FROM "Exposure_InputData"."Electric_lines"
+      FROM "Exposure_InputData"."Electric_Grid"
     `;
     const result = await pool.query(query);
     totals['Electric_lines'] = parseInt(result.rows[0].total_length) || 0;
@@ -179,9 +179,10 @@ async function getTotalFeatureCounts(pool) {
   }
 
   // All other point/line layers: Use COUNT(*)
+  // Note: Telecom_Tower queries Exposure_InputData.Telecom_Towers (original table name)
   const countLayers = [
     'BHU', 'Branch_Canals', 'Drains', 'Embankments', 'Hospitals',
-    'Main_Canals', 'Railways', 'Roads', 'Schools', 'Telecom_Tower'
+    'Main_Canals', 'Railways', 'Roads', 'Schools', 'Telecom_Towers'
   ];
   for (const exposureType of countLayers) {
     try {
@@ -194,7 +195,20 @@ async function getTotalFeatureCounts(pool) {
     }
   }
 
-  return totals;
+  // Map old database table names to new API layer names
+  const layerNameMapping = {
+    'Electric_Grid': 'Electric_lines',
+    'Telecom_Towers': 'Telecom_Tower'
+  };
+
+  // Apply the mapping to create the final totals with correct keys
+  const finalTotals = {};
+  for (const [dbTable, count] of Object.entries(totals)) {
+    const apiLayerName = layerNameMapping[dbTable] || dbTable;
+    finalTotals[apiLayerName] = count;
+  }
+
+  return finalTotals;
 }
 
 /**
@@ -551,7 +565,7 @@ async function processResults(rows, depthThreshold, pool) {
       depthBins,
       // Handle 2.3yrs → 23yrs for GeoServer layer naming (decimal workaround)
       geoserverLayer: `T3_${row.return_period.replace('2.3', '23')}yrs_${row.climate.charAt(0).toUpperCase() + row.climate.slice(1)}_${row.maintenance === 'redcapacity' ? 'RedCapacity' : row.maintenance.charAt(0).toUpperCase() + row.maintenance.slice(1)}_Impacted_${row.exposure_type}`,
-      workspace: 'exp_revised',
+      workspace: 'exposures',
       geometryType: geometryType,
     };
 

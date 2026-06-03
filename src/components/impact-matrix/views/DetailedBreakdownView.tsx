@@ -136,8 +136,8 @@ export function DetailedBreakdownView({
       percentage: filteredScenario.populationImpact.affectedPercentage,
     } : null;
 
-    // Infrastructure Impact (Roads, Railways, Electric Grid, Telecom)
-    const infrastructureLayers: ExposureLayerType[] = ['Roads', 'Railways', 'Electric_Grid', 'Telecom_Towers'];
+    // Infrastructure Impact (Roads, Railways, Electric Lines, Telecom Towers)
+    const infrastructureLayers: ExposureLayerType[] = ['Roads', 'Railways', 'Electric_lines', 'Telecom_Tower'];
     const infrastructureImpacts = infrastructureLayers
       .map(layer => impacts[layer])
       .filter(impact => impact && impact.totalFeatures > 0);
