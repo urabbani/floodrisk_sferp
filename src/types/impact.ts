@@ -2,17 +2,22 @@
 // These types define the structure for displaying flood impact and exposure data
 
 /**
- * The 8 exposure layer types that can be impacted by flooding
+ * The 12 exposure layer types that can be impacted by flooding
+ * Updated June 2026 - replaced old 8 layers with new schema structure
  */
 export type ExposureLayerType =
   | 'BHU'
-  | 'Built_up_Area'
+  | 'Branch_Canals'
   | 'Cropped_Area'
-  | 'Electric_Grid'
+  | 'Drains'
+  | 'Electric_lines'
+  | 'Embankments'
+  | 'Hospitals'
+  | 'Main_Canals'
   | 'Railways'
   | 'Roads'
-  | 'Settlements'
-  | 'Telecom_Towers';
+  | 'Schools'
+  | 'Telecom_Tower';
 
 /**
  * Depth bin ranges for flood depth classification
@@ -122,13 +127,17 @@ export type ImpactSummaryResponse = {
  */
 export const EXPOSURE_LAYER_TYPES: ExposureLayerType[] = [
   'BHU',
-  'Built_up_Area',
+  'Branch_Canals',
   'Cropped_Area',
-  'Electric_Grid',
+  'Drains',
+  'Electric_lines',
+  'Embankments',
+  'Hospitals',
+  'Main_Canals',
   'Railways',
   'Roads',
-  'Settlements',
-  'Telecom_Towers',
+  'Schools',
+  'Telecom_Tower',
 ];
 
 /**
@@ -136,13 +145,17 @@ export const EXPOSURE_LAYER_TYPES: ExposureLayerType[] = [
  */
 export const EXPOSURE_LAYER_LABELS: Record<ExposureLayerType, string> = {
   'BHU': 'Basic Health Units',
-  'Built_up_Area': 'Built-up Area',
+  'Branch_Canals': 'Branch Canals',
   'Cropped_Area': 'Cropped Area',
-  'Electric_Grid': 'Electric Grid',
+  'Drains': 'Drains',
+  'Electric_lines': 'Electric Lines',
+  'Embankments': 'Embankments',
+  'Hospitals': 'Hospitals',
+  'Main_Canals': 'Main Canals',
   'Railways': 'Railways',
   'Roads': 'Roads',
-  'Settlements': 'Settlements',
-  'Telecom_Towers': 'Telecom Towers',
+  'Schools': 'Schools',
+  'Telecom_Tower': 'Telecom Towers',
 };
 
 /**
@@ -150,13 +163,17 @@ export const EXPOSURE_LAYER_LABELS: Record<ExposureLayerType, string> = {
  */
 export const EXPOSURE_LAYER_GEOMETRY: Record<ExposureLayerType, 'point' | 'line' | 'polygon'> = {
   'BHU': 'point',
-  'Built_up_Area': 'polygon',
+  'Branch_Canals': 'line',
   'Cropped_Area': 'polygon',
-  'Electric_Grid': 'line',
+  'Drains': 'line',
+  'Electric_lines': 'line',
+  'Embankments': 'line',
+  'Hospitals': 'point',
+  'Main_Canals': 'line',
   'Railways': 'line',
   'Roads': 'line',
-  'Settlements': 'polygon',
-  'Telecom_Towers': 'point',
+  'Schools': 'point',
+  'Telecom_Tower': 'point',
 };
 
 /**

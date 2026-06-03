@@ -32,16 +32,20 @@ const pool = new Pool({
 });
 
 // Exposure types (tables to publish)
+// Updated June 2026 - 12 new exposure types from updated T3 schemas
 const EXPOSURE_TYPES = [
   'BHU',
-  'Buildings',
-  'Built_up_Area',
+  'Branch_Canals',
   'Cropped_Area',
-  'Electric_Grid',
+  'Drains',
+  'Electric_lines',
+  'Embankments',
+  'Hospitals',
+  'Main_Canals',
   'Railways',
   'Roads',
-  'Settlements',
-  'Telecom_Towers',
+  'Schools',
+  'Telecom_Tower',
 ];
 
 // Scenario combinations
@@ -213,14 +217,21 @@ async function createStore(schemaName) {
 }
 
 /**
- * Publish a feature type (layer) from PostGIS
+ * Publish a feature type from PostGIS
+ * Uses unique name with schema prefix and nativeName for actual table
  */
 async function publishLayer(schemaName, tableName) {
+  // Use schema prefix as feature type name for uniqueness
+  const featureTypeName = `${schemaName}_${tableName}`;
+
   return new Promise((resolve) => {
-    // Use minimal payload - GeoServer will auto-configure the rest
     const payload = JSON.stringify({
       featureType: {
-        name: tableName,
+        name: featureTypeName,
+        nativeName: tableName,
+        title: `${tableName} (${schemaName})`,
+        abstract: `Impact layer: ${tableName} from ${schemaName}`,
+        SRS: 'EPSG:32642',
       },
     });
 
@@ -247,17 +258,10 @@ async function publishLayer(schemaName, tableName) {
           // Layer already exists - this is okay
           process.stdout.write('.');
           resolve(true);
-        } else if (res.statusCode === 500) {
-          // Server error - might be a database connection issue
-          process.stdout.write('x');
-          if (Math.random() < 0.02) { // Show 2% of errors
-            console.log(`\n  ⚠️  ${tableName}: Server error - store might not be ready`);
-          }
-          resolve(false);
         } else {
-          // Other errors
-          if (Math.random() < 0.05) { // Show 5% of errors
-            console.log(`\n  ⚠️  ${tableName}: ${res.statusCode}`);
+          // Log error for debugging
+          if (Math.random() < 0.05) {
+            console.log(`\n  ⚠️  ${featureTypeName}: Status ${res.statusCode}`);
           }
           process.stdout.write('x');
           resolve(false);
@@ -266,8 +270,8 @@ async function publishLayer(schemaName, tableName) {
     });
 
     req.on('error', (error) => {
-      if (Math.random() < 0.1) { // Show 10% of errors
-        console.log(`\n  ❌ ${tableName}: ${error.message}`);
+      if (Math.random() < 0.1) {
+        console.log(`\n  ❌ ${featureTypeName}: ${error.message}`);
       }
       process.stdout.write('E');
       resolve(false);
