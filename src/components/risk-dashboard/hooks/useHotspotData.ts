@@ -1,8 +1,8 @@
 /**
  * Hook for computing flood risk hotspot scores
  *
- * Combines EAD (physical risk), Expected Annual Fatalities (population risk),
- * and socioeconomic vulnerability into composite hotspot scores.
+ * Combines EAD (physical risk), EAL (economic loss), Expected Annual Fatalities
+ * (population risk), and socioeconomic vulnerability into composite hotspot scores.
  *
  * UPDATED: Now integrates population risk across all 7 return periods using
  * trapezoidal integration (Expected Annual Fatalities), matching the EAD methodology.
@@ -10,6 +10,7 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useEadData } from './useEadData';
+import { useEalData } from './useEalData';
 import { useSocioeconomicData } from '@/hooks/useSocioeconomicData';
 import { calculateVulnerabilityIndicesWithPoverty } from '@/lib/vulnerability';
 import { computeHotspotScores, calculateExpectedAnnualFatalities } from '@/lib/hotspot';
@@ -89,8 +90,9 @@ export function useHotspotData(
   const [popLoading, setPopLoading] = useState(true);
   const [popError, setPopError] = useState<string | null>(null);
 
-  // Load EAD and socioeconomic data
+  // Load EAD, EAL, and socioeconomic data
   const { eadResults, isLoading: eadLoading, error: eadError } = useEadData();
+  const { ealResults, isLoading: ealLoading } = useEalData();
   const { data: socioeconomicData, loading: socioLoading, error: socioError } = useSocioeconomicData();
 
   // Fetch all 7 population risk scenarios when climate or maintenance changes
@@ -154,7 +156,7 @@ export function useHotspotData(
 
   // Compute hotspot scores when all data is available
   const hotspotResults = useMemo(() => {
-    if (!eadResults || !socioeconomicData || !expectedAnnualFatalities) return null;
+    if (!eadResults || !ealResults || !socioeconomicData || !expectedAnnualFatalities) return null;
 
     // Calculate vulnerability indices from census + poverty data
     const vulnerabilityIndices = calculateVulnerabilityIndicesWithPoverty(socioeconomicData);
@@ -162,15 +164,16 @@ export function useHotspotData(
     // Compute hotspot scores using Expected Annual Fatalities
     return computeHotspotScores({
       eadResults,
+      ealResults,
       expectedAnnualFatalities,
       vulnerabilityIndices,
       climate,
       maintenance: maintenance as 'breaches' | 'redcapacity' | 'perfect',
       weights,
     });
-  }, [eadResults, socioeconomicData, expectedAnnualFatalities, climate, maintenance, weights]);
+  }, [eadResults, ealResults, socioeconomicData, expectedAnnualFatalities, climate, maintenance, weights]);
 
-  const isLoading = eadLoading || socioLoading || popLoading;
+  const isLoading = eadLoading || ealLoading || socioLoading || popLoading;
   const error = eadError || socioError || popError;
 
   return {

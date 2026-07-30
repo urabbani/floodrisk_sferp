@@ -73,7 +73,7 @@ Hotspot Score = w₁ × Physical Risk + w₂ × Population Risk + w₃ × Socioe
 
 Where:
 - Each dimension is normalized to 0-100 scale (min-max normalization)
-- Current weights: w₁ = w₂ = w₃ = 1/3 (equal weights)
+- Current weights: w₁ = w₂ = w₃ = w₄ = 1/4 (equal weights across 4 dimensions)
 - Higher scores = higher priority for intervention
 
 ### Dimension 1: Physical Risk (Economic Damage)
@@ -101,7 +101,26 @@ Where:
 Physical Risk (normalized) = (EAD - min_EAD) / (max_EAD - min_EAD) × 100
 ```
 
-### Dimension 2: Population Risk (Expected Annual Fatalities)
+### Dimension 2: Economic Loss (EAL)
+
+**Source:** Expected Annual Loss (EAL) from loss/damage-factor analysis
+
+**Calculation:**
+```
+EAL = Σ 0.5 × (Lᵢ + Lᵢ₊₁) × |1/RPᵢ - 1/RPᵢ₊₁|   where Lᵢ = Dᵢ × sector Loss/Damage factor
+```
+
+Where:
+- Each of the 16 assets is scaled by its sector's Loss/Damage factor (e.g. Commerce 18.95, Agriculture 2.51, Transport 0.02), then integrated across the 7 return periods
+- Equivalently `EAL[asset] = factor × EAD[asset]` (factor constant across return periods)
+- Re-weights the asset mix relative to EAD (loss-weighted vs raw-damage-weighted)
+
+**Normalization:**
+```
+Economic Loss (normalized) = (EAL - min_EAL) / (max_EAL - min_EAL) × 100
+```
+
+### Dimension 3: Population Risk (Expected Annual Fatalities)
 
 **Source:** Semi-quantitative fatality estimation using depth × velocity mortality factors
 
@@ -140,7 +159,7 @@ Where Fᵢ = Moderate fatality estimate for return period RPᵢ
 Population Risk (normalized) = (EAF - min_EAF) / (max_EAF - min_EAF) × 100
 ```
 
-### Dimension 3: Socioeconomic Vulnerability
+### Dimension 4: Socioeconomic Vulnerability
 
 **Source:** Census 2017 + Poverty 2019 (PSLM) composite index
 
@@ -176,13 +195,15 @@ Vulnerability = 0.4 × Demographic + 0.3 × Economic + 0.2 × Housing + 0.1 × S
 
 **Final Calculation:**
 ```
-Hotspot Score = 0.33 × Physical Risk (normalized EAD) + 
-                0.33 × Population Risk (normalized EAF) + 
-                0.33 × Socioeconomic Vulnerability
+Hotspot Score = 0.25 × Physical Risk (normalized EAD) + 
+                0.25 × Economic Loss (normalized EAL) + 
+                0.25 × Population Risk (normalized EAF) + 
+                0.25 × Socioeconomic Vulnerability
 ```
 
 Where:
 - **EAD** = Expected Annual Damage (economic)
+- **EAL** = Expected Annual Loss (damage × sector loss/damage factors)
 - **EAF** = Expected Annual Fatalities (population)
 
 **Interpretation:**
@@ -192,7 +213,7 @@ Where:
 - **70-100**: Very high priority hotspot
 
 **Methodology Consistency:**
-Both EAD and EAF use trapezoidal integration across 7 return periods (2.3, 5, 10, 25, 50, 100, 500 years), providing a consistent probabilistic approach to risk quantification.
+EAD, EAL, and EAF all use trapezoidal integration across 7 return periods (2.3, 5, 10, 25, 50, 100, 500 years), providing a consistent probabilistic approach to risk quantification.
 
 ---
 
@@ -604,6 +625,7 @@ interface HotspotDistrictResult {
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.1 | 2026-04-26 | **EAF Integration**: Changed Population Risk to use Expected Annual Fatalities integrated across all return periods, matching EAD methodology. Removed return period selector. |
+| 1.2 | 2026-07-30 | **EAL Integration**: Added Economic Loss (Expected Annual Loss) as a 4th hotspot dimension. Composite now combines EAD + EAL + EAF + Socioeconomic with equal 1/4 weights. |
 | 1.0 | 2026-04-26 | Initial release with 3-dimension hotspot scoring |
 
 ---

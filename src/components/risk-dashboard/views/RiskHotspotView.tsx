@@ -6,6 +6,7 @@
  *
  * METHODOLOGY UPDATE (April 2026):
  * - Physical Risk: Uses Expected Annual Damage (EAD) - integrated across ALL 7 return periods
+ * - Economic Loss: Uses Expected Annual Loss (EAL) - EAD scaled by sector Loss/Damage factors
  * - Population Risk: Uses Expected Annual Fatalities (EAF) - integrated across ALL 7 return periods
  * - Socioeconomic Vulnerability: Static census + poverty composite index
  *
@@ -91,7 +92,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
     };
   }, [hotspotResults]);
 
-  // Radar chart data: 3 axes × 7 districts
+  // Radar chart data: 4 axes × 7 districts
   const radarData = useMemo(() => {
     if (!hotspotResults) return [];
     return [
@@ -99,6 +100,12 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         dimension: 'Physical Risk',
         ...Object.fromEntries(
           hotspotResults.map((r) => [r.district, r.dimensions.physicalRisk])
+        ),
+      },
+      {
+        dimension: 'Economic Loss',
+        ...Object.fromEntries(
+          hotspotResults.map((r) => [r.district, r.dimensions.economicLoss])
         ),
       },
       {
@@ -159,7 +166,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
             <CardTitle className="text-lg">Flood Risk Hotspots</CardTitle>
           </div>
           <CardDescription>
-            Multi-Criteria Analysis (MCA) using Expected Annual Damage, Expected Annual Fatalities, and Socioeconomic vulnerability integrated across all return periods for comparable hotspot scores
+            Multi-Criteria Analysis (MCA) using Expected Annual Damage, Expected Annual Loss, Expected Annual Fatalities, and Socioeconomic vulnerability integrated across all return periods for comparable hotspot scores
           </CardDescription>
         </CardHeader>
       </Card>
@@ -248,7 +255,7 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
         <CardHeader className="pb-2">
           <CardTitle className="text-base">District Hotspot Rankings</CardTitle>
           <CardDescription>
-            MCA-based composite scores integrating EAD, EAF, and Vulnerability across all return periods
+            MCA-based composite scores integrating EAD, EAL, EAF, and Vulnerability across all return periods
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -320,13 +327,14 @@ export function RiskHotspotView({ climate, onChoroplethData }: RiskHotspotViewPr
       <Card>
         <CardContent className="pt-4">
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <strong>Methodology:</strong> Multi-Criteria Analysis combining EAD, EAF, and Socioeconomic vulnerability (equal weights).
+            <strong>Methodology:</strong> Multi-Criteria Analysis combining EAD, EAL, EAF, and Socioeconomic vulnerability (equal weights).
             <br />• <strong>Physical Risk (EAD):</strong> Expected Annual Damage integrated across 7 return periods (2.3yr–500yr) using trapezoidal integration
+            <br />• <strong>Economic Loss (EAL):</strong> Expected Annual Loss — damage scaled by sector Loss/Damage factors, integrated across 7 return periods
             <br />• <strong>Population Risk (EAF):</strong> Expected Annual Fatalities integrated across 7 return periods using trapezoidal integration
             <br />• <strong>Socioeconomic Vulnerability:</strong> Composite index from census 2017 + poverty 2019
-            <br />Both EAD and EAF use identical probabilistic methodology, integrating across the full probability spectrum.
+            <br />EAD, EAL, and EAF all use identical probabilistic methodology, integrating across the full probability spectrum.
             <br /><strong className="text-green-700">✓ Stable Rankings:</strong> Hotspot scores remain consistent regardless of single return period selection, as they capture the complete risk distribution rather than one specific scenario.
-            Each dimension is min-max normalized across districts, then weighted equally (1/3 each).
+            Each dimension is min-max normalized across districts, then weighted equally (1/4 each).
             Higher scores indicate greater overall flood risk and intervention priority.
           </p>
         </CardContent>

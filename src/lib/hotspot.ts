@@ -12,7 +12,7 @@ import type {
   HotspotDistrictResult,
 } from '@/types/socioeconomic';
 import { DISTRICTS, RETURN_PERIODS } from '@/types/risk';
-import type { EadResult } from '@/types/risk';
+import type { EadResult, EalResult } from '@/types/risk';
 import type { VulnerabilityIndex } from '@/types/socioeconomic';
 
 /**
@@ -87,6 +87,7 @@ function normalizeTo100(values: number[]): number[] {
  */
 export function computeHotspotScores(params: {
   eadResults: EadResult[];
+  ealResults: EalResult[];
   expectedAnnualFatalities: Record<DistrictName, number>; // Integrated across all RPs
   vulnerabilityIndices: VulnerabilityIndex[];
   climate: 'present' | 'future';
@@ -95,6 +96,7 @@ export function computeHotspotScores(params: {
 }): HotspotDistrictResult[] {
   const {
     eadResults,
+    ealResults,
     expectedAnnualFatalities,
     vulnerabilityIndices,
     climate,
@@ -110,6 +112,7 @@ export function computeHotspotScores(params: {
 
   // Extract raw dimension values per district (in DISTRICTS order)
   const rawPhysical: number[] = [];
+  const rawEconomicLoss: number[] = [];
   const rawPopulation: number[] = [];
   const rawSocioeconomic: number[] = [];
 
@@ -120,6 +123,12 @@ export function computeHotspotScores(params: {
     );
     rawPhysical.push(ead?.eadTotal ?? 0);
 
+    // Economic Loss: EAL total (damage × sector loss/damage factors)
+    const eal = ealResults.find(
+      (r) => r.climate === climate && r.maintenance === maintenance && r.region === district
+    );
+    rawEconomicLoss.push(eal?.ealTotal ?? 0);
+
     // Population Risk: Expected Annual Fatalities (integrated across all return periods)
     rawPopulation.push(expectedAnnualFatalities[district] ?? 0);
 
@@ -129,6 +138,7 @@ export function computeHotspotScores(params: {
 
   // Normalize each dimension to 0-100
   const normPhysical = normalizeTo100(rawPhysical);
+  const normEconomicLoss = normalizeTo100(rawEconomicLoss);
   const normPopulation = normalizeTo100(rawPopulation);
   const normSocioeconomic = normalizeTo100(rawSocioeconomic);
 
@@ -137,12 +147,14 @@ export function computeHotspotScores(params: {
     const dimensions: HotspotDimensionScores = {
       district,
       physicalRisk: Math.round(normPhysical[i] * 10) / 10,
+      economicLoss: Math.round(normEconomicLoss[i] * 10) / 10,
       populationRisk: Math.round(normPopulation[i] * 10) / 10,
       socioeconomicVulnerability: Math.round(normSocioeconomic[i] * 10) / 10,
     };
 
     const hotspotScore = Math.round(
       dimensions.physicalRisk * weights.physicalRisk +
+      dimensions.economicLoss * weights.economicLoss +
       dimensions.populationRisk * weights.populationRisk +
       dimensions.socioeconomicVulnerability * weights.socioeconomicVulnerability
     );

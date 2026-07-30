@@ -144,6 +144,7 @@ export interface SocioeconomicData {
 export interface HotspotDimensionScores {
   district: DistrictName;
   physicalRisk: number; // from EAD total, normalized
+  economicLoss: number; // from EAL total (loss/damage factors), normalized
   populationRisk: number; // from fatality estimates, normalized
   socioeconomicVulnerability: number; // from VulnerabilityIndex.overallScore
 }
@@ -164,15 +165,17 @@ export interface HotspotDistrictResult {
  */
 export interface HotspotWeights {
   physicalRisk: number;
+  economicLoss: number;
   populationRisk: number;
   socioeconomicVulnerability: number;
 }
 
 /**
- * Default equal weights for hotspot calculation
+ * Default equal weights for hotspot calculation (4 dimensions)
  */
 export const DEFAULT_HOTSPOT_WEIGHTS: HotspotWeights = {
-  physicalRisk: 1 / 3,
-  populationRisk: 1 / 3,
-  socioeconomicVulnerability: 1 / 3,
+  physicalRisk: 1 / 4,
+  economicLoss: 1 / 4,
+  populationRisk: 1 / 4,
+  socioeconomicVulnerability: 1 / 4,
 };
