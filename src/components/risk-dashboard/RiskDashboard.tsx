@@ -3,13 +3,15 @@ import { Shield, Layers, Map, BarChart3, AlertCircle, Calculator, TrendingUp, Us
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RiskView, ScenarioKey, DistrictName, ScenarioMeta } from '@/types/risk';
-import { totalRiskValue, buildScenarioKey } from '@/types/risk';
+import { totalRiskValue, buildScenarioKey, toLossData } from '@/types/risk';
 import { useRiskData } from './hooks/useRiskData';
 import { useEadData } from './hooks/useEadData';
+import { useEalData } from './hooks/useEalData';
 import { RiskSummaryHeatmap } from './views/RiskSummaryHeatmap';
 import { RiskDistrictBreakdown } from './views/RiskDistrictBreakdown';
 import { RiskSpatialView } from './views/RiskSpatialView';
 import { RiskEadView } from './views/RiskEadView';
+import { RiskEalView } from './views/RiskEalView';
 import { RiskPopulationView } from './views/RiskPopulationView';
 import { RiskHotspotView } from './views/RiskHotspotView';
 import { RiskCurveModal } from './components/RiskCurveModal';
@@ -31,6 +33,9 @@ export function RiskDashboard({
   const [currentView, setCurrentView] = useState<RiskView>('summary');
   const [selectedClimate, setSelectedClimate] = useState<'present' | 'future'>('present');
   const [selectedScenarioKey, setSelectedScenarioKey] = useState<ScenarioKey | null>(null);
+
+  // Damage/Loss metric toggle (per-scenario views only)
+  const [lossMode, setLossMode] = useState<'damage' | 'loss'>('damage');
 
   // Risk Curve modal state
   const [riskCurveOpen, setRiskCurveOpen] = useState(false);
@@ -54,6 +59,12 @@ export function RiskDashboard({
   // Data
   const { data, isLoading, error } = useRiskData();
   const eadState = useEadData();
+  const ealState = useEalData();
+
+  // Parallel loss dataset (Dmg scaled by per-sector Loss/Damage factor)
+  const lossData = useMemo(() => (data ? toLossData(data) : null), [data]);
+  // Per-scenario views render this when the Loss toggle is on
+  const activeData = lossMode === 'loss' ? lossData : data;
 
   // Notify parent of view changes
   useEffect(() => {
@@ -62,19 +73,19 @@ export function RiskDashboard({
 
   // Compute choropleth data for spatial view
   const choroplethData = useMemo(() => {
-    if (!data || currentView !== 'spatial') return null;
+    if (!activeData || currentView !== 'spatial') return null;
 
     const key = `${spatialReturnPeriod}_${selectedClimate}_${spatialMaintenance}`;
-    const scenarioData = data.data[key];
+    const scenarioData = activeData.data[key];
     if (!scenarioData) return null;
 
     const result: Record<DistrictName, number> = {} as any;
-    for (const district of data.districts) {
+    for (const district of activeData.districts) {
       const regionData = scenarioData[district]?.[MODE];
       result[district as DistrictName] = regionData ? totalRiskValue(regionData) : 0;
     }
     return result;
-  }, [data, currentView, spatialReturnPeriod, selectedClimate, spatialMaintenance]);
+  }, [activeData, currentView, spatialReturnPeriod, selectedClimate, spatialMaintenance]);
 
   // Push choropleth data to parent
   useEffect(() => {
@@ -83,7 +94,7 @@ export function RiskDashboard({
 
   // Clean up choropleth when leaving spatial/ead/population/hotspots view
   useEffect(() => {
-    if (currentView !== 'spatial' && currentView !== 'ead' && currentView !== 'population' && currentView !== 'hotspots') {
+    if (currentView !== 'spatial' && currentView !== 'ead' && currentView !== 'eal' && currentView !== 'population' && currentView !== 'hotspots') {
       onChoroplethData?.(null);
     }
   }, [currentView, onChoroplethData]);
@@ -169,6 +180,15 @@ export function RiskDashboard({
               EAD
             </Button>
             <Button
+              variant={currentView === 'eal' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setCurrentView('eal')}
+              className="text-sm h-8"
+            >
+              <TrendingUp className="w-3.5 h-3.5 mr-1" />
+              EAL
+            </Button>
+            <Button
               variant={currentView === 'population' ? 'default' : 'ghost'}
               size="sm"
               onClick={() => setCurrentView('population')}
@@ -193,24 +213,47 @@ export function RiskDashboard({
       {/* Controls Bar — Climate only */}
       <div className="px-4 py-2.5 border-b border-slate-100 bg-slate-50 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-slate-700">Climate:</label>
-            <div className="flex gap-1">
-              {(['present', 'future'] as const).map((climate) => (
-                <button
-                  key={climate}
-                  onClick={() => handleClimateChange(climate)}
-                  className={cn(
-                    'px-3 py-1.5 text-sm rounded-md transition-all capitalize',
-                    selectedClimate === climate
-                      ? 'bg-green-600 text-white font-medium'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-green-300',
-                  )}
-                >
-                  {climate}
-                </button>
-              ))}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-slate-700">Climate:</label>
+              <div className="flex gap-1">
+                {(['present', 'future'] as const).map((climate) => (
+                  <button
+                    key={climate}
+                    onClick={() => handleClimateChange(climate)}
+                    className={cn(
+                      'px-3 py-1.5 text-sm rounded-md transition-all capitalize',
+                      selectedClimate === climate
+                        ? 'bg-green-600 text-white font-medium'
+                        : 'bg-white text-slate-600 border border-slate-200 hover:border-green-300',
+                    )}
+                  >
+                    {climate}
+                  </button>
+                ))}
+              </div>
             </div>
+            {(currentView === 'summary' || currentView === 'district' || currentView === 'spatial') && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-slate-700">Metric:</label>
+                <div className="flex gap-1">
+                  {(['damage', 'loss'] as const).map((metric) => (
+                    <button
+                      key={metric}
+                      onClick={() => setLossMode(metric)}
+                      className={cn(
+                        'px-3 py-1.5 text-sm rounded-md transition-all',
+                        lossMode === metric
+                          ? 'bg-amber-600 text-white font-medium'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:border-amber-300',
+                      )}
+                    >
+                      {metric === 'damage' ? 'Damage' : 'Loss'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Risk Curve Button */}
@@ -252,7 +295,7 @@ export function RiskDashboard({
         {/* Summary View */}
         {currentView === 'summary' && !isLoading && !error && data && (
           <RiskSummaryHeatmap
-            data={data}
+            data={activeData}
             climate={selectedClimate}
             mode={MODE}
             selectedKey={selectedScenarioKey}
@@ -263,7 +306,7 @@ export function RiskDashboard({
         {/* District View */}
         {currentView === 'district' && selectedScenarioKey && !isLoading && !error && data && (
           <RiskDistrictBreakdown
-            data={data}
+            data={activeData}
             scenarioKey={selectedScenarioKey}
             mode={MODE}
             onBack={handleBackToSummary}
@@ -273,7 +316,7 @@ export function RiskDashboard({
         {/* Spatial View */}
         {currentView === 'spatial' && !isLoading && !error && data && (
           <RiskSpatialView
-            data={data}
+            data={activeData}
             climate={selectedClimate}
             maintenance={spatialMaintenance}
             returnPeriod={spatialReturnPeriod}
@@ -289,6 +332,15 @@ export function RiskDashboard({
         {currentView === 'ead' && !isLoading && !error && eadState.eadResults && (
           <RiskEadView
             eadResults={eadState.eadResults}
+            climate={selectedClimate}
+            onChoroplethData={onChoroplethData}
+          />
+        )}
+
+        {/* EAL View */}
+        {currentView === 'eal' && !isLoading && !error && ealState.ealResults && (
+          <RiskEalView
+            ealResults={ealState.ealResults}
             climate={selectedClimate}
             onChoroplethData={onChoroplethData}
           />

@@ -123,6 +123,34 @@ The Risk Dashboard provides flood risk assessment with 4 views: Summary Heatmap,
 
 **Choropleth integration:** EAD view pushes district EAD totals to the map via `onChoroplethData` callback. "Show on Map" is active by default. Visibility condition in App.tsx includes `'ead'`.
 
+### Loss Estimation & Expected Annual Loss (EAL) Module
+
+EAL layers an **economic loss** estimate on top of EAD's direct damage. Each of the 16 assets inherits a **Loss/Damage factor** from its sector; loss is computed client-side (no data-pipeline change).
+
+**Formula:** `Loss[asset] = Dmg[asset] × sectorFactor(asset)`. EAL integrates loss across the 7 return periods via the same trapezoidal method as EAD, so `EAL[asset] = factor × EAD[asset]` (factor constant across return periods).
+
+**Sector → asset mapping** (defined in `src/types/risk.ts`):
+- Agriculture, Food, Livestock (2.51) → crop, livestock
+- Commerce & Industries (18.95) → buildHigh
+- Water Resources & Irrigation (0.21) → embankments, mainCanals, branchCanals, drains
+- Energy (0.36) → electric
+- Transport & Communications (0.02) → roads, railways, telecom
+- Housing / Settlements (0.11) → buildLow56, buildLow44
+- Education (0.39) → schools
+- Health (0.30) → hospitals, bhu
+- WASH (0.64) → *no matching asset, contributes 0*
+
+**Key additions in `src/types/risk.ts`:** `SectorKey`, `SECTOR_FACTORS`, `SECTOR_LABELS`, `SECTOR_COLORS`, `SECTOR_ASSETS`, `ASSET_SECTOR`, `ASSET_SECTOR_FACTOR`, `computeAssetLoss()`, `toLossData()`, `EalResult`; `RiskView` extended with `'eal'`.
+
+**Components:**
+- `useEalData` (`hooks/useEalData.ts`): mirrors `useEadData` but multiplies damage by `ASSET_SECTOR_FACTOR` before `calculateEad`. Returns `ealResults`.
+- `RiskEalView` (`views/RiskEalView.tsx`): EAD-style view grouped by the **9 sectors** (expandable to assets) — summary table by maintenance, district bar chart, ranked table, choropleth push.
+- `EalBarChart` (`components/EalBarChart.tsx`): sector-grouped stacked bars (mirrors `EadBarChart`).
+
+**Per-scenario Damage/Loss toggle:** `RiskDashboard` exposes a Metric toggle (Damage/Loss) for Summary/District/Spatial views. When Loss is selected, `toLossData(data)` feeds those views (and the spatial choropleth) — the same view components render loss unchanged because loss keeps the `Dmg` shape/formatting.
+
+**Choropleth:** EAL view pushes district EAL totals to the map; the visibility condition in App.tsx and the cleanup condition in `RiskDashboard.tsx` both include `'eal'`.
+
 ### Impact Matrix Module
 
 The Impact Matrix provides comprehensive flood impact assessment across 42 scenarios per climate:

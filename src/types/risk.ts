@@ -179,7 +179,7 @@ export type RiskJsonData = {
   districts: string[];
 };
 
-export type RiskView = 'summary' | 'district' | 'spatial' | 'ead' | 'population' | 'hotspots';
+export type RiskView = 'summary' | 'district' | 'spatial' | 'ead' | 'eal' | 'population' | 'hotspots';
 
 /**
  * 7 districts in Sindh Province (Naushahro Feroze and Shaheed Benazirabad excluded)
@@ -303,6 +303,166 @@ export function buildScenarioKey(
   return `${returnPeriod}_${climate}_${maintenance}`;
 }
 
+// ---- Loss Estimation (Loss/Damage factors) ----
+
+/**
+ * Sectors with their Derived Factor (Loss/Damage ratio).
+ * Per-asset loss = damage × factor of the sector the asset belongs to.
+ *
+ * Note: WASH has no matching asset in the 16-asset model and contributes 0.
+ */
+export type SectorKey =
+  | 'agriculture'
+  | 'commerce'
+  | 'water'
+  | 'energy'
+  | 'transport'
+  | 'housing'
+  | 'education'
+  | 'health'
+  | 'wash';
+
+export const SECTOR_FACTORS: Record<SectorKey, number> = {
+  agriculture: 2.51, // Agriculture, Food, Livestock
+  commerce: 18.95,   // Commerce & Industries
+  water: 0.21,       // Water Resources & Irrigation
+  energy: 0.36,      // Energy
+  transport: 0.02,   // Transport & Communications
+  housing: 0.11,     // Housing / Settlements
+  education: 0.39,   // Education
+  health: 0.30,      // Health
+  wash: 0.64,        // WASH (Water & Sanitation) — no asset, contributes 0
+};
+
+export const SECTOR_LABELS: Record<SectorKey, string> = {
+  agriculture: 'Agriculture, Food, Livestock',
+  commerce: 'Commerce & Industries',
+  water: 'Water Resources & Irrigation',
+  energy: 'Energy',
+  transport: 'Transport & Communications',
+  housing: 'Housing / Settlements',
+  education: 'Education',
+  health: 'Health',
+  wash: 'WASH (Water & Sanitation)',
+};
+
+export const SECTOR_COLORS: Record<SectorKey, string> = {
+  agriculture: '#22c55e',
+  commerce: '#f59e0b',
+  water: '#06b6d4',
+  energy: '#eab308',
+  transport: '#64748b',
+  housing: '#3b82f6',
+  education: '#8b5cf6',
+  health: '#ec4899',
+  wash: '#14b8a6',
+};
+
+export const SECTOR_ICONS: Record<SectorKey, string> = {
+  agriculture: '🌾',
+  commerce: '🏭',
+  water: '🌊',
+  energy: '⚡',
+  transport: '🛣️',
+  housing: '🏠',
+  education: '🎓',
+  health: '🏥',
+  wash: '🚰',
+};
+
+/** All sectors in display order */
+export const SECTOR_KEYS: SectorKey[] = [
+  'agriculture', 'commerce', 'water', 'energy', 'transport',
+  'housing', 'education', 'health', 'wash',
+];
+
+/** Asset → sector mapping (buildHigh → Commerce per project decision) */
+export const ASSET_SECTOR: Record<RiskAssetKey, SectorKey> = {
+  crop: 'agriculture',
+  livestock: 'agriculture',
+  buildHigh: 'commerce',
+  embankments: 'water',
+  mainCanals: 'water',
+  branchCanals: 'water',
+  drains: 'water',
+  electric: 'energy',
+  roads: 'transport',
+  railways: 'transport',
+  telecom: 'transport',
+  buildLow56: 'housing',
+  buildLow44: 'housing',
+  schools: 'education',
+  hospitals: 'health',
+  bhu: 'health',
+};
+
+/** Sector → its assets (WASH = []) */
+export const SECTOR_ASSETS: Record<SectorKey, RiskAssetKey[]> = {
+  agriculture: ['crop', 'livestock'],
+  commerce: ['buildHigh'],
+  water: ['embankments', 'mainCanals', 'branchCanals', 'drains'],
+  energy: ['electric'],
+  transport: ['roads', 'railways', 'telecom'],
+  housing: ['buildLow56', 'buildLow44'],
+  education: ['schools'],
+  health: ['hospitals', 'bhu'],
+  wash: [],
+};
+
+/** Asset → its sector's factor (convenience) */
+export const ASSET_SECTOR_FACTOR: Record<RiskAssetKey, number> = Object.fromEntries(
+  RISK_ASSET_KEYS.map((asset) => [asset, SECTOR_FACTORS[ASSET_SECTOR[asset]]])
+) as Record<RiskAssetKey, number>;
+
+/**
+ * Compute per-asset loss from damage: loss[asset] = dmg[asset] × sector factor.
+ */
+export function computeAssetLoss(dmg: RegionRiskData): RegionRiskData {
+  return {
+    crop: dmg.crop * ASSET_SECTOR_FACTOR.crop,
+    buildLow56: dmg.buildLow56 * ASSET_SECTOR_FACTOR.buildLow56,
+    buildLow44: dmg.buildLow44 * ASSET_SECTOR_FACTOR.buildLow44,
+    buildHigh: dmg.buildHigh * ASSET_SECTOR_FACTOR.buildHigh,
+    telecom: dmg.telecom * ASSET_SECTOR_FACTOR.telecom,
+    electric: dmg.electric * ASSET_SECTOR_FACTOR.electric,
+    railways: dmg.railways * ASSET_SECTOR_FACTOR.railways,
+    hospitals: dmg.hospitals * ASSET_SECTOR_FACTOR.hospitals,
+    bhu: dmg.bhu * ASSET_SECTOR_FACTOR.bhu,
+    schools: dmg.schools * ASSET_SECTOR_FACTOR.schools,
+    roads: dmg.roads * ASSET_SECTOR_FACTOR.roads,
+    embankments: dmg.embankments * ASSET_SECTOR_FACTOR.embankments,
+    mainCanals: dmg.mainCanals * ASSET_SECTOR_FACTOR.mainCanals,
+    branchCanals: dmg.branchCanals * ASSET_SECTOR_FACTOR.branchCanals,
+    drains: dmg.drains * ASSET_SECTOR_FACTOR.drains,
+    livestock: dmg.livestock * ASSET_SECTOR_FACTOR.livestock,
+  };
+}
+
+/**
+ * Build a parallel dataset where every `Dmg` block is replaced by its loss.
+ * Exp/Vul are untouched. Used by per-scenario views when the Loss toggle is on.
+ */
+export function toLossData(data: RiskJsonData): RiskJsonData {
+  const lossData: RiskJsonData = {
+    generated: data.generated,
+    scenarios: data.scenarios,
+    districts: data.districts,
+    data: {},
+  };
+  for (const scenarioKey of Object.keys(data.data)) {
+    lossData.data[scenarioKey] = {};
+    for (const region of Object.keys(data.data[scenarioKey])) {
+      const regionModes = data.data[scenarioKey][region];
+      lossData.data[scenarioKey][region] = {
+        Exp: regionModes.Exp,
+        Vul: regionModes.Vul,
+        Dmg: regionModes.Dmg ? computeAssetLoss(regionModes.Dmg) : regionModes.Dmg,
+      };
+    }
+  }
+  return lossData;
+}
+
 // ---- EAD (Expected Annual Damage) ----
 
 /** Asset keys for EAD computation - now includes all 16 assets */
@@ -351,6 +511,15 @@ export type EadResult = {
   region: string;
   ead: Record<AssetSubKey, number>;
   eadTotal: number;
+};
+
+/** Result of Expected Annual Loss (EAL) calculation for one climate × maintenance × region */
+export type EalResult = {
+  climate: 'present' | 'future';
+  maintenance: 'breaches' | 'redcapacity' | 'perfect';
+  region: string;
+  eal: Record<AssetSubKey, number>;
+  ealTotal: number;
 };
 
 /** Result of Expected Annual Population Affected (EAPA) calculation */

@@ -128,7 +128,7 @@ function App() {
     data: choroplethData,
     min: choroplethMin,
     max: choroplethMax,
-    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'population' || currentRiskView === 'hotspots'),
+    visible: sidebarView === 'risk' && (currentRiskView === 'spatial' || currentRiskView === 'ead' || currentRiskView === 'eal' || currentRiskView === 'population' || currentRiskView === 'hotspots'),
     mode: choroplethMode,
   });
 
