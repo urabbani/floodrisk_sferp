@@ -2,24 +2,31 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { TrendingUp, Map, BarChart3, ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { EalResult, AssetSubKey, SectorKey, DistrictName } from '@/types/risk';
+import type { EalResult, AssetSubKey, DistrictName } from '@/types/risk';
 import {
   MAINTENANCE_LEVELS,
   MAINTENANCE_LABELS,
   DISTRICTS,
   DISPLAY_ASSET_KEYS,
   ASSET_SUB_KEY_LABELS,
-  SECTOR_KEYS,
-  SECTOR_ASSETS,
-  SECTOR_LABELS,
-  SECTOR_COLORS,
-  SECTOR_ICONS,
   formatRiskValueFull,
   getRiskColor,
   RISK_ASSET_COLORS,
 } from '@/types/risk';
 import { EalBarChart } from '../components/EalBarChart';
 import type { EalBarChartData } from '../components/EalBarChart';
+
+// Same asset grouping as EAD (sectors are internal to factor application only)
+const ASSET_GROUPS = {
+  agriculture: { label: 'Agriculture', assets: ['crop' as AssetSubKey], icon: '🌾', color: RISK_ASSET_COLORS.crop },
+  buildings: { label: 'Buildings', assets: ['buildLow56' as AssetSubKey, 'buildLow44' as AssetSubKey, 'buildHigh' as AssetSubKey], icon: '🏗️', color: RISK_ASSET_COLORS.buildLow44 },
+  infrastructure: { label: 'Infrastructure', assets: ['telecom' as AssetSubKey, 'electric' as AssetSubKey, 'railways' as AssetSubKey, 'roads' as AssetSubKey], icon: '🛣️', color: '#f59e0b' },
+  hydraulicStructures: { label: 'Hydraulic Structures', assets: ['embankments' as AssetSubKey, 'mainCanals' as AssetSubKey, 'branchCanals' as AssetSubKey, 'drains' as AssetSubKey], icon: '🌊', color: '#06b6d4' },
+  facilities: { label: 'Facilities', assets: ['hospitals' as AssetSubKey, 'bhu' as AssetSubKey, 'schools' as AssetSubKey], icon: '🏥', color: '#a855f7' },
+  livestock: { label: 'Livestock', assets: ['livestock' as AssetSubKey], icon: '🐄', color: RISK_ASSET_COLORS.livestock },
+} as const;
+
+type AssetGroupKey = keyof typeof ASSET_GROUPS;
 
 interface RiskEalViewProps {
   ealResults: EalResult[];
@@ -31,27 +38,27 @@ interface RiskEalViewProps {
 export function RiskEalView({ ealResults, climate, onChoroplethData, className }: RiskEalViewProps) {
   const [selectedMaintenance, setSelectedMaintenance] = useState<'breaches' | 'redcapacity' | 'perfect'>('breaches');
   const [showOnMap, setShowOnMap] = useState(true);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<AssetGroupKey>>(new Set());
 
-  const toggleGroup = (key: string) => {
+  const toggleGroup = (group: AssetGroupKey) => {
     setExpandedGroups((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
+      if (next.has(group)) {
+        next.delete(group);
       } else {
-        next.add(key);
+        next.add(group);
       }
       return next;
     });
   };
 
-  const expandAll = () => setExpandedGroups(new Set(SECTOR_KEYS));
+  const expandAll = () => setExpandedGroups(new Set(Object.keys(ASSET_GROUPS) as AssetGroupKey[]));
   const collapseAll = () => setExpandedGroups(new Set());
 
-  // Helper to calculate sector total
-  const getSectorTotal = (eal: Record<AssetSubKey, number> | undefined, sector: SectorKey): number => {
+  // Helper to calculate group total
+  const getGroupTotal = (eal: Record<AssetSubKey, number> | undefined, groupKey: AssetGroupKey): number => {
     if (!eal) return 0;
-    return SECTOR_ASSETS[sector].reduce((sum, asset) => sum + (eal[asset] ?? 0), 0);
+    return ASSET_GROUPS[groupKey].assets.reduce((sum, asset) => sum + (eal[asset] ?? 0), 0);
   };
 
   // Summary: EAL by maintenance level for TOTAL region
@@ -79,9 +86,11 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
         district,
         rawData,
       };
-    }).sort((a, b) =>
-      DISPLAY_ASSET_KEYS.reduce((s, k) => s + (b.rawData[k] ?? 0) - (a.rawData[k] ?? 0), 0)
-    );
+    }).sort((a, b) => {
+      const sumA = DISPLAY_ASSET_KEYS.reduce((s, k) => s + (a.rawData[k] ?? 0), 0);
+      const sumB = DISPLAY_ASSET_KEYS.reduce((s, k) => s + (b.rawData[k] ?? 0), 0);
+      return sumB - sumA;
+    });
   }, [ealResults, climate, selectedMaintenance]);
 
   // Ranked districts
@@ -125,14 +134,14 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
           <span className="text-sm font-semibold text-slate-800">Expected Annual Loss (EAL)</span>
         </div>
         <p className="text-xs text-slate-500 mt-1">
-          Loss/Damage factors applied per sector, integrated across 7 return periods (2.3yr – 500yr)
+          Trapezoidal integration across 7 return periods (2.3yr – 500yr) with sector Loss/Damage factors applied
         </p>
       </div>
 
       {/* Summary Table */}
       <div className="px-4">
         <div className="flex items-center justify-between mb-2">
-          <h4 className="text-sm font-semibold text-slate-700">EAL by Maintenance Level (by Sector)</h4>
+          <h4 className="text-sm font-semibold text-slate-700">EAL by Maintenance Level</h4>
           <div className="flex gap-1">
             <Button size="sm" variant="ghost" className="text-xs h-6 px-2" onClick={expandAll}>
               Expand All
@@ -146,7 +155,7 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-slate-200">
-                <th className="text-left py-1.5 px-2 font-medium text-slate-600 sticky left-0 bg-slate-50 z-10">Sector</th>
+                <th className="text-left py-1.5 px-2 font-medium text-slate-600 sticky left-0 bg-slate-50 z-10">Asset Group</th>
                 <th className="text-right py-1.5 px-2 font-medium text-slate-600 whitespace-nowrap">Breaches</th>
                 <th className="text-right py-1.5 px-2 font-medium text-slate-600 whitespace-nowrap">Reduced Cap.</th>
                 <th className="text-right py-1.5 px-2 font-medium text-slate-600 whitespace-nowrap">Perfect</th>
@@ -154,27 +163,27 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
               </tr>
             </thead>
             <tbody>
-              {SECTOR_KEYS.map((sector) => {
-                const isExpanded = expandedGroups.has(sector);
-                const breachesTotal = getSectorTotal(summaryData.find((d) => d.maintenance === 'breaches')?.result?.eal, sector);
-                const reducedTotal = getSectorTotal(summaryData.find((d) => d.maintenance === 'redcapacity')?.result?.eal, sector);
-                const perfectTotal = getSectorTotal(summaryData.find((d) => d.maintenance === 'perfect')?.result?.eal, sector);
+              {(Object.keys(ASSET_GROUPS) as AssetGroupKey[]).map((groupKey) => {
+                const group = ASSET_GROUPS[groupKey];
+                const isExpanded = expandedGroups.has(groupKey);
+                const breachesTotal = getGroupTotal(summaryData.find((d) => d.maintenance === 'breaches')?.result?.eal, groupKey);
+                const reducedTotal = getGroupTotal(summaryData.find((d) => d.maintenance === 'redcapacity')?.result?.eal, groupKey);
+                const perfectTotal = getGroupTotal(summaryData.find((d) => d.maintenance === 'perfect')?.result?.eal, groupKey);
                 const avgTotal = (breachesTotal + reducedTotal + perfectTotal) / 3;
-                const hasAssets = SECTOR_ASSETS[sector].length > 0;
 
                 return (
-                  <React.Fragment key={sector}>
-                    {/* Sector row */}
+                  <React.Fragment key={groupKey}>
+                    {/* Group row */}
                     <tr className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-1.5 px-2 font-medium text-slate-700 sticky left-0 bg-slate-50 z-10">
                         <button
-                          onClick={() => hasAssets && toggleGroup(sector)}
-                          className={cn('flex items-center gap-1 transition-colors', hasAssets && 'hover:text-amber-600')}
+                          onClick={() => toggleGroup(groupKey)}
+                          className="flex items-center gap-1 hover:text-amber-600 transition-colors"
                         >
-                          {hasAssets && (isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />)}
-                          <span>{SECTOR_ICONS[sector]}</span>
-                          <span>{SECTOR_LABELS[sector]}</span>
-                          <span className="text-slate-400 text-[10px]">({SECTOR_ASSETS[sector].length})</span>
+                          {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                          <span>{group.icon}</span>
+                          <span>{group.label}</span>
+                          <span className="text-slate-400 text-[10px]">({group.assets.length})</span>
                         </button>
                       </td>
                       <td className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
@@ -191,7 +200,7 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
                       </td>
                     </tr>
                     {/* Expanded asset rows */}
-                    {isExpanded && SECTOR_ASSETS[sector].map((asset) => {
+                    {isExpanded && group.assets.map((asset) => {
                       const breachesVal = summaryData.find((d) => d.maintenance === 'breaches')?.result?.eal[asset] ?? 0;
                       const reducedVal = summaryData.find((d) => d.maintenance === 'redcapacity')?.result?.eal[asset] ?? 0;
                       const perfectVal = summaryData.find((d) => d.maintenance === 'perfect')?.result?.eal[asset] ?? 0;
@@ -295,7 +304,10 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
               {/* District header with bar */}
               <div
                 className="flex items-center gap-2 text-xs py-2 px-2 bg-slate-50 hover:bg-slate-100 cursor-pointer"
-                onClick={() => toggleGroup(`district-${district}`)}
+                onClick={() => {
+                  const districtGroupKey = `district-${district}` as AssetGroupKey;
+                  toggleGroup(districtGroupKey);
+                }}
               >
                 <span className="w-4 text-slate-400 text-right flex-shrink-0 font-medium">{i + 1}</span>
                 <span className="w-28 font-semibold text-slate-700 truncate flex-shrink-0">{district}</span>
@@ -311,58 +323,59 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
                 <span className="w-24 text-right font-bold text-slate-900 flex-shrink-0">
                   {formatRiskValueFull(ealTotal, 'Dmg')}
                 </span>
-                {expandedGroups.has(`district-${district}`)
+                {expandedGroups.has(`district-${district}` as AssetGroupKey)
                   ? <ChevronDown className="w-4 h-4 text-slate-500 flex-shrink-0" />
                   : <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 }
               </div>
 
-              {/* Expanded sectors */}
-              {expandedGroups.has(`district-${district}`) && eal && (
+              {/* Expanded asset groups */}
+              {expandedGroups.has(`district-${district}` as AssetGroupKey) && eal && (
                 <div className="text-xs bg-white">
-                  {SECTOR_KEYS.filter((s) => SECTOR_ASSETS[s].length > 0).map((sector) => {
-                    const sectorTotal = getSectorTotal(eal, sector);
-                    const pct = ealTotal > 0 ? (sectorTotal / ealTotal) * 100 : 0;
+                  {(Object.keys(ASSET_GROUPS) as AssetGroupKey[]).map((groupKey) => {
+                    const group = ASSET_GROUPS[groupKey];
+                    const groupTotal = getGroupTotal(eal, groupKey);
+                    const pct = ealTotal > 0 ? (groupTotal / ealTotal) * 100 : 0;
 
                     return (
-                      <div key={sector} className="border-b border-slate-100 last:border-0">
-                        {/* Sector row */}
+                      <div key={groupKey} className="border-b border-slate-100 last:border-0">
+                        {/* Group row */}
                         <div
                           className="flex items-center gap-2 py-1 px-2 hover:bg-slate-50 cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleGroup(`${sector}-${district}`);
+                            toggleGroup(`${groupKey}-${district}` as AssetGroupKey);
                           }}
                         >
                           <span className="w-4" />
                           <span className="w-28 flex items-center gap-1 text-slate-600 truncate">
-                            {SECTOR_ICONS[sector]} {SECTOR_LABELS[sector]}
+                            {group.icon} {group.label}
                           </span>
                           <div className="flex-1 h-2 bg-slate-100 rounded-sm overflow-hidden">
                             <div
                               className="h-full rounded-sm"
                               style={{
                                 width: `${pct}%`,
-                                backgroundColor: SECTOR_COLORS[sector],
+                                backgroundColor: group.color,
                               }}
                             />
                           </div>
                           <span className="w-24 text-right font-medium text-slate-700 flex-shrink-0">
-                            {formatRiskValueFull(sectorTotal, 'Dmg')}
+                            {formatRiskValueFull(groupTotal, 'Dmg')}
                           </span>
                           <span className="w-12 text-right text-slate-500 flex-shrink-0 text-[10px]">
                             {pct.toFixed(1)}%
                           </span>
-                          {expandedGroups.has(`${sector}-${district}`)
+                          {expandedGroups.has(`${groupKey}-${district}` as AssetGroupKey)
                             ? <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                             : <ChevronRight className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                           }
                         </div>
 
-                        {/* Individual assets within sector */}
-                        {expandedGroups.has(`${sector}-${district}`) && (
+                        {/* Individual assets within group */}
+                        {expandedGroups.has(`${groupKey}-${district}` as AssetGroupKey) && (
                           <div className="bg-slate-50/50">
-                            {SECTOR_ASSETS[sector].map((asset) => {
+                            {group.assets.map((asset) => {
                               const val = eal[asset] ?? 0;
                               const assetPct = ealTotal > 0 ? (val / ealTotal) * 100 : 0;
 

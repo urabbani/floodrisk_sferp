@@ -11,11 +11,8 @@ import {
 import {
   RISK_ASSET_COLORS,
   RISK_ASSET_SHORT_LABELS,
-  SECTOR_KEYS,
-  SECTOR_ASSETS,
-  SECTOR_COLORS,
-  SECTOR_LABELS,
   formatRiskValueFull,
+  ASSET_SUB_KEYS,
 } from '@/types/risk';
 
 export interface EalBarChartData {
@@ -26,6 +23,34 @@ export interface EalBarChartData {
 interface EalBarChartProps {
   data: EalBarChartData[];
 }
+
+// Same asset grouping as EAD (sectors are internal to factor application only)
+const ASSET_GROUPS = {
+  agriculture: ['crop'],
+  buildings: ['buildLow56', 'buildLow44', 'buildHigh'],
+  infrastructure: ['telecom', 'electric', 'railways', 'roads'],
+  hydraulicStructures: ['embankments', 'mainCanals', 'branchCanals', 'drains'],
+  facilities: ['hospitals', 'bhu', 'schools'],
+  livestock: ['livestock'],
+} as const;
+
+const GROUP_COLORS: Record<string, string> = {
+  agriculture: RISK_ASSET_COLORS.crop,
+  buildings: RISK_ASSET_COLORS.buildLow44,
+  infrastructure: '#f59e0b',
+  hydraulicStructures: '#06b6d4',
+  facilities: '#a855f7',
+  livestock: RISK_ASSET_COLORS.livestock,
+};
+
+const GROUP_LABELS: Record<string, string> = {
+  agriculture: 'Agriculture',
+  buildings: 'Buildings',
+  infrastructure: 'Infrastructure',
+  hydraulicStructures: 'Hydraulic Structures',
+  facilities: 'Facilities',
+  livestock: 'Livestock',
+};
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -46,22 +71,25 @@ function CustomTooltip({ active, payload, label }: any) {
               <span className="text-slate-600">{entry.name}:</span>
               <span className="font-medium text-slate-900">{formatRiskValueFull(val, 'Dmg')}</span>
             </div>
-            {/* Show asset breakdown for each sector */}
+            {/* Show asset breakdown for each group */}
             {rawData && entry.dataKey && (
               <div className="ml-4 mb-1">
-                {SECTOR_KEYS.map((sector) => {
-                  if (sector !== entry.dataKey) return null;
-                  return SECTOR_ASSETS[sector].map((asset) => {
-                    const assetVal = rawData[asset];
-                    if (!assetVal) return null;
-                    return (
-                      <div key={asset} className="flex items-center gap-2 text-xs text-slate-500">
-                        <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: RISK_ASSET_COLORS[asset] }} />
-                        <span>{RISK_ASSET_SHORT_LABELS[asset]}:</span>
-                        <span className="font-medium text-slate-700">{formatRiskValueFull(assetVal, 'Dmg')}</span>
-                      </div>
-                    );
-                  });
+                {ASSET_SUB_KEYS.map((asset) => {
+                  const assetVal = rawData[asset];
+                  if (assetVal === 0) return null;
+                  // Find which group this asset belongs to
+                  for (const [group, assets] of Object.entries(ASSET_GROUPS)) {
+                    if (assets.includes(asset) && group === entry.dataKey) {
+                      return (
+                        <div key={asset} className="flex items-center gap-2 text-xs text-slate-500">
+                          <div className="w-2 h-2 rounded-sm flex-shrink-0" style={{ backgroundColor: RISK_ASSET_COLORS[asset] }} />
+                          <span>{RISK_ASSET_SHORT_LABELS[asset]}:</span>
+                          <span className="font-medium text-slate-700">{formatRiskValueFull(assetVal, 'Dmg')}</span>
+                        </div>
+                      );
+                    }
+                  }
+                  return null;
                 })}
               </div>
             )}
@@ -77,24 +105,21 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export function EalBarChart({ data }: EalBarChartProps) {
-  // Group raw asset values into sector totals per district
+  // Transform data to have grouped values
   const chartData = data.map((item) => {
     const grouped: any = { district: item.district, rawData: item.rawData };
-    for (const sector of SECTOR_KEYS) {
-      grouped[sector] = SECTOR_ASSETS[sector].reduce(
-        (sum, asset) => sum + (item.rawData[asset] ?? 0),
-        0
-      );
+    for (const [group, assets] of Object.entries(ASSET_GROUPS)) {
+      grouped[group] = assets.reduce((sum, asset) => sum + (item.rawData[asset] ?? 0), 0);
     }
     return grouped;
   });
 
   const renderLegend = () => (
     <div className="flex items-center justify-center gap-4 pt-2 text-xs flex-wrap">
-      {SECTOR_KEYS.filter((s) => SECTOR_ASSETS[s].length > 0).map((sector) => (
-        <div key={sector} className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: SECTOR_COLORS[sector] }} />
-          <span className="text-slate-600">{SECTOR_LABELS[sector]}</span>
+      {Object.entries(GROUP_LABELS).map(([key, label]) => (
+        <div key={key} className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: GROUP_COLORS[key] }} />
+          <span className="text-slate-600">{label}</span>
         </div>
       ))}
     </div>
@@ -108,13 +133,13 @@ export function EalBarChart({ data }: EalBarChartProps) {
         <YAxis type="category" dataKey="district" width={130} tick={{ fontSize: 11 }} />
         <Tooltip content={<CustomTooltip />} />
         <Legend content={renderLegend} />
-        {SECTOR_KEYS.map((sector) => (
+        {Object.keys(ASSET_GROUPS).map((group) => (
           <Bar
-            key={sector}
-            dataKey={sector}
-            name={SECTOR_LABELS[sector]}
+            key={group}
+            dataKey={group}
+            name={GROUP_LABELS[group]}
             stackId="eal"
-            fill={SECTOR_COLORS[sector]}
+            fill={GROUP_COLORS[group]}
           />
         ))}
       </BarChart>

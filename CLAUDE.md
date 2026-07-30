@@ -144,8 +144,8 @@ EAL layers an **economic loss** estimate on top of EAD's direct damage. Each of 
 
 **Components:**
 - `useEalData` (`hooks/useEalData.ts`): mirrors `useEadData` but multiplies damage by `ASSET_SECTOR_FACTOR` before `calculateEad`. Returns `ealResults`.
-- `RiskEalView` (`views/RiskEalView.tsx`): EAD-style view grouped by the **9 sectors** (expandable to assets) — summary table by maintenance, district bar chart, ranked table, choropleth push.
-- `EalBarChart` (`components/EalBarChart.tsx`): sector-grouped stacked bars (mirrors `EadBarChart`).
+- `RiskEalView` (`views/RiskEalView.tsx`): EAD-style view using the **same 6 asset groups as EAD** (Agriculture, Buildings, Infrastructure, Hydraulic Structures, Facilities, Livestock) — summary table by maintenance, district bar chart, ranked table, choropleth push. Sectors are internal to factor application only and are not shown.
+- `EalBarChart` (`components/EalBarChart.tsx`): asset-grouped stacked bars (mirrors `EadBarChart`), labeled "Total EAL".
 
 **Per-scenario Damage/Loss toggle:** `RiskDashboard` exposes a Metric toggle (Damage/Loss) for Summary/District/Spatial views. When Loss is selected, `toLossData(data)` feeds those views (and the spatial choropleth) — the same view components render loss unchanged because loss keeps the `Dmg` shape/formatting.
 
