@@ -414,6 +414,12 @@ export const ASSET_SECTOR_FACTOR: Record<RiskAssetKey, number> = Object.fromEntr
   RISK_ASSET_KEYS.map((asset) => [asset, SECTOR_FACTORS[ASSET_SECTOR[asset]]])
 ) as Record<RiskAssetKey, number>;
 
+// All building types (buildLow56, buildLow44, buildHigh) use the Housing sector
+// factor (0.11) per domain review (2026-07). buildLow56/buildLow44 inherit it via
+// the housing sector mapping above; buildHigh's nominal sector is Commerce (18.95),
+// so it needs an explicit override to match the other buildings.
+ASSET_SECTOR_FACTOR.buildHigh = SECTOR_FACTORS.housing; // 0.11
+
 /**
  * Compute per-asset loss from damage: loss[asset] = dmg[asset] × sector factor.
  */

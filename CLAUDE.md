@@ -131,7 +131,8 @@ EAL layers an **economic loss** estimate on top of EAD's direct damage. Each of 
 
 **Sector → asset mapping** (defined in `src/types/risk.ts`):
 - Agriculture, Food, Livestock (2.51) → crop, livestock
-- Commerce & Industries (18.95) → buildHigh
+- Commerce & Industries (18.95) → *(no asset uses this factor in EAL — see override below)*
+- **All buildings (buildLow56, buildLow44, buildHigh)** → **0.11** (override: per domain review 2026-07, all building types use the Housing factor 0.11. buildLow56/buildLow44 inherit it via the housing sector; buildHigh is explicitly overridden since its nominal sector is Commerce/18.95)
 - Water Resources & Irrigation (0.21) → embankments, mainCanals, branchCanals, drains
 - Energy (0.36) → electric
 - Transport & Communications (0.02) → roads, railways, telecom
