@@ -13,6 +13,7 @@ import {
   RISK_ASSET_SHORT_LABELS,
   formatRiskValueFull,
   ASSET_SUB_KEYS,
+  COMMERCE_UPLIFT_FACTOR,
 } from '@/types/risk';
 
 export interface EalBarChartData {
@@ -41,6 +42,7 @@ const GROUP_COLORS: Record<string, string> = {
   hydraulicStructures: '#06b6d4',
   facilities: '#a855f7',
   livestock: RISK_ASSET_COLORS.livestock,
+  commerce: '#0f766e',
 };
 
 const GROUP_LABELS: Record<string, string> = {
@@ -50,6 +52,7 @@ const GROUP_LABELS: Record<string, string> = {
   hydraulicStructures: 'Hydraulic Structures',
   facilities: 'Facilities',
   livestock: 'Livestock',
+  commerce: 'Commerce & Industries',
 };
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -108,9 +111,13 @@ export function EalBarChart({ data }: EalBarChartProps) {
   // Transform data to have grouped values
   const chartData = data.map((item) => {
     const grouped: any = { district: item.district, rawData: item.rawData };
+    let sumOfGroups = 0;
     for (const [group, assets] of Object.entries(ASSET_GROUPS)) {
       grouped[group] = assets.reduce((sum, asset) => sum + (item.rawData[asset] ?? 0), 0);
+      sumOfGroups += grouped[group];
     }
+    // Commerce & Industries = flat uplift on the sum of all asset losses
+    grouped.commerce = sumOfGroups * COMMERCE_UPLIFT_FACTOR;
     return grouped;
   });
 
@@ -142,6 +149,13 @@ export function EalBarChart({ data }: EalBarChartProps) {
             fill={GROUP_COLORS[group]}
           />
         ))}
+        <Bar
+          key="commerce"
+          dataKey="commerce"
+          name={GROUP_LABELS.commerce}
+          stackId="eal"
+          fill={GROUP_COLORS.commerce}
+        />
       </BarChart>
     </ResponsiveContainer>
   );

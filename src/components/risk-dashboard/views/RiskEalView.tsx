@@ -99,7 +99,7 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
       const result = ealResults.find(
         (r) => r.climate === climate && r.maintenance === selectedMaintenance && r.region === district
       );
-      return { district, ealTotal: result?.ealTotal ?? 0, eal: result?.eal };
+      return { district, ealTotal: result?.ealTotal ?? 0, commerceEal: result?.commerceEal ?? 0, eal: result?.eal };
     }).sort((a, b) => b.ealTotal - a.ealTotal);
   }, [ealResults, climate, selectedMaintenance]);
 
@@ -230,6 +230,30 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
                   </React.Fragment>
                 );
               })}
+              {/* Commerce & Industries row (34% uplift — derived, no sub-assets) */}
+              <tr className="border-b border-slate-100 bg-slate-50/70">
+                <td className="py-1.5 px-2 font-medium text-slate-700 sticky left-0 bg-slate-50/70 z-10">
+                  <span className="flex items-center gap-1">
+                    <span>🏭</span>
+                    <span>Commerce &amp; Industries</span>
+                  </span>
+                </td>
+                <td className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
+                  {formatRiskValueFull(summaryData.find((d) => d.maintenance === 'breaches')?.result?.commerceEal ?? 0, 'Dmg')}
+                </td>
+                <td className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
+                  {formatRiskValueFull(summaryData.find((d) => d.maintenance === 'redcapacity')?.result?.commerceEal ?? 0, 'Dmg')}
+                </td>
+                <td className="py-1.5 px-2 text-right text-slate-600 whitespace-nowrap">
+                  {formatRiskValueFull(summaryData.find((d) => d.maintenance === 'perfect')?.result?.commerceEal ?? 0, 'Dmg')}
+                </td>
+                <td className="py-1.5 px-2 text-right font-semibold text-slate-900 border-l border-slate-200 whitespace-nowrap">
+                  {formatRiskValueFull(
+                    (summaryData.reduce((sum, d) => sum + (d.result?.commerceEal ?? 0), 0) / 3),
+                    'Dmg'
+                  )}
+                </td>
+              </tr>
               {/* Total row */}
               <tr className="border-b border-slate-200 bg-slate-100 font-semibold">
                 <td className="py-1.5 px-2 text-slate-800 sticky left-0 bg-slate-100 z-10">
@@ -299,7 +323,7 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
       <div className="px-4">
         <h4 className="text-sm font-semibold text-slate-700 mb-2">Ranked by Total EAL</h4>
         <div className="space-y-2">
-          {rankedDistricts.map(({ district, ealTotal, eal }, i) => (
+          {rankedDistricts.map(({ district, ealTotal, commerceEal, eal }, i) => (
             <div key={district} className="border border-slate-200 rounded-sm overflow-hidden">
               {/* District header with bar */}
               <div
@@ -410,6 +434,31 @@ export function RiskEalView({ ealResults, climate, onChoroplethData, className }
                       </div>
                     );
                   })}
+                  {/* Commerce & Industries line (34% uplift, no sub-assets) */}
+                  <div className="border-b border-slate-100 last:border-0">
+                    <div className="flex items-center gap-2 py-1 px-2">
+                      <span className="w-4" />
+                      <span className="w-28 flex items-center gap-1 text-slate-600 truncate">
+                        🏭 Commerce &amp; Industries
+                      </span>
+                      <div className="flex-1 h-2 bg-slate-100 rounded-sm overflow-hidden">
+                        <div
+                          className="h-full rounded-sm"
+                          style={{
+                            width: `${ealTotal > 0 ? ((commerceEal ?? 0) / ealTotal) * 100 : 0}%`,
+                            backgroundColor: '#0f766e',
+                          }}
+                        />
+                      </div>
+                      <span className="w-24 text-right font-medium text-slate-700 flex-shrink-0">
+                        {formatRiskValueFull(commerceEal ?? 0, 'Dmg')}
+                      </span>
+                      <span className="w-12 text-right text-slate-500 flex-shrink-0 text-[10px]">
+                        {(ealTotal > 0 ? ((commerceEal ?? 0) / ealTotal) * 100 : 0).toFixed(1)}%
+                      </span>
+                      <span className="w-3.5 flex-shrink-0" />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

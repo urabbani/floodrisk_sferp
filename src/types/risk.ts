@@ -519,12 +519,23 @@ export type EadResult = {
   eadTotal: number;
 };
 
+/**
+ * Flat uplift applied to total EAL to account for under-counted Commerce & Industries
+ * losses. The Commerce & Industries line item = COMMERCE_UPLIFT_FACTOR × (sum of all
+ * asset losses); the grand total = sum × (1 + COMMERCE_UPLIFT_FACTOR).
+ * NOTE: unrelated to the `commerce` *sector* loss/damage factor (SECTOR_FACTORS.commerce).
+ */
+export const COMMERCE_UPLIFT_FACTOR = 0.34;
+
 /** Result of Expected Annual Loss (EAL) calculation for one climate × maintenance × region */
 export type EalResult = {
   climate: 'present' | 'future';
   maintenance: 'breaches' | 'redcapacity' | 'perfect';
   region: string;
   eal: Record<AssetSubKey, number>;
+  /** Commerce & Industries uplift = COMMERCE_UPLIFT_FACTOR × (sum of the 16 asset losses). */
+  commerceEal: number;
+  /** Grand total = sum of the 16 asset losses × (1 + COMMERCE_UPLIFT_FACTOR); includes commerceEal. */
   ealTotal: number;
 };
 

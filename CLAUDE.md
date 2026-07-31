@@ -141,12 +141,14 @@ EAL layers an **economic loss** estimate on top of EAD's direct damage. Each of 
 - Health (0.30) → hospitals, bhu
 - WASH (0.64) → *no matching asset, contributes 0*
 
-**Key additions in `src/types/risk.ts`:** `SectorKey`, `SECTOR_FACTORS`, `SECTOR_LABELS`, `SECTOR_COLORS`, `SECTOR_ASSETS`, `ASSET_SECTOR`, `ASSET_SECTOR_FACTOR`, `computeAssetLoss()`, `toLossData()`, `EalResult`; `RiskView` extended with `'eal'`.
+**Key additions in `src/types/risk.ts`:** `SectorKey`, `SECTOR_FACTORS`, `SECTOR_LABELS`, `SECTOR_COLORS`, `SECTOR_ASSETS`, `ASSET_SECTOR`, `ASSET_SECTOR_FACTOR`, `computeAssetLoss()`, `toLossData()`, `EalResult`, `COMMERCE_UPLIFT_FACTOR`; `RiskView` extended with `'eal'`.
+
+**Commerce & Industries uplift (added 2026-07):** EAL carries a derived **"Commerce & Industries"** line item = `COMMERCE_UPLIFT_FACTOR` (0.34) × (sum of the 16 asset losses). `EalResult.commerceEal` holds that value, and `EalResult.ealTotal` is the **grand total** = sum × 1.34 (it *includes* the uplift — the old base sum is not stored/displayed separately). Because the uplift flows through `ealTotal`, every downstream consumer (choropleth, ranked totals, the Hotspots economic-loss dimension) inherits it automatically; the uplift is uniform across districts so Hotspots' min-max normalization leaves its rankings unchanged. It appears as a row in the summary table, a 7th stacked segment in `EalBarChart`, and a line in the ranked breakdown. EAD and the per-scenario Damage/Loss toggle are unaffected.
 
 **Components:**
-- `useEalData` (`hooks/useEalData.ts`): mirrors `useEadData` but multiplies damage by `ASSET_SECTOR_FACTOR` before `calculateEad`. Returns `ealResults`.
-- `RiskEalView` (`views/RiskEalView.tsx`): EAD-style view using the **same 6 asset groups as EAD** (Agriculture, Buildings, Infrastructure, Hydraulic Structures, Facilities, Livestock) — summary table by maintenance, district bar chart, ranked table, choropleth push. Sectors are internal to factor application only and are not shown.
-- `EalBarChart` (`components/EalBarChart.tsx`): asset-grouped stacked bars (mirrors `EadBarChart`), labeled "Total EAL".
+- `useEalData` (`hooks/useEalData.ts`): mirrors `useEadData` but multiplies damage by `ASSET_SECTOR_FACTOR` before `calculateEad`. Per district/TOTAL it computes `baseTotal`, then `commerceEal = baseTotal × 0.34` and `ealTotal = baseTotal × 1.34`. Returns `ealResults`.
+- `RiskEalView` (`views/RiskEalView.tsx`): EAD-style view using the **same 6 asset groups as EAD** (Agriculture, Buildings, Infrastructure, Hydraulic Structures, Facilities, Livestock) plus the derived **Commerce & Industries** row — summary table by maintenance, district bar chart, ranked table, choropleth push. Sectors are internal to factor application only and are not shown.
+- `EalBarChart` (`components/EalBarChart.tsx`): asset-grouped stacked bars (mirrors `EadBarChart`) plus a Commerce & Industries segment (= 0.34 × sum of the 6 groups), labeled "Total EAL".
 
 **Per-scenario Damage/Loss toggle:** `RiskDashboard` exposes a Metric toggle (Damage/Loss) for Summary/District/Spatial views. When Loss is selected, `toLossData(data)` feeds those views (and the spatial choropleth) — the same view components render loss unchanged because loss keeps the `Dmg` shape/formatting.
 

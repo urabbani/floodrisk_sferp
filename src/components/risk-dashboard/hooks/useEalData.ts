@@ -6,6 +6,7 @@ import {
   DISTRICTS,
   ASSET_SUB_KEYS,
   ASSET_SECTOR_FACTOR,
+  COMMERCE_UPLIFT_FACTOR,
   buildScenarioKey,
   calculateEad,
   type EalResult,
@@ -56,14 +57,16 @@ export function useEalData() {
             ASSET_SUB_KEYS.map(asset => [asset, calculateEad(lossesByAsset[asset])])
           ) as Record<AssetSubKey, number>;
 
-          const ealTotal = Object.values(eal).reduce((sum, val) => sum + val, 0);
+          const baseTotal = Object.values(eal).reduce((sum, val) => sum + val, 0);
+          const commerceEal = baseTotal * COMMERCE_UPLIFT_FACTOR;
 
           const result: EalResult = {
             climate,
             maintenance,
             region,
             eal,
-            ealTotal,
+            commerceEal,
+            ealTotal: baseTotal + commerceEal,
           };
           districtResults.push(result);
           results.push(result);
@@ -80,14 +83,16 @@ export function useEalData() {
           }
         }
 
-        const totalSum = Object.values(totalEal).reduce((sum, val) => sum + val, 0);
+        const totalBase = Object.values(totalEal).reduce((sum, val) => sum + val, 0);
+        const totalCommerce = totalBase * COMMERCE_UPLIFT_FACTOR;
 
         results.push({
           climate,
           maintenance,
           region: 'TOTAL',
           eal: totalEal,
-          ealTotal: totalSum,
+          commerceEal: totalCommerce,
+          ealTotal: totalBase + totalCommerce,
         });
       }
     }
