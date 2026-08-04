@@ -91,7 +91,6 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
         }),
         visible: bm.visible,
         zIndex: -1,
-        className: bm.id === 'satellite' ? 'satellite-grayscale' : undefined,
       })
     );
 
@@ -104,7 +103,6 @@ export function SwipeCompare({ onClose }: SwipeCompareProps) {
         }),
         visible: bm.visible,
         zIndex: -1,
-        className: bm.id === 'satellite' ? 'satellite-grayscale' : undefined,
       })
     );
 

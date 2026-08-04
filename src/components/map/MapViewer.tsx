@@ -95,7 +95,6 @@ export const MapViewer = forwardRef<MapViewerHandle, MapViewerProps>(
         }),
         visible: bm.visible,
         zIndex: -1, // FIXED: Always below data layers
-        className: bm.id === 'satellite' ? 'satellite-grayscale' : undefined,
       });
       baseLayerRefs.current!.set(bm.id, layer);
     });
