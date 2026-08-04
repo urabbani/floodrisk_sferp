@@ -12,7 +12,7 @@ import { RiskDashboard } from '@/components/risk-dashboard';
 import type { RiskView, DistrictName, RiskMode } from '@/types/risk';
 import { useChoroplethLayer } from '@/components/risk-dashboard/hooks/useChoroplethLayer';
 import { useHotspotWmsLayer } from '@/components/risk-dashboard/hooks/useHotspotWmsLayer';
-import { InterventionPanel } from '@/components/annotations/InterventionPanel';
+import { SchemaInterventionsPanel } from '@/components/interventions-schema';
 import { InterventionDialog } from '@/components/annotations/InterventionDialog';
 import { LoginDialog } from '@/components/annotations/LoginDialog';
 import { useDrawingInteractions } from '@/components/annotations/hooks/useDrawingInteractions';
@@ -29,7 +29,6 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import type { DrawingTool, NewAnnotation } from '@/types/annotations';
 import type Feature from 'ol/Feature';
-import type { Annotation } from '@/types/annotations';
 
 // Recursively collect all layers from the tree
 function collectAllLayers(tree: LayerGroup): LayerInfo[] {
@@ -154,10 +153,8 @@ function App() {
   // Interventions hooks (using the annotations hook for interventions)
   const {
     annotations: interventions,
-    isLoading: interventionsLoading,
     createAnnotation,
     updateAnnotation,
-    deleteAnnotation,
     refetch: loadInterventions,
   } = useAnnotations({ enabled: !!map });
 
@@ -243,11 +240,13 @@ function App() {
   });
 
   // Show/hide interventions based on sidebar view
+  // NOTE: the Interventions tab now shows the WFS schema layers, so annotation
+  // features are no longer force-shown there — they remain at their default state.
   useEffect(() => {
     if (!vectorSource) return;
 
     const features = vectorSource.getFeatures();
-    const shouldBeVisible = sidebarView === 'interventions';
+    const shouldBeVisible = false;
 
     features.forEach((feature: Feature) => {
       const currentVisible = feature.get('visible');
@@ -787,37 +786,6 @@ function App() {
     setDrawingTool,
   ]);
 
-  const handleAnnotationDelete = useCallback(async (id: number) => {
-    try {
-      // Remove feature from vector source immediately
-      const features = vectorSource?.getFeatures() || [];
-      for (const f of features) {
-        if (f.get('id') === id) {
-          vectorSource?.removeFeature(f);
-          break;
-        }
-      }
-      await deleteAnnotation(id);
-    } catch (error) {
-      console.error('Failed to delete intervention:', error);
-      alert('Failed to delete intervention');
-      // On failure, reload to restore consistent state
-      await loadInterventions();
-    }
-  }, [deleteAnnotation, vectorSource, loadInterventions]);
-
-  const handleAnnotationClick = useCallback((annotation: Annotation) => {
-    // Find feature and zoom to it
-    const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === annotation.id);
-    if (feature && feature.getGeometry()) {
-      const extent = feature.getGeometry()!.getExtent();
-      const mapInstance = mapViewerRef.current?.getMap();
-      if (mapInstance) {
-        mapInstance.getView().fit(extent, { padding: [50, 50, 50, 50], duration: 500 });
-      }
-    }
-  }, [vectorSource]);
-
   const handleExportAnnotations = useCallback(() => {
     const features = vectorSource?.getFeatures() || [];
     if (features.length === 0) {
@@ -1060,30 +1028,7 @@ function App() {
                 className="h-full"
               />
             ) : (
-              <InterventionPanel
-                interventions={interventions}
-                isLoading={interventionsLoading}
-                onInterventionClick={handleAnnotationClick}
-                onInterventionEdit={(intervention) => {
-                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === intervention.id);
-                  if (feature) {
-                    setEditingAnnotation({ id: intervention.id, feature });
-                    setAnnotationDialogMode('edit');
-                    setAnnotationDialogOpen(true);
-                  }
-                }}
-                onInterventionDelete={handleAnnotationDelete}
-                onInterventionToggleVisibility={(id, visible) => {
-                  const feature = vectorSource?.getFeatures().find((f: Feature) => f.get('id') === id);
-                  if (feature) {
-                    feature.set('visible', visible);
-                    // Trigger both source and layer to re-render
-                    vectorSource?.changed();
-                    vectorLayer?.changed();
-                  }
-                }}
-                onToolChange={handleToolChange}
-              />
+              <SchemaInterventionsPanel map={map} />
             )}
           </div>
         </aside>

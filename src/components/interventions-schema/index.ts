@@ -1,0 +1,1 @@
+export { SchemaInterventionsPanel } from './SchemaInterventionsPanel';
