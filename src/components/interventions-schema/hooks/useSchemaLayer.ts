@@ -16,8 +16,10 @@ import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Style from 'ol/style/Style';
 import Circle from 'ol/style/Circle';
+import Text from 'ol/style/Text';
 import {
   INTERVENTION_LAYER_BY_KEY,
+  featureLabel,
   type InterventionLayer,
   type SchemaGeometryType,
 } from '@/types/interventions-schema';
@@ -41,8 +43,22 @@ function buildStyle(
   color: string,
   geometryType: SchemaGeometryType,
   selected: boolean,
+  label: string | null,
 ): Style {
   const width = selected ? SELECTED_STROKE_WIDTH : 2;
+
+  const text = label
+    ? new Text({
+        text: label,
+        font: '600 11px sans-serif',
+        fill: new Fill({ color: '#1e293b' }),
+        stroke: new Stroke({ color: '#ffffff', width: 3 }),
+        overflow: true,
+        // Lift point labels above the marker; run line labels along the line.
+        ...(geometryType === 'point' ? { offsetY: -14 } : {}),
+        ...(geometryType === 'line' ? { placement: 'line' as const } : {}),
+      })
+    : undefined;
 
   switch (geometryType) {
     case 'point':
@@ -52,16 +68,19 @@ function buildStyle(
           fill: new Fill({ color }),
           stroke: new Stroke({ color: '#ffffff', width: 2 }),
         }),
+        text,
       });
     case 'line':
       return new Style({
         stroke: new Stroke({ color, width: selected ? width + 1 : 3 }),
+        text,
       });
     case 'polygon':
     default:
       return new Style({
         fill: new Fill({ color: hexToRgba(color, selected ? 0.55 : 0.3) }),
         stroke: new Stroke({ color, width }),
+        text,
       });
   }
 }
@@ -87,7 +106,14 @@ export function useSchemaLayer({ map }: UseSchemaLayerOptions) {
         selectedRef.current?.key === key &&
         String(selectedRef.current.id) === String(feature.get('featureId'));
 
-      return buildStyle(layer.color, layer.geometryType, selected);
+      // Map label: derive from feature props, truncate to keep the map tidy.
+      const rawLabel = featureLabel(
+        feature.getProperties() as Record<string, unknown>,
+      );
+      const label =
+        rawLabel.length > 28 ? `${rawLabel.slice(0, 27)}…` : rawLabel;
+
+      return buildStyle(layer.color, layer.geometryType, selected, label);
     };
 
     const layer = new VectorLayer({
