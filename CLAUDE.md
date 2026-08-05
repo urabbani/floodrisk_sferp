@@ -68,6 +68,7 @@ Hazard
 - **results**: Static flood scenario layers (raster), survey points, structures
 - **DEM**: DEM layers (HDTM_shaded_relief), AOI, SubCatchments, Stream Network (database-backed from public schema)
 - **exposures**: Impact exposure layers (378 layers across 42 scenarios, database-backed)
+- **interventions**: Read-only WFS layers of flood-mitigation interventions (7 layers, see "Intervention Datasets" below)
 
 ### Key Components
 
@@ -99,6 +100,12 @@ Hazard
     - **Hardcoded Data**: All 42 intervention types with exact text from `docs/InterventionWebSiteRequirements_v3.docx`
     - **Non-drawable interventions filtered**: M8, P9, H4, H5, ML7, ML8 (featureType: 'none')
     - **Default visibility**: Intervention features are hidden by default (`visible: false` in `useAnnotationLayer.ts`), users toggle visibility via eye icon in the Interventions panel
+- **Intervention Datasets (WFS)** (`src/components/interventions-schema/`): Read-only browser + map for GeoServer WFS intervention layers — distinct from the annotation-based drawing above. Data-driven entirely by the `INTERVENTION_LAYERS` array in `src/types/interventions-schema.ts`; adding a layer there is all that's required (no panel/hook changes).
+  - **Layers (7):** smallDams (point), DiversionBunds (line), FloodChannel_Choki-ZeroPoint / FloodChannel_Hamal-Manchar / FloodChannel_hamalDrain (polygon), ChokingPoints (point), RingBunds (polygon)
+  - **useInterventionWfs** (`src/hooks/useInterventionWfs.ts`): One cached WFS GetFeature fetch per layer; geometries arrive in EPSG:32642 (no reprojection)
+  - **useSchemaLayer** (`src/components/interventions-schema/hooks/useSchemaLayer.ts`): Single OL VectorLayer rendering all layers; per-layer show/hide, click-to-zoom highlight, and white-halo'd labels (per-geometry placement, truncated to 28 chars)
+  - **Label fields** (`featureLabel`): `title` (smallDams, DiversionBunds), `Protection` (FloodChannel_*), `Name` (RingBunds), `Pt` (ChokingPoints); falls back to first non-empty string property
+  - **Reach via proxy:** `/geoserver/interventions/ows?…` (Vite/Apache proxy → `http://10.0.0.205:8080`)
 
 ### Risk Analysis & EAD Module
 
