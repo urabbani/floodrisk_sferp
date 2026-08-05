@@ -26,7 +26,7 @@ export interface InterventionLayer {
   color: string;
 }
 
-/** The 5 intervention layers (verified live via WFS GetCapabilities). */
+/** The 7 intervention layers (verified live via WFS GetCapabilities). */
 export const INTERVENTION_LAYERS: readonly InterventionLayer[] = [
   {
     typeName: 'interventions:smallDams',
@@ -63,6 +63,20 @@ export const INTERVENTION_LAYERS: readonly InterventionLayer[] = [
     geometryType: 'polygon',
     color: '#dc2626', // red
   },
+  {
+    typeName: 'interventions:ChokingPoints',
+    key: 'ChokingPoints',
+    displayName: 'Choking Points',
+    geometryType: 'point',
+    color: '#0891b2', // cyan
+  },
+  {
+    typeName: 'interventions:RingBunds',
+    key: 'RingBunds',
+    displayName: 'Ring Bunds',
+    geometryType: 'polygon',
+    color: '#be185d', // pink
+  },
 ] as const;
 
 /** Map a layer key back to its config (O(1) lookup). */
@@ -90,11 +104,19 @@ export function buildWfsUrl(typeName: string): string {
 /**
  * Pick a human-readable label for a feature from its properties.
  * Shape A tables (smallDams, DiversionBunds) carry `title`;
- * Shape B tables (FloodChannel_*) carry `Protection`.
+ * Shape B tables (FloodChannel_*) carry `Protection`;
+ * RingBunds carries `Name`; ChokingPoints carries `Pt` (a numeric id).
  */
 export function featureLabel(properties: Record<string, unknown> | null): string {
   if (!properties) return 'Unnamed feature';
-  const candidates = ['title', 'Protection', 'INV_CODE', 'descriptio'];
+  const candidates = [
+    'title',
+    'Protection',
+    'Name',
+    'INV_CODE',
+    'descriptio',
+    'Pt',
+  ];
   for (const key of candidates) {
     const value = properties[key];
     if (typeof value === 'string' && value.trim()) return value.trim();
