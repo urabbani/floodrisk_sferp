@@ -31,63 +31,63 @@ export const INTERVENTION_LAYERS: readonly InterventionLayer[] = [
   {
     typeName: 'interventions:S1_FloodChannel',
     key: 'S1_FloodChannel',
-    displayName: 'S1 Flood Channel',
+    displayName: 'Flood Channel',
     geometryType: 'polygon',
     color: '#16a34a', // green
   },
   {
     typeName: 'interventions:S2_ZeroPoint',
     key: 'S2_ZeroPoint',
-    displayName: 'S2 Zero Point',
+    displayName: 'ZeroPoint',
     geometryType: 'point',
     color: '#0891b2', // cyan
   },
   {
     typeName: 'interventions:S3_FloodChannel',
     key: 'S3_FloodChannel',
-    displayName: 'S3 Flood Channel',
+    displayName: 'Flood Channel',
     geometryType: 'polygon',
     color: '#9333ea', // purple
   },
   {
     typeName: 'interventions:S4_MoriaLoopBund',
     key: 'S4_MoriaLoopBund',
-    displayName: 'S4 Moria Loop Bund',
+    displayName: 'Moria Loop Bund',
     geometryType: 'point',
     color: '#ea580c', // orange
   },
   {
     typeName: 'interventions:S6_DiversionBunds',
     key: 'S6_DiversionBunds',
-    displayName: 'S6 Diversion Bunds',
+    displayName: 'Diversion Bunds',
     geometryType: 'line',
     color: '#f59e0b', // amber
   },
   {
     typeName: 'interventions:S6_SmallDams',
     key: 'S6_SmallDams',
-    displayName: 'S6 Small Dams',
+    displayName: 'Small Dams',
     geometryType: 'point',
     color: '#2563eb', // blue
   },
   {
     typeName: 'interventions:S7_RingBunds',
     key: 'S7_RingBunds',
-    displayName: 'S7 Ring Bunds',
+    displayName: 'Ring Bunds',
     geometryType: 'polygon',
     color: '#be185d', // pink
   },
   {
     typeName: 'interventions:S9_BottlenecksRemoval',
     key: 'S9_BottlenecksRemoval',
-    displayName: 'S9 Bottlenecks Removal',
+    displayName: 'Bottlenecks Removal',
     geometryType: 'point',
     color: '#65a30d', // lime
   },
   {
     typeName: 'interventions:S14_FPBundHotspots',
     key: 'S14_FPBundHotspots',
-    displayName: 'S14 FP Bund Hotspots',
+    displayName: 'FP Bund Hotspots',
     geometryType: 'point',
     color: '#dc2626', // red
   },
