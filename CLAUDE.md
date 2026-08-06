@@ -101,10 +101,10 @@ Hazard
     - **Non-drawable interventions filtered**: M8, P9, H4, H5, ML7, ML8 (featureType: 'none')
     - **Default visibility**: Intervention features are hidden by default (`visible: false` in `useAnnotationLayer.ts`), users toggle visibility via eye icon in the Interventions panel
 - **Intervention Datasets (WFS)** (`src/components/interventions-schema/`): Read-only browser + map for GeoServer WFS intervention layers — distinct from the annotation-based drawing above. Data-driven entirely by the `INTERVENTION_LAYERS` array in `src/types/interventions-schema.ts`; adding a layer there is all that's required (no panel/hook changes).
-  - **Layers (7):** smallDams (point), DiversionBunds (line), FloodChannel_Choki-ZeroPoint / FloodChannel_Hamal-Manchar / FloodChannel_hamalDrain (polygon), ChokingPoints (point), RingBunds (polygon)
+  - **Layers (9):** S1_FloodChannel (polygon), S2_ZeroPoint (point), S3_FloodChannel (polygon), S4_MoriaLoopBund (point), S6_DiversionBunds (line), S6_SmallDams (point), S7_RingBunds (polygon), S9_BottlenecksRemoval (point), S14_FPBundHotspots (point)
   - **useInterventionWfs** (`src/hooks/useInterventionWfs.ts`): One cached WFS GetFeature fetch per layer; geometries arrive in EPSG:32642 (no reprojection)
   - **useSchemaLayer** (`src/components/interventions-schema/hooks/useSchemaLayer.ts`): Single OL VectorLayer rendering all layers; per-layer show/hide, click-to-zoom highlight, and white-halo'd labels (per-geometry placement, truncated to 28 chars)
-  - **Label fields** (`featureLabel`): `title` (smallDams, DiversionBunds), `Protection` (FloodChannel_*), `Name` (RingBunds), `Pt` (ChokingPoints); falls back to first non-empty string property
+  - **Label fields** (`featureLabel`): `title` (S6_DiversionBunds), `Protection` (S1/S3_FloodChannel), `Name` (S6_SmallDams, S7_RingBunds, S4_MoriaLoopBund, S14_FPBundHotspots, S9_BottlenecksRemoval); S2_ZeroPoint has no attributes (falls back to 'Unnamed feature')
   - **Reach via proxy:** `/geoserver/interventions/ows?…` (Vite/Apache proxy → `http://10.0.0.205:8080`)
 
 ### Risk Analysis & EAD Module

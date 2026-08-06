@@ -26,56 +26,70 @@ export interface InterventionLayer {
   color: string;
 }
 
-/** The 7 intervention layers (verified live via WFS GetCapabilities). */
+/** The 9 intervention layers (verified live via WFS GetCapabilities). */
 export const INTERVENTION_LAYERS: readonly InterventionLayer[] = [
   {
-    typeName: 'interventions:smallDams',
-    key: 'smallDams',
-    displayName: 'Small Dams',
-    geometryType: 'point',
-    color: '#2563eb', // blue
-  },
-  {
-    typeName: 'interventions:DiversionBunds',
-    key: 'DiversionBunds',
-    displayName: 'Diversion Bunds',
-    geometryType: 'line',
-    color: '#f59e0b', // amber
-  },
-  {
-    typeName: 'interventions:FloodChannel_Choki-ZeroPoint',
-    key: 'FloodChannel_Choki-ZeroPoint',
-    displayName: 'Flood Channel: Choki–Zero Point',
+    typeName: 'interventions:S1_FloodChannel',
+    key: 'S1_FloodChannel',
+    displayName: 'S1 Flood Channel',
     geometryType: 'polygon',
     color: '#16a34a', // green
   },
   {
-    typeName: 'interventions:FloodChannel_Hamal-Manchar',
-    key: 'FloodChannel_Hamal-Manchar',
-    displayName: 'Flood Channel: Hamal–Manchar',
-    geometryType: 'polygon',
-    color: '#9333ea', // purple
-  },
-  {
-    typeName: 'interventions:FloodChannel_hamalDrain',
-    key: 'FloodChannel_hamalDrain',
-    displayName: 'Flood Channel: Hamal Drain',
-    geometryType: 'polygon',
-    color: '#dc2626', // red
-  },
-  {
-    typeName: 'interventions:ChokingPoints',
-    key: 'ChokingPoints',
-    displayName: 'Choking Points',
+    typeName: 'interventions:S2_ZeroPoint',
+    key: 'S2_ZeroPoint',
+    displayName: 'S2 Zero Point',
     geometryType: 'point',
     color: '#0891b2', // cyan
   },
   {
-    typeName: 'interventions:RingBunds',
-    key: 'RingBunds',
-    displayName: 'Ring Bunds',
+    typeName: 'interventions:S3_FloodChannel',
+    key: 'S3_FloodChannel',
+    displayName: 'S3 Flood Channel',
+    geometryType: 'polygon',
+    color: '#9333ea', // purple
+  },
+  {
+    typeName: 'interventions:S4_MoriaLoopBund',
+    key: 'S4_MoriaLoopBund',
+    displayName: 'S4 Moria Loop Bund',
+    geometryType: 'point',
+    color: '#ea580c', // orange
+  },
+  {
+    typeName: 'interventions:S6_DiversionBunds',
+    key: 'S6_DiversionBunds',
+    displayName: 'S6 Diversion Bunds',
+    geometryType: 'line',
+    color: '#f59e0b', // amber
+  },
+  {
+    typeName: 'interventions:S6_SmallDams',
+    key: 'S6_SmallDams',
+    displayName: 'S6 Small Dams',
+    geometryType: 'point',
+    color: '#2563eb', // blue
+  },
+  {
+    typeName: 'interventions:S7_RingBunds',
+    key: 'S7_RingBunds',
+    displayName: 'S7 Ring Bunds',
     geometryType: 'polygon',
     color: '#be185d', // pink
+  },
+  {
+    typeName: 'interventions:S9_BottlenecksRemoval',
+    key: 'S9_BottlenecksRemoval',
+    displayName: 'S9 Bottlenecks Removal',
+    geometryType: 'point',
+    color: '#65a30d', // lime
+  },
+  {
+    typeName: 'interventions:S14_FPBundHotspots',
+    key: 'S14_FPBundHotspots',
+    displayName: 'S14 FP Bund Hotspots',
+    geometryType: 'point',
+    color: '#dc2626', // red
   },
 ] as const;
 
@@ -103,9 +117,10 @@ export function buildWfsUrl(typeName: string): string {
 
 /**
  * Pick a human-readable label for a feature from its properties.
- * Shape A tables (smallDams, DiversionBunds) carry `title`;
- * Shape B tables (FloodChannel_*) carry `Protection`;
- * RingBunds carries `Name`; ChokingPoints carries `Pt` (a numeric id).
+ * `title` (S6_DiversionBunds), `Protection` (S1/S3_FloodChannel),
+ * or `Name` (S6_SmallDams, S7_RingBunds, S4_MoriaLoopBund,
+ * S14_FPBundHotspots, S9_BottlenecksRemoval). S2_ZeroPoint carries no
+ * attributes and falls back to 'Unnamed feature'.
  */
 export function featureLabel(properties: Record<string, unknown> | null): string {
   if (!properties) return 'Unnamed feature';
