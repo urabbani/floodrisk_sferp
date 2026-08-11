@@ -1,6 +1,6 @@
 /**
  * SchemaInterventionsPanel — read-only browser for the GeoServer WFS
- * `interventions` layers. Lists the 5 layers as an accordion; each layer can
+ * `interventions` layers. Lists the 12 layers as an accordion; each layer can
  * be toggled onto the map (eye) and expanded to browse its features.
  *
  * Replaces the annotation-based InterventionPanel in the Interventions tab.
